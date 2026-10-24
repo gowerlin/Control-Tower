@@ -4,46 +4,52 @@ import { useData, withBase } from 'vitepress'
 import type { ThemeConfig } from '../../config.mjs'
 import bmadGuide from '../../../data/bmad-guide.json'
 
-// 取得方式（取代 BAT 的 DownloadLinks）：不放下載連結，只寫「未公開，目前僅供部分協助測試者申請」、目前版號與安裝步驟。
+// 取得方式（取代 BAT 的 DownloadLinks）：目前版號、GitHub Release 下載連結與安裝步驟。
 // 版號讀 ct-release.json（scripts/sync-ct-release.mjs 產生）與 data/bmad-guide.json（跟 BMad-Method 走，bmad-guide 發版時同步更新）。
-// 安裝步驟摘要自 CT 安裝與使用指南 § 4.1、§ 4.3，詳細步驟在 /install。公開發行後改成真的連結。
+// 下載網址用 config.mts 的 releasesUrl 組，不寫死版號：tag 是 ct-v<CT 版號>、bmad-guide-v<bmad-guide 版號>，附件名就是 json 裡的 zip 名。
+// CT 單一 skill zip 有 8 個，連到該版 Release 頁。安裝步驟摘要自 CT 安裝與使用指南 § 4.1、§ 4.3，詳細步驟在 /install。
 const { theme } = useData<ThemeConfig>()
 const release = computed(() => theme.value.ctRelease)
+const releasesUrl = computed(() => theme.value.releasesUrl)
+const ctTag = computed(() => `ct-v${release.value.ctVersion}`)
+const ctAsset = (name: string) => `${releasesUrl.value}download/${ctTag.value}/${name}`
+const bmadGuideAsset = computed(() => `${releasesUrl.value}download/bmad-guide-v${bmadGuide.version}/${bmadGuide.zip}`)
 </script>
 
 <template>
   <div class="ct-download">
     <p class="cd-status">
       <span><b>目前版本</b> CT v{{ release.ctVersion }} · CT Guide v{{ release.guideVersion }}（{{ release.releasedAt }}）· BMad Guide v{{ bmadGuide.version }}（{{ bmadGuide.releasedAt }}）</span>
-      <span><b>取得方式</b> 未公開，目前僅供部分協助測試者申請</span>
+      <span><b>取得方式</b> 從 GitHub Releases 下載</span>
     </p>
     <ul class="cd-files" aria-label="發行檔">
       <li v-if="release.zip">
-        <span class="download-item">
+        <a class="download-item" :href="ctAsset(release.zip)">
           <span class="download-label">BMad Control Tower</span>
           <span class="download-note">{{ release.zip }}</span>
-        </span>
+        </a>
       </li>
       <li v-if="release.zip">
-        <span class="download-item">
+        <a class="download-item" :href="`${releasesUrl}tag/${ctTag}`" target="_blank" rel="noreferrer">
           <span class="download-label">CT 單一 skill zip（claude.ai 上傳用）</span>
-          <span class="download-note">BMad-Control-Tower-v{{ release.ctVersion }}-skills/（8 個 &lt;skill&gt;-v{{ release.ctVersion }}.zip）</span>
-        </span>
+          <span class="download-note">8 個 &lt;skill&gt;-v{{ release.ctVersion }}.zip，在 v{{ release.ctVersion }} 的 Release 頁</span>
+        </a>
       </li>
       <li v-if="release.guideZip">
-        <span class="download-item">
+        <a class="download-item" :href="ctAsset(release.guideZip)">
           <span class="download-label">CT Guide Skill</span>
           <span class="download-note">{{ release.guideZip }}</span>
-        </span>
+        </a>
       </li>
       <li v-if="bmadGuide.zip">
-        <span class="download-item">
+        <a class="download-item" :href="bmadGuideAsset">
           <span class="download-label">BMad Guide Skill</span>
           <span class="download-note">{{ bmadGuide.zip }}</span>
-        </span>
+        </a>
       </li>
     </ul>
-    <p class="cd-steps-title">拿到之後</p>
+    <p class="cd-more">舊版本：所有版本見 <a :href="releasesUrl" target="_blank" rel="noreferrer">GitHub Releases</a></p>
+    <p class="cd-steps-title">下載之後</p>
     <ol class="cd-steps">
       <li>zip 解壓縮後，根層直接是 8 個 skill 目錄（不含 <code>docs/</code>）；發行目錄版則是 <code>skills/</code> 底下 8 個 skill 目錄，另附 <code>docs/</code>。</li>
       <li>Claude Code 放到 <code>~/.claude/skills/&lt;skill&gt;/</code>；Codex 放到 <code>~/.codex/skills/&lt;skill&gt;/</code>。塔台與 Worker 用同一批，一起升級。</li>

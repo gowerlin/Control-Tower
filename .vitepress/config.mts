@@ -19,6 +19,8 @@ export interface ThemeConfig extends DefaultTheme.Config {
   batSiteUrl: string
   /** 推廣影片第二季簡報的 GitHub Release 下載網址（結尾有 /）；/podcast 的下載連結一律用它組，內文不手寫網址 */
   podcastReleaseUrl: string
+  /** CT、CT Guide、BMad Guide 發行 zip 的 GitHub Releases 網址（結尾有 /）；CtDownload 的下載連結一律用它組，內文不手寫網址 */
+  releasesUrl: string
   /** Artifact 預覽建置：沒有 client JS，元件只剩 SSR 的樣子 */
   artifact: boolean
 }
@@ -29,6 +31,8 @@ export interface ThemeConfig extends DefaultTheme.Config {
 const DEFAULT_BAT_SITE_URL = 'https://gowerlin.github.io/better-agent-terminal/'
 // 推廣影片第二季簡報 PDF 的 Release 附件網址：同上，只能寫在設定裡，允許清單只放行到 podcast-s2/ 這一層
 const PODCAST_RELEASE_URL = 'https://github.com/gowerlin/Control-Tower/releases/download/podcast-s2/'
+// 發行 zip 的 Releases 網址：同上，只能寫在設定裡；tag 規則 ct-v<CT 版號>、bmad-guide-v<bmad-guide 版號>，由 CtDownload 組
+const CT_RELEASES_URL = 'https://github.com/gowerlin/Control-Tower/releases/'
 // Artifact 預覽用的哨兵 base：build 完由 scripts/build-artifact.mjs 改寫成相對路徑
 const ARTIFACT_BASE = '/__ct__/'
 
@@ -305,6 +309,7 @@ export default () => {
       ctRelease,
       batSiteUrl: BAT_SITE_URL,
       podcastReleaseUrl: PODCAST_RELEASE_URL,
+      releasesUrl: CT_RELEASES_URL,
       artifact: IS_ARTIFACT,
 
       // logo.svg 的線條是 currentColor；放進 <img> 時跟不到頁面文字色，所以深色模式另給固定淺色線條的版本

@@ -2517,7 +2517,7 @@
   }
 }
 
-/* ---------- 取得方式（CtDownload：不放下載連結） ---------- */
+/* ---------- 取得方式（CtDownload：GitHub Release 下載連結） ---------- */
 
 .ct-download {
   margin: 16px 0;
@@ -2555,14 +2555,6 @@
 
 .ct-download .cd-files li {
   margin: 0;
-}
-
-.ct-download .download-item {
-  cursor: default;
-}
-
-.ct-download .download-item:hover {
-  border-color: var(--vp-c-divider);
 }
 
 .ct-download .cd-steps-title {

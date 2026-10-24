@@ -1,19 +1,43 @@
 ---
 title: 更版紀錄
-description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.12.5），更早的版本見演進史。
+description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.12.6），更早的版本見演進史。
 ---
 
 <!-- 本頁由 scripts/sync-ct-release.mjs 從 CT CHANGELOG 產生，請勿手改；要改內容請改來源後重跑。 -->
 
 # 更版紀錄
 
-目前版本 **v5.12.5**（2026-10-23）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 50 版（v2.1.1 ～ v5.8.0）請看[演進史](./evolution)。
+目前版本 **v5.12.6**（2026-10-25）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 51 版（v2.1.1 ～ v5.8.1）請看[演進史](./evolution)。
 
 ::: tip 摘要不具權威
 本頁照錄 CT 的 CHANGELOG，只拿掉工單、決策、驗收回函等內部編號與出處註記。規則的權威定義在 CT 各 skill 與 references，兩者有出入時以 CT 本體為準。
 :::
 
 ::: v-pre
+
+## 5.12.6 <small>2026-10-25</small> {#v5-12-6}
+
+
+> **PATCH：發行內容去識別（只改說明文字，規則與行為不變）。**
+> 範例與由來說明裡可識別的名稱換成中性說法或範例值，以便公開發行；指令、旗標、exit code、步驟順序、檔名、設定的值域與預設、工單 metadata、BAT 介面都不變。
+
+### Changed
+
+- 去識別改寫（只列檔案與類別，不列原文；「由來」類句子保留事件與日期，只換名稱）：
+  - 私人專案 repo 名與專案代稱 → 「專案 A／B／C」、`project-a`／`project-b`／`project-c`：`ct-exec/SKILL.md` § Landing Zone Check、`ct-fieldguide/references/global-fieldguide.md`（範例表）、
+    `ct-insights/references/analysis-rules.md`，`control-tower/references/` 的 `archive-system.md`、`auto-session.md`、`cross-project-coordination.md`、`multi-tower-protocol.md`、`playbook-engine.md`、`work-order-template.md`；本檔歷史段落
+  - 本機絕對路徑 → `~/repos/…`、`~/Projects/…` 占位：`global-fieldguide.md`（範例表）、`work-order-template.md` § `repo`；`docs/Control Tower 自助擴充指南：教塔台學新技能 v4.md`（`*import --from` 範例路徑）
+  - 私有詞（人名、帳號、主機名、組織名）→ 中性說法：`auto-session.md`、`cross-project-coordination.md`、`work-order-template.md`、`yolo-mode.md`；本檔歷史段落
+  - 內網主機位址 → RFC 5737 範例位址：`enhancement-integration.md`、`self-learning-core.md`
+  - 私人規則名 → 中性說法：`yolo-mode.md`；本檔歷史段落
+  - 分頁短 id 範例 → 占位：`memory-protocol.md`
+- 版號：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表；安裝指南新增 § 2.51，§ 4.1 版號範例同步（`OLD=5.12.5`、`VER=5.12.6`、發行物檔名）。
+
+### Unchanged
+
+- 規則與行為：指令、旗標、exit code、步驟順序、檔名、設定的值域與預設、工單 metadata 不變；BAT 介面不變、CT 最低 BAT 版本不變。
+- 保留的公開值：BAT 預設安裝路徑（`Program Files` 下的 `BetterAgentTerminal`）、`auto-session.md` § A.1 偵測變數完整表 SSH 列的文件範例位址。
+- 歷史段落只換可識別的名稱，記載的事件、日期與版本內容不改。
 
 ## 5.12.5 <small>2026-10-23</small> {#v5-12-5}
 
@@ -319,36 +343,12 @@ description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.12.5），
 - Codex 塔台沒有 ListAgents／SendMessage，不適用本規則；codex 塔台之間的傳訊不在本版範圍。
 - 規則只涉及塔台；Worker 行為不變。塔台與 Worker 請同版安裝。
 
-## 5.8.1 <small>2026-10-18</small> {#v5-8-1}
-
-
-> **PATCH：BAT `v0.7.0-pre.9` 已發佈——v5.8.0 的 BAT 版本占位字串換成 `>= 0.7.0-pre.9`；yolo 提問的「提問時間」取自系統、收尾自檢不改已送出的題目；
-> 塔台答覆行由 Worker 的工單 commit 帶入，註明為預期行為。** 來自 BAT 實機驗收回函與 BAT `v0.7.0-pre.9` 發佈。
-> BAT 介面不變。非 yolo 的 Worker／塔台行為、派工命令、斷點 D 判準、`--wait-started`、隔離派工、合併流程、提問通道流程與 `worker_question_timeout` 不變。
-
-### Changed
-
-- BAT 版本：v5.8.0 文中 codex OSC 7501 所需 BAT 版本的占位字串（`control-tower/SKILL.md`、`auto-session.md`、`yolo-mode.md`、`version-governance.md`、
-  本檔 [5.8.0]、安裝指南）全部換成 BAT `>= 0.7.0-pre.9`（BAT README 版本對照：BAT `>= 0.7.0-pre.9`、CT `>= v5.8.0`、codex `>= 0.163.0`）。
-- `yolo-mode.md` § Worker 向塔台提問 › § Worker 端 第 2 點：題目範本的「提問時間」寫明取值指令（bash `date "+%Y-%m-%dT%H:%M:%S%z"`、
-  PowerShell `Get-Date -Format "yyyy-MM-ddTHH:mm:ssK"`），範本下補一句：先執行指令再貼上輸出，不得推估或補整數秒。
-  `ct-exec/SKILL.md` 提問前檢查與 `work-order-template.md` 提問範本只引用該處。
-- `ct-exec/SKILL.md` § Phase 4 第 4 點自檢：(a) 不合格時不改已送出的題目（塔台可能已依原文答覆），只在 `### 遭遇問題` 記下哪一題、哪裡不合格；
-  (b)(c) 照舊修正後繼續。自檢項目不變，仍只檢查「有沒有」。
-- `yolo-mode.md` § 塔台端 第 3 點 **工單答覆**：註明塔台寫答覆行後不另 commit，Worker 之後以工單檔為單位 commit 時一併帶入屬預期行為，
-  Worker 不改動答覆行、可在回報區註明；§ Worker 端 3-B 的等待例外處引用。不新增「塔台寫完答覆行就 commit」的規則。
-
-### Compatibility
-
-- BAT ≤ `0.7.0-pre.8` 或 codex 低於 `0.163.0`：行為與 v5.8.0 相同（`blockedDetection: none`、`agentStarted: null`、`started: unknown`）。
-- 規則變更只涉及 yolo Worker 的題目寫法與收尾自檢；塔台與 Worker 請同版安裝。
-
 :::
 
 ## 延伸閱讀 {#further-reading}
 
-- CT `CHANGELOG.md`（共 60 個版本；本頁列最近 10 版）
+- CT `CHANGELOG.md`（共 61 個版本；本頁列最近 10 版）
 - CT `version-governance.md` § 歷史版號表
-- [演進史](./evolution)：更早的 50 版與八個世代
+- [演進史](./evolution)：更早的 51 版與八個世代
 
 Portal 是摘要，不具權威；與 CT reference 有出入時，以 reference 為準。
