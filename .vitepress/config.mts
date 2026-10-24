@@ -276,6 +276,7 @@ export default () => {
     srcExclude: [
       'PORTAL-PLAN.md',
       'README.md',
+      'THIRD-PARTY-NOTICES.md',
       'design/**',
       'scripts/**',
       'data/**',

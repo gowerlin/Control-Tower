@@ -212,11 +212,14 @@ function isConfig(file) {
   return /(^|\/)\.vitepress\/[^/]+\.(mts|ts|json)$/.test(p)
 }
 
-// 例外：站點根目錄的 README.md 是公開 repo 的首頁，要放 Portal 自己的公開網址。
-// 「站點根目錄」= 旁邊有 .vitepress/config.mts 的目錄，所以 site/README.md 與匯出後公開 repo 根的 README.md 都成立；
-// 子目錄的 README.md 與其他 .md 照舊不放行
-function isSiteReadme(file) {
-  return path.basename(file) === 'README.md' && fs.existsSync(path.join(path.dirname(file), '.vitepress', 'config.mts'))
+// 例外：站點根目錄的 README.md 是公開 repo 的首頁，要放 Portal 自己的公開網址；
+// LICENSE 與 THIRD-PARTY-NOTICES.md 是公開 repo 的授權檔，著作權行要寫著作權人的帳號名（允許清單另列那一整行）。
+// 「站點根目錄」= 旁邊有 .vitepress/config.mts 的目錄，所以 site/ 與匯出後公開 repo 根的這三個檔都成立；
+// 子目錄的同名檔與其他 .md 照舊不放行
+const SITE_ROOT_FILES = new Set(['README.md', 'LICENSE', 'THIRD-PARTY-NOTICES.md'])
+
+function isSiteRootFile(file) {
+  return SITE_ROOT_FILES.has(path.basename(file)) && fs.existsSync(path.join(path.dirname(file), '.vitepress', 'config.mts'))
 }
 
 function main() {
@@ -249,7 +252,7 @@ function main() {
       let line = raw
       for (const entry of allow) {
         if (!line.includes(entry)) continue
-        if (!isBuildOutput(file) && !isConfig(file) && !isSiteReadme(file)) add(file, i + 1, '允許清單網址寫在設定以外')
+        if (!isBuildOutput(file) && !isConfig(file) && !isSiteRootFile(file)) add(file, i + 1, '允許清單網址寫在設定以外')
         line = line.split(entry).join(' ')
       }
       for (const [category, re] of PATTERNS) {

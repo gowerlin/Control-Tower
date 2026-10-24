@@ -95,3 +95,9 @@ npm run deid
 **Pages 尚未啟用時**，workflow 只建置與檢查連結，部署步驟會跳過。到 Settings → Pages → Source 選 **GitHub Actions** 啟用後，回 Actions 頁重新執行 **Pages** workflow 即可部署。
 
 本 repo 的內容由維護者從另一個 repo 匯出後推送；匯出時會對匯出的全部檔案跑去識別掃描（含 `--internal-ids`），沒有通過就不推送。請不要直接在這裡改頁面，改動會在下次匯出時被覆蓋。
+
+## 授權
+
+網站原始碼，以及 GitHub Releases 中的 Control Tower（CT）、CT Guide、BMad Guide Skill（`bmad-guide`）三組 skill，都以 MIT License 授權發布，見 [`LICENSE`](LICENSE)。
+
+BMad-Method 的授權與商標聲明見 [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md)。
