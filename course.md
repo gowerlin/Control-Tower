@@ -173,6 +173,9 @@ git switch -c my-ch1 ch1-start      # 從第一章道館的起點開始做</code
 
 ## 延伸閱讀
 
-- 課程規劃（`COURSE-PLAN.md`）§ 1 課程定位、§ 3 課程總表、§ 6.1 錄製時版本
+- [課程道館說明](/course-dojo)：6 章道館的題目、驗收、自我驗證方式與參考解導讀
+- 程式碼 repo：<a :href="codeRepo" target="_blank" rel="noreferrer">ct-bat-bmad-go-sms</a>，示範專案的完整程式碼與 12 個道館 tag
+- 投影片 PDF：GitHub Release <a :href="slidesPage" target="_blank" rel="noreferrer">課程「多代理規格驅動開發實戰」投影片 PDF</a>
+- 課程影片：YouTube 播放清單，見上方[取得方式](#取得方式)
 
-Portal 是摘要，不具權威；課程內容以課程本身為準。
+這一頁是課程的摘要；章節內容、指令與版本以影片和程式碼 repo 為準。
