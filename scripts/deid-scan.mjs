@@ -65,7 +65,7 @@ const INTERNAL_NUMBER_PATTERNS = [
 // 範例編號：頁面上示範格式或指令用的工單號，不指向本 repo 真的工單。只在更版紀錄以外放行（更版紀錄照錄 CHANGELOG，
 // 出現的編號都是真的）。新增範例要先加在這裡並寫出處頁；不要用萬用規則放行
 const EXAMPLE_IDS = new Map([
-  ['T0001', '指令與格式範例：install、faq、reference/commands、guide/ct-guide、versions/evolution、deep/features/work-orders、multi-tower、recovery'],
+  ['T0001', '指令與格式範例：install、faq、reference/commands、guide/ct-guide、versions/evolution、deep/features/work-orders、multi-tower、recovery；課程示範專案的工單：course-dojo'],
   ['T0005', '*resume 範例：reference/commands、deep/features/recovery'],
   ['T0015', '工單檔名範例：deep/features/work-orders'],
   ['T0042', '派工與回報範例：index、faq、lifecycle、HeroTower.vue'],
@@ -75,6 +75,19 @@ const EXAMPLE_IDS = new Map([
   ['T0115', '單專案標準形式範例：deep/features/work-orders'],
   ['T0123', '*insights workflow 語法範例：reference/commands'],
   ['T0124', '*insights workflow 語法範例：reference/commands'],
+  ['T0002', '課程示範專案的工單（CH3 道館；公開程式碼 repo 的 _ct-workorders/）：course-dojo'],
+  ['T0003', '課程示範專案的工單（CH3 道館；公開程式碼 repo 的 _ct-workorders/）：course-dojo'],
+  ['T0004', '課程示範專案的工單（CH4 道館，4-03 的前置工單；公開程式碼 repo 的 _ct-workorders/）：course-dojo'],
+  ['T0005', '課程示範專案的工單（CH4 道館；公開程式碼 repo 的 _ct-workorders/）：course-dojo'],
+  ['T0006', '課程示範專案的工單（CH4 道館；公開程式碼 repo 的 _ct-workorders/）：course-dojo'],
+  ['T0007', '課程示範專案的工單（CH4 道館；公開程式碼 repo 的 _ct-workorders/）：course-dojo'],
+  ['T0008', '課程示範專案的工單（CH5 道館；公開程式碼 repo 的 _ct-workorders/）：course-dojo'],
+  ['T0009', '課程示範專案的工單（CH5 道館；公開程式碼 repo 的 _ct-workorders/）：course-dojo'],
+  ['T0010', '課程示範專案的工單（CH5 道館；公開程式碼 repo 的 _ct-workorders/）：course-dojo'],
+  ['T0011', '課程示範專案的工單（CH5 道館的合併工單；公開程式碼 repo 的 _ct-workorders/）：course-dojo'],
+  ['T9003', '課程示範專案的工單（CH4 道館的前置單；公開程式碼 repo 的 _ct-workorders/）：course-dojo'],
+  ['D001', '課程示範專案的決策（CH1 道館；公開程式碼 repo 的 _ct-workorders/）：course-dojo'],
+  ['D002', '課程示範專案的決策（CH3 道館；公開程式碼 repo 的 _ct-workorders/）：course-dojo'],
   ['BUG-001', '引用欄位範例：deep/features/record-types']
 ])
 

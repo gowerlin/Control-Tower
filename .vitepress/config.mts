@@ -21,6 +21,10 @@ export interface ThemeConfig extends DefaultTheme.Config {
   podcastReleaseUrl: string
   /** CT、CT Guide、BMad Guide 發行 zip 的 GitHub Releases 網址（結尾有 /）；CtDownload 的下載連結一律用它組，內文不手寫網址 */
   releasesUrl: string
+  /** 課程示範專案的公開程式碼 repo 網址（結尾沒有 /）；/course、/course-dojo 的 clone 指令與 repo 連結一律用它組，內文不手寫網址 */
+  courseCodeRepoUrl: string
+  /** 課程投影片 PDF 的 Release tag；下載網址＝releasesUrl＋download/<tag>/<檔名> */
+  courseReleaseTag: string
   /** Artifact 預覽建置：沒有 client JS，元件只剩 SSR 的樣子 */
   artifact: boolean
 }
@@ -33,6 +37,9 @@ const DEFAULT_BAT_SITE_URL = 'https://gowerlin.github.io/better-agent-terminal/'
 const PODCAST_RELEASE_URL = 'https://github.com/gowerlin/Control-Tower/releases/download/podcast-s2/'
 // 發行 zip 的 Releases 網址：同上，只能寫在設定裡；tag 規則 ct-v<CT 版號>、bmad-guide-v<bmad-guide 版號>，由 CtDownload 組
 const CT_RELEASES_URL = 'https://github.com/gowerlin/Control-Tower/releases/'
+// 課程示範專案的公開程式碼 repo：同上，只能寫在設定裡；投影片 PDF 放在上面 Releases 的這個 tag（前綴已在允許清單）
+const COURSE_CODE_REPO_URL = 'https://github.com/gowerlin/ct-bat-bmad-go-sms'
+const COURSE_RELEASE_TAG = 'course-ct-bat-bmad-go-sms'
 // Artifact 預覽用的哨兵 base：build 完由 scripts/build-artifact.mjs 改寫成相對路徑
 const ARTIFACT_BASE = '/__ct__/'
 
@@ -117,6 +124,7 @@ const nav: DefaultTheme.NavItem[] = [
     items: [
       { text: '實戰案例', link: '/cases' },
       { text: '課程', link: '/course' },
+      { text: '課程道館說明', link: '/course-dojo' },
       { text: '推廣影片（S2）', link: '/podcast' }
     ]
   },
@@ -193,6 +201,7 @@ const sidebar: DefaultTheme.SidebarItem[] = [
     items: [
       { text: '實戰案例', link: '/cases' },
       { text: '課程入口', link: '/course' },
+      { text: '課程道館說明', link: '/course-dojo' },
       { text: '推廣影片（S2）', link: '/podcast' }
     ]
   },
@@ -311,6 +320,8 @@ export default () => {
       batSiteUrl: BAT_SITE_URL,
       podcastReleaseUrl: PODCAST_RELEASE_URL,
       releasesUrl: CT_RELEASES_URL,
+      courseCodeRepoUrl: COURSE_CODE_REPO_URL,
+      courseReleaseTag: COURSE_RELEASE_TAG,
       artifact: IS_ARTIFACT,
 
       // logo.svg 的線條是 currentColor；放進 <img> 時跟不到頁面文字色，所以深色模式另給固定淺色線條的版本
