@@ -120,6 +120,11 @@ const nav: DefaultTheme.NavItem[] = [
     ]
   },
   {
+    text: '預覽',
+    activeMatch: '^/preview/',
+    items: [{ text: '方法論轉接（v6.0.0-pre.1，未發布）', link: '/preview/methodology-adapters' }]
+  },
+  {
     text: '案例與課程',
     items: [
       { text: '實戰案例', link: '/cases' },
@@ -195,6 +200,10 @@ const sidebar: DefaultTheme.SidebarItem[] = [
       { text: '更版紀錄', link: '/versions/releases' },
       { text: '演進史', link: '/versions/evolution' }
     ]
+  },
+  {
+    text: '預覽（尚未發布）',
+    items: [{ text: '方法論轉接（v6.0.0-pre.1）', link: '/preview/methodology-adapters' }]
   },
   {
     text: '案例與課程',
