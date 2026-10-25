@@ -135,7 +135,7 @@ git switch -c my-ch1 ch1-start      # 從第一章道館的起點開始做</code
 
 - 校驗：<a :href="slides('SHA256SUMS.txt')">SHA256SUMS.txt</a>，下載到同一個資料夾後執行 `sha256sum -c SHA256SUMS.txt`。
 - zip 裡的 PDF 檔名是中文（UTF-8）。解壓縮後檔名變成亂碼時，改用 7-Zip 或 `tar -xf <zip 檔>`。
-- **授權**：投影片 PDF 著作權屬課程作者、保留所有權利，可下載供個人學習觀看與列印，不授權改作與轉散布。程式碼 repo 以 MIT 授權，見 repo 的 <a :href="`${codeRepo}/blob/main/LICENSE`" target="_blank" rel="noreferrer">LICENSE</a>。BMad-Method 的授權與商標聲明，見 Control Tower 公開 repo 根目錄的 `THIRD-PARTY-NOTICES.md`。
+- **授權**：投影片 PDF 以 [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh-hant)（姓名標示—非商業性—禁止改作）授權，著作權屬課程作者。可以原樣轉載、分享，但要標示出處（課程作者與本頁連結）、限非商業用途、不得改作。程式碼 repo 以 MIT 授權，見 repo 的 <a :href="`${codeRepo}/blob/main/LICENSE`" target="_blank" rel="noreferrer">LICENSE</a>。BMad-Method 的授權與商標聲明，見 Control Tower 公開 repo 根目錄的 `THIRD-PARTY-NOTICES.md`。
 
 ### 錄製時用的工具版本 {#recording-tools}
 

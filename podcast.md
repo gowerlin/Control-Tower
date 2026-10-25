@@ -63,6 +63,8 @@ const audio = (name) => theme.value.podcastReleaseUrl + name
 | S2-04 | BAT：給塔台跑道、無線電和雷達 | 20:32 | <span v-if="!theme.artifact"><audio controls preload="none" :src="audio('S2-04-audio.m4a')"></audio><br></span><a :href="audio('S2-04-audio.m4a')">下載 S2-04-audio.m4a</a>（37.8 MB） |
 | S2-05 | 實戰與邊界：放手，但不是放任 | 24:31 | <span v-if="!theme.artifact"><audio controls preload="none" :src="audio('S2-05-audio.m4a')"></audio><br></span><a :href="audio('S2-05-audio.m4a')">下載 S2-05-audio.m4a</a>（45.1 MB） |
 
+語音版的授權與簡報相同，見[簡報下載](#簡報下載)最後的說明。
+
 ## 簡報下載
 
 五集的投影片 PDF 都放在公開 repo 的 GitHub Release，點連結直接下載。
@@ -76,5 +78,7 @@ const audio = (name) => theme.value.podcastReleaseUrl + name
 | S2-05 | 實戰與邊界：放手，但不是放任 | <a :href="pdf('S2-05-in-practice.pdf')">S2-05-in-practice.pdf</a>（12.0 MB） |
 
 投影片是整頁圖片，沒有可選取的文字。
+
+**授權**：簡報 PDF 與完整語音版（m4a）以 [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh-hant)（姓名標示—非商業性—禁止改作）授權，著作權屬節目作者。可以原樣轉載、分享，但要標示出處（節目作者與本頁連結）、限非商業用途、不得改作。
 
 Portal 是摘要，不具權威；影片、語音版與簡報內容以錄製時版本為準，現行做法以 Portal 與 CT reference 為準。
