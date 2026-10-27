@@ -1,19 +1,40 @@
 ---
 title: 更版紀錄
-description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.12.6），更早的版本見演進史。
+description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.12.7），更早的版本見演進史。
 ---
 
 <!-- 本頁由 scripts/sync-ct-release.mjs 從 CT CHANGELOG 產生，請勿手改；要改內容請改來源後重跑。 -->
 
 # 更版紀錄
 
-目前版本 **v5.12.6**（2026-10-25）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 51 版（v2.1.1 ～ v5.8.1）請看[演進史](./evolution)。
+目前版本 **v5.12.7**（2026-10-27）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 52 版（v2.1.1 ～ v5.9.0）請看[演進史](./evolution)。
 
 ::: tip 摘要不具權威
 本頁照錄 CT 的 CHANGELOG，只拿掉工單、決策、驗收回函等內部編號與出處註記。規則的權威定義在 CT 各 skill 與 references，兩者有出入時以 CT 本體為準。
 :::
 
 ::: v-pre
+
+## 5.12.7 <small>2026-10-27</small> {#v5-12-7}
+
+
+> **PATCH：BAT／CT 環境偵測改成只列變數名稱、不輸出值。**
+> 舊的偵測寫法（`Get-ChildItem Env:BAT*`、`Get-ChildItem Env:CT_*` 不接 `Select-Object -ExpandProperty Name`）會把變數值（含 BAT 範圍權杖 `BAT_REMOTE_TOKEN`）印進 session transcript；Worker 依這個思路自組 `env | grep …` 時也一樣。
+
+### Fixed
+
+- 偵測指令改成只列名稱——PowerShell `Get-ChildItem Env:BAT* | Select-Object -ExpandProperty Name | Sort-Object`（`CT_*` 同理），bash `env | cut -d= -f1 | grep -E '^BAT_' | sort`：
+  - `control-tower/references/auto-session.md`:93（決策樹 Step 0 註記）、:171（虛擬碼註解）、:244（`env | grep -iE …` → `env | cut -d= -f1 | grep -iE …`）、:754（§ 偵測條件 PowerShell 範例）
+  - `control-tower/references/yolo-mode.md`:43、`control-tower/SKILL.md`:89、`ct-exec/SKILL.md`:39、:56（`Env:CT_*`）、安裝指南 :1774（§ 4.2 Codex 端 `AGENTS.md` 塔台派工段落範例；v5.12.6 為 :1757）
+  - 同類敘述（沒有指令、但會讓 Worker 自組列值指令）補一句只列名稱並引用權威：`ct-done/SKILL.md`:121、`ct-help/SKILL.md`:106
+- 新增唯一權威規則 `auto-session.md` § BAT 內部終端路由 › 偵測條件（:756～:764）：偵測 `BAT_*`／`CT_*` 只判斷有無、任何 helper 或手動檢查只列名稱；`BAT_REMOTE_TOKEN` 任何時候只記「已設定」（呼應 § 範圍權杖與分頁角色 第 2 點）；例外是規則明定的單一非祕密變數只讀那一個（`CT_MODE`、`CT_INTERACTIVE`、`ct-exec` 落點檢查記錄的 `BAT_WORKSPACE_ID`、worktree 的 `CT_HOME`／`CT_WORKTREE_*` 證據）。其他檔只放一句並引用。
+- 版號：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表；安裝指南新增 § 2.52，§ 4.1 版號範例同步（`OLD=5.12.6`、`VER=5.12.7`、發行物檔名）。
+
+### Unchanged
+
+- 判讀邏輯：`shell env visibility mismatch`、塔台派工五個必要變數、Worker notify 三個必要變數、helper exit code、落點檢查（含記錄 `BAT_WORKSPACE_ID`）與 worktree SHA 證據都不變。
+- BAT 介面不變、CT 最低 BAT 版本不變；設定的值域與預設、工單 metadata 不變。
+- 歷史段落（本檔舊段落、版號表舊列、安裝指南舊章節）不改。
 
 ## 5.12.6 <small>2026-10-25</small> {#v5-12-6}
 
@@ -307,48 +328,12 @@ description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.12.6），
 - `ct-evolve --workflow` 與 `[WF-CANDIDATE]` 只在 v5.10.0 以上的 `ct-evolve` 可用；塔台的 `*evolve` 子命令不變。
 - 塔台與 Worker 請同版安裝。
 
-## 5.9.0 <small>2026-10-18</small> {#v5-9-0}
-
-
-> **MINOR：接 BAT 新介面——跨 session 傳訊時辨識塔台與 Worker。** 新增「跨 session 選收件人」規則；
-> MCP `bat_whoami`／`bat_list_terminals`／`bat_get_state` 多 `claudeSessionName`／`claudeSessionId`，`bat_list_terminals` 的 `scope` 多 `towers`；
-> 塔台面板多一行 session 名稱提示。BAT 介面以 BAT 的「介面契約總表」為準，需 BAT `>= 0.7.1-pre.1`；
-> 舊 BAT（≤ `0.7.0-pre.9`）或非 BAT 維持 v5.8.1 的做法（回覆稿寫在自己 repo、請使用者轉交）。派工命令、`--set-role` 流程、斷點 D、提問通道、
-> 隔離派工、合併流程與 `worker_question_timeout` 不變。
-
-### Added
-
-- `cross-project-coordination.md` 新增 § 跨 session 選收件人（唯一權威）：Claude Code 塔台用 ListAgents／SendMessage 通知另一個專案的塔台時，
-  依序 ① ListAgents 有 `<目標工作區> · Tower` → 送它（同名多列附 `[ref]` 或改用 ②）；② 自己在 BAT 內且已宣告塔台 → MCP `bat_list_terminals scope=towers`，
-  以 `workspaceName` 找目標塔台、取 `claudeSessionName` 對 ListAgents 名稱（`null`、`INVALID_ARGS`、`NOT_OWNER`、對不出 → 找不到）；③ 都找不到 →
-  回覆稿寫在自己 repo、請使用者轉交。名稱含 ` · Worker · T####` 的 session 一律不是塔台；不得只靠目錄名、`<工作區> · <短 ID>` 或 idle／busy 推定。
-  訊息首行仍請收件者確認身分；跨 session 訊息只是通知，`_handover-*.md`／`_reply-*.md` 仍是正式紀錄。§ 命名與落點慣例 加一句連過去。
-- `auto-session.md` § BAT MCP 唯讀 tool：`claudeSessionName`／`claudeSessionId` 說明（`string | null`；鍵不存在 = 舊 BAT，不當 `null`；
-  `claudeSessionId: null` 不代表沒有 session）與 `scope: towers` 說明（只給已宣告塔台、跨工作區、欄位白名單、仍 `NOT_OWNER`、舊 BAT `INVALID_ARGS`、
-  BAT 重開後要重新宣告）；「目前沒有任何 CT 規則必須使用 MCP」一點補上這兩項也不是必要條件。
-- `auto-session.md` § 依賴的 BAT 基礎設施：新增 BAT `>= 0.7.1-pre.1` 一列。
-- `memory-protocol.md` § 塔台狀態面板：新增「塔台 session 名稱提示」（提示行，不是欄位）——BAT 內、`--set-role` 已處理、`bat_whoami` 有
-  `claudeSessionName` 鍵且值不以 ` · Tower` 結尾 → 提示用 BAT「以塔台開啟 Claude」開塔台；鍵不存在、MCP 不可用、非 BAT → 不顯示、不報錯、不另查。
-
-### Changed
-
-- `auto-session.md` § BAT MCP 唯讀 tool 表：`bat_whoami`、`bat_list_terminals`、`bat_get_state` 三列補新欄位與 `towers`。
-- `auto-session.md` § 對使用者描述分頁：補一句分頁標題不是 ListAgents 的 session 名稱，BAT 派出的 claude Worker 名稱為 `<工作區> · Worker · T####`（由 BAT 加）。
-- `control-tower/SKILL.md`：Startup Protocol 第 6 步、BAT MCP 摘要句各補一句，新增跨 session 選收件人摘要句（只摘要、引用權威）。
-
-### Compatibility
-
-- BAT ≤ `0.7.0-pre.9` 或非 BAT：ListAgents 沒有這些名稱、MCP 沒有這兩個鍵、`scope: towers` 回 `INVALID_ARGS` → 選收件人走第 ③ 步、面板不顯示提示，
-  與 v5.8.1 相同。
-- Codex 塔台沒有 ListAgents／SendMessage，不適用本規則；codex 塔台之間的傳訊不在本版範圍。
-- 規則只涉及塔台；Worker 行為不變。塔台與 Worker 請同版安裝。
-
 :::
 
 ## 延伸閱讀 {#further-reading}
 
-- CT `CHANGELOG.md`（共 61 個版本；本頁列最近 10 版）
+- CT `CHANGELOG.md`（共 62 個版本；本頁列最近 10 版）
 - CT `version-governance.md` § 歷史版號表
-- [演進史](./evolution)：更早的 51 版與八個世代
+- [演進史](./evolution)：更早的 52 版與八個世代
 
 Portal 是摘要，不具權威；與 CT reference 有出入時，以 reference 為準。

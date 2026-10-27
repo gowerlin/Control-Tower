@@ -146,7 +146,7 @@ CT 是在執行時去讀 `bmad-guide` 的 reference，不把它的內容寫死�
 ### bash 裡看不到 `BAT_*` 環境變數，是不是不在 BAT 裡？ {#bat-env}
 
 ::: details 先用 PowerShell 複查
-在 Windows 上，bash 這類輔助 shell 有時看不到 BAT 注入的變數，但原生 PowerShell 看得到。不要直接判定為不在 BAT 裡，先用 `Get-ChildItem Env:BAT* | Sort-Object Name` 複查；PowerShell 看得到、bash 看不到，是 shell 之間的可見性落差，不是非 BAT 環境。
+在 Windows 上，bash 這類輔助 shell 有時看不到 BAT 注入的變數，但原生 PowerShell 看得到。不要直接判定為不在 BAT 裡，先用 `Get-ChildItem Env:BAT* | Select-Object -ExpandProperty Name | Sort-Object` 複查（只列名稱、不輸出值；`BAT_REMOTE_TOKEN` 只記「已設定」）；PowerShell 看得到、bash 看不到，是 shell 之間的可見性落差，不是非 BAT 環境。
 
 出處：`control-tower/SKILL.md` § BAT And Auto-Session；`ct-help/SKILL.md` § BAT And YOLO。
 :::
@@ -186,7 +186,7 @@ CT 是在執行時去讀 `bmad-guide` 的 reference，不把它的內容寫死�
 ::: details 派工不是一個命令
 CT 沒有 `*dispatch`。派工是開單之後的一個步驟：塔台依 `auto-session` 設定自動派，或給你指令讓你自己開。舊版的 `*help roles`（職責速查卡）也已在 v5.0.3 刪除。完整的現行命令見[指令參考大全](/reference/commands)。
 
-出處：`control-tower/SKILL.md` § Built-In Commands；CT 安裝與使用指南 § 14. 命令速查表（v5.12.6）。
+出處：`control-tower/SKILL.md` § Built-In Commands；CT 安裝與使用指南 § 14. 命令速查表（v5.12.7）。
 :::
 
 ## BAT 相關問題 {#bat}
