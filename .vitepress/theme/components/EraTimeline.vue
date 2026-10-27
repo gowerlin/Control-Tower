@@ -71,9 +71,9 @@ const ERAS: Era[] = [
   },
   {
     callsign: 'v5.10–5.12',
-    range: '5.10.0–5.12.7',
+    range: '5.10.0–5.12.8',
     dates: '10-20 → 10-27',
-    count: '10 版',
+    count: '11 版',
     theme: 'Workflow 規則層 · 重派前回收',
     what: '替 Workflow 工具在工單裡定位置：它是單張工單內的執行方式，要明文授權才能用；閘門 G2 沒過，範圍縮小。5.12 在重派前先回收舊 Worker 分頁。'
   }

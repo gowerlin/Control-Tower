@@ -1,19 +1,42 @@
 ---
 title: 更版紀錄
-description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.12.7），更早的版本見演進史。
+description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.12.8），更早的版本見演進史。
 ---
 
 <!-- 本頁由 scripts/sync-ct-release.mjs 從 CT CHANGELOG 產生，請勿手改；要改內容請改來源後重跑。 -->
 
 # 更版紀錄
 
-目前版本 **v5.12.7**（2026-10-27）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 52 版（v2.1.1 ～ v5.9.0）請看[演進史](./evolution)。
+目前版本 **v5.12.8**（2026-10-27）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 53 版（v2.1.1 ～ v5.10.0）請看[演進史](./evolution)。
 
 ::: tip 摘要不具權威
 本頁照錄 CT 的 CHANGELOG，只拿掉工單、決策、驗收回函等內部編號與出處註記。規則的權威定義在 CT 各 skill 與 references，兩者有出入時以 CT 本體為準。
 :::
 
 ::: v-pre
+
+## 5.12.8 <small>2026-10-27</small> {#v5-12-8}
+
+
+> **PATCH：BMAD 路由與工單規則裡 BMad-Method v6.11 前的舊名改成現行名稱，並修正「`bmad-create-story` 內建 Review」的說法。**
+> BMad-Method v6.12 起新安裝預設不裝舊名的 shim（要 `--shims` 才裝），照舊名開出的工單可能叫不到 skill。名稱以 BMad-Method v6.12.4（`bmad-guide` v6.12.4）為準。
+
+### Fixed
+
+- 路由與規則直接用舊名的地方換成現行名稱：
+  - `control-tower/references/enhancement-integration.md`:52（ECC 觀察範例 `bmad-create-prd` → `bmad-prd`）、:114（`bmad-quick-dev` → `bmad-build`）、:115、:133、:148（`bmad-dev-auto` → `bmad-build-auto`）、:129（補 context 改用 `bmad-project-context`（setup intent），取代 `bmad-document-project`／`bmad-generate-project-context`）、:152（`bmad-dev-auto-result-*.md` → `bmad-build-auto-result-*.md`）、:133、:154（`final_revision` → commit 範圍 `baseline_revision..HEAD`；多個 story 用 `baseline_revision..下一個 story 的 baseline_revision`）
+  - `control-tower/references/work-order-system.md`:132（`dev-story` 工單 → 開發（`bmad-build`）工單）、:147（派發摘要範例 `bmad-generate-project-context` → `bmad-project-context`（setup intent））、:172（`bmad-dev-auto` → `bmad-build-auto`、`final_revision` → commit 範圍）
+  - `control-tower/references/work-order-template.md`:62、:63、:65（`bmad-dev-auto` → `bmad-build-auto`、結果檔名、`final_revision` → commit 範圍）
+  - `control-tower/references/debug-strategies.md`:12（`dev-story` → 開發（`bmad-build`））
+- `work-order-system.md`:120 的審查說法：原本寫「使用 `bmad-create-story` 時 Story 內建 Review、不需額外工單」，已不成立。改成：`bmad-create-story` 是保留的 shim；Story 拆分走 `bmad-spec` Story Breakdown，審查在 `bmad-build` 的 Review Triage，不能因為用了 story 就省略審查；用 `bmad-build` 時看 spec 的 `## Review Triage Log` 有沒有跑，沒跑就照同一表的其他條件另派審查工單。
+- 版號：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表；安裝指南新增 § 2.53，§ 4.1 版號範例同步（`OLD=5.12.7`、`VER=5.12.8`、發行物檔名）。
+
+### Unchanged
+
+- 已經寫明「舊名 → 新名」的退役對照保留：`enhancement-integration.md`:129～:131、`work-order-system.md`:171、:174、:175。
+- `control-tower/SKILL.md` 的「退役名要經外部 `bmad-guide` 確認才路由」原則不變；其他規則、旗標、exit code、步驟不變。
+- BAT 介面不變、CT 最低 BAT 版本不變；設定的值域與預設、工單 metadata 不變。
+- 歷史段落（本檔舊段落、版號表舊列、安裝指南舊章節）不改。
 
 ## 5.12.7 <small>2026-10-27</small> {#v5-12-7}
 
@@ -287,53 +310,12 @@ description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.12.7），
 - BAT 面板顯示 `execution` 等欄位的功能延後到知識卡達 🟡。
 - 塔台與 Worker 請同版安裝。
 
-## 5.10.0 <small>2026-10-20</small> {#v5-10-0}
-
-
-> **MINOR：Workflow 規則層——CT 開始定義 Claude Code Workflow 在工單裡的位置。** 新增 reference `workflow-engine.md`（Workflow 的唯一權威）、
-> `ct-insights` 的「Workflow 適配度」規則組（S1–S6／X1–X5、WFC 候選格式）、`ct-evolve --workflow`（只產 brief 與 🔵 知識卡）與 `[WF-CANDIDATE]` 標記、
-> 資料層「Layer 3 附屬：專案 workflow 腳本」。**只有規則層**：派發匹配、工單 frontmatter 欄位（`execution`、`workflow_run_id` 等）、
-> `ct-exec` 的 workflow 執行路徑與 Codex 派工檢查在 v5.11.0。BAT 無最低版本需求。派工命令、`--set-role`、斷點、提問通道、隔離派工、合併流程、
-> `worker_auto_close` 與 `ct-exec` 執行流程不變。
-
-### Added
-
-- `control-tower/references/workflow-engine.md`（唯一權威）：定位（Workflow 是 Worker 在單張工單內的執行方式，不是 CT 的編排層）；
-  Skill／Playbook／Workflow 三分法與分界三提醒；工具型（分析作業用，例：語料挖掘）與派工型（工單用，例：多來源唯讀核對；派發待 v5.11.0）；
-  設計規則 R1 回傳 schema 映射報告區段、R2 有界覆蓋一律 `log()` 略過項、R3 不用內建 `isolation: 'worktree'`、只做唯讀或分析形狀、
-  R4 子 agent 只用唯讀 tool、R5 不用 `Date.now()`／`Math.random()`；知識卡格式（`_ct-workorders/_workflows/<name>.md`，全局卡在 Layer 2）；
-  成熟度 🔵 brief → 🟡 回測（召回 ≥ 80%、誤報 ≤ 20%；無已知發現的研究型改 1 次實戰＋使用者認可）→ 🟢 → ⭐，
-  每次回測或試跑前列規模經使用者同意；指標降級（只限 Workflow：連續 2 次推翻率 > 30%，或單位成本超過卡片上限 50% → 降一級；
-  累積 ≥ 5 次執行後再評估是否推廣）；成本與規模（沒有 token 預算參數、只能限制 agent／子任務數並事後記帳；1.9 bytes/token、每個 agent 固定開銷約 31k、
-  `resumeFromRunId` 可能沒命中快取；尊重 session 規模準則）；同意治理原則（⭐ 前一律先問使用者，機制在 v5.11.0）；Codex 不支援；知識卡寫入路徑檢查。
-- `ct-insights/references/analysis-rules.md` 新增 § Workflow 適配度（唯一權威偵測規則）：判定流程（扇出軌 S1＋S6、驗證軌 S3）、
-  S1–S6／X1–X5 表與偵測細節（X2 三個來源、X4 不以時間排除、「名稱含 batch ≠ 適合 workflow」、共用狀態是 S6 反條件）、
-  輔助訊號「Worker 自發扇出」（不單獨成立）、分級（🔵／邊界／排除，不用 0–100 分數）、WFC 候選輸出格式與 Playbook／邊界清單。
-- `ct-evolve/SKILL.md`：`--workflow [name]` 模式（只產 brief 並寫成 🔵 知識卡；不寫 `.claude/workflows/`、不寫腳本、不執行 Workflow；
-  腳本由另一張工單在使用者確認 brief 後撰寫，比照 `--skill`）；§ Workflow Bridge `[WF-CANDIDATE]` 標記（比照 `[FG-CANDIDATE]`，條件引用規則組）；
-  寫入邊界與 `--status` 同步。
-- `data-layer-architecture.md` § 寫入規則 新增「Layer 3 附屬：專案 workflow 腳本」：`<project>/.claude/workflows/*.js` 不屬於 Layer 1、必須進 git、
-  只由 Worker 依工單 `affects_files` 寫入、brief 先經使用者確認、不使用 `~/.claude/workflows/`、不自動同步到其他專案；架構總覽補 `workflows/`、`_workflows/`。
-
-### Changed
-
-- `doctrine.md` 前言：在「CT 不是 workflow 工具」之後補一段定位，指向 `workflow-engine.md`。
-- `playbook-engine.md`：管線總覽補 Workflow 分支；§ 塔台自動建議 註明 Workflow 匹配在 v5.11.0；§ 寫入路徑安全檢查 註明知識卡改走 `workflow-engine.md` 的檢查。
-- `self-learning-core.md`：§ 置信度系統 一句指向 Workflow 指標降級（本表規則不變）；§ 寫入路徑安全檢查 註明 `_workflows/` 不是不明路徑、專案腳本不是學習寫入。
-- `control-tower/SKILL.md` Reference Routing、`ct-insights/SKILL.md` Analysis Flow 與 Reference Routing：補摘要與引用。
-
-### Compatibility
-
-- 沒有新的工單欄位、設定或命令參數；舊工單與 v5.9.0 行為相同。BAT 無最低版本需求（Workflow 是 Claude Code 原生能力）。
-- `ct-evolve --workflow` 與 `[WF-CANDIDATE]` 只在 v5.10.0 以上的 `ct-evolve` 可用；塔台的 `*evolve` 子命令不變。
-- 塔台與 Worker 請同版安裝。
-
 :::
 
 ## 延伸閱讀 {#further-reading}
 
-- CT `CHANGELOG.md`（共 62 個版本；本頁列最近 10 版）
+- CT `CHANGELOG.md`（共 63 個版本；本頁列最近 10 版）
 - CT `version-governance.md` § 歷史版號表
-- [演進史](./evolution)：更早的 52 版與八個世代
+- [演進史](./evolution)：更早的 53 版與八個世代
 
 Portal 是摘要，不具權威；與 CT reference 有出入時，以 reference 為準。

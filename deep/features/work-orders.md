@@ -77,12 +77,12 @@ BUG、PLAN、EXP 單據有自己的編號規則，不適用這個正則（見 [B
 
 用 BMad 時，Story 產生後、Dev 實作前，塔台依情況決定要不要插入獨立審查：
 
-- 用 `bmad-create-story` 產生的 Story 內建審查，不需要額外工單。
+- `bmad-create-story` 是保留的 shim；Story 拆分走 `bmad-spec` 的 Story Breakdown，審查在 `bmad-build` 的 Review Triage。不能因為用了 story 就省略審查：用 `bmad-build` 時看 spec 的 `## Review Triage Log`，沒跑就照下面的條件另派審查工單。
 - 高風險 Story（安全、金流、資料遷移）或跨多個子專案、影響共用模組的 Story，派一張**獨立審查工單**，在不同 session 執行，避免確認偏誤。
 - 沒用 BMad 的自訂流程，塔台主動提議審查步驟。
 - 使用者明確跳過時，記進決策日誌。
 
-審查回報裡有 CRITICAL 或 HIGH 發現時，塔台強制先派修正工單，修完才派 `dev-story`。這就是「審查 → 修正 → 交付」三步。
+審查回報裡有 CRITICAL 或 HIGH 發現時，塔台強制先派修正工單，修完才派開發（`bmad-build`）工單。這就是「審查 → 修正 → 交付」三步。
 
 ## 回報處理與進度同步 {#report}
 
