@@ -42,3 +42,19 @@ for any other purpose. See [TRADEMARK.md](TRADEMARK.md) for detailed guidelines.
 ```
 
 BMad Control Tower、BMad Guide Skill 不是 BMad Code, LLC 的產品，也未經其背書；名稱中的 BMad 指所搭配的 BMad-Method。
+
+## ct-adapter-pstack
+
+CT v6.0.0-beta.1 起，Release 另附 `ct-adapter-pstack`（讓 CT 塔台能把部分工作層交給 pstack 的 adapter）。它是 CT 的一部分，以 MIT License 授權，全文見其 zip 內的 `LICENSE`。
+
+本 adapter **只含** pstack 的 skill／playbook／agent 名稱、與 CT 規則的對照、版本與偵測位置、上游連結，以及 CT 自己寫的規則與說明；**不含**上游任何 skill、playbook、hook 或注入文字的原文，也**不附**上游授權全文。上游只在下表引用：
+
+| 元件 | 出處 | 授權 | 著作權人 |
+|---|---|---|---|
+| pstack-claude（Claude Code／Codex 移植版） | https://github.com/michael-denyer/pstack-claude | MIT | 見上游 repo 的 `LICENSE` |
+| pstack（原作） | https://github.com/cursor/plugins/tree/main/pstack | 見原作 repo | 見原作 repo |
+| cursor-team-kit、thermos（pstack-claude 內含的第三方元件） | 見上游 `NOTICE.md` | MIT | Cursor |
+
+各元件與上游檔案的對照表在上游 `NOTICE.md`：https://github.com/michael-denyer/pstack-claude/blob/main/NOTICE.md 。以上依 pstack-claude v0.9.102（commit `356c6e0f`）整理；上游更版時，授權與著作權人以上游當時的檔案為準。完整的出處與授權說明見 `ct-adapter-pstack` zip 內的 `NOTICE.md`。
+
+「pstack」「poteto-mode」等是上游專案使用的名稱；本 adapter 使用這些名稱只為了指出對應的上游功能，不代表上游作者認可或參與本 adapter。

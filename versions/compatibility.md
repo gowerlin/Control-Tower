@@ -49,18 +49,20 @@ CT 不內嵌 BMad-Method 的內容。需要 BMad 的 workflow 路由時，塔台
 
 BAT 站也有一張相容表，是從 BAT 的角度列（<BatLink path="compatibility">BAT 站：相容版本</BatLink>）。兩張表的最低版本一致。「收單後回收 Worker 分頁」與沿用它的「重派前回收」兩端都是 `>= 0.6.1-pre.4`：CT 原本寫 `0.6.1-pre.3`，v5.12.3 依 BAT 的相容表更正（pre.3 已有這個指令，但分頁剛有輸出會回 `BUSY`；等輸出安靜再關自 pre.4 起，見 CT CHANGELOG [5.12.3]）。
 
-## 預覽版 {#preview}
+## Beta {#preview}
 
-上面的表格只列**穩定版**。CT v6.0.0-pre.1 是預覽版，尚未發布，不列入表格；它的內容見[預覽：方法論轉接](../preview/methodology-adapters)。
+上面的表格只列**穩定版**。CT v6.0.0-beta.1 是 Beta，放在 GitHub 預發行 Release、與穩定版並行，不列入表格；它的內容與下載見[Beta：方法論轉接](../preview/methodology-adapters)。
 
 和 BAT 有關的只有一項，BAT 指揮塔總覽讀塔台狀態摘要：
 
 | 功能 | BAT | CT |
 |---|---|---|
 | 總覽顯示最後更新與進行中工單 | `>= 0.7.1-pre.7`（預覽版） | 不限版本（BAT 直接讀工單檔） |
-| 總覽顯示下一個編號與待辦 | `>= 0.7.1-pre.7`（預覽版） | `>= v6.0.0-pre.1`（預覽版，塔台寫出 `_tower-state.md` 的機器可讀摘要） |
+| 總覽顯示下一個編號與待辦 | `>= 0.7.1-pre.7`（預覽版） | `>= v6.0.0-pre.1`（v6 預覽版起，含 Beta v6.0.0-beta.1；塔台寫出 `_tower-state.md` 的機器可讀摘要） |
 
-CT 版本不夠時，總覽只是少了這兩項，其他照常顯示。方法論轉接本身沒有改變 BAT 介面，也沒有提高 CT 要求的最低 BAT 版本。
+CT 版本不夠時，總覽只是少了這兩項，其他照常顯示。方法論轉接本身沒有改變 BAT 介面，也沒有提高 CT 要求的最低 BAT 版本；beta.1 的 BAT 介面與最低 BAT 版本和 v6.0.0-pre.1 相同。
+
+beta.1 改成 BUG／PLAN／EXP 預設開啟，啟用時立即產生 `_bug-tracker.md`、`_backlog.md`，BAT 指揮塔面板的「臭蟲」與「待辦池」因此不必等第一次 `*sync` 就有檔可讀；這不需要新的 BAT 版本。
 
 ## 延伸閱讀
 
