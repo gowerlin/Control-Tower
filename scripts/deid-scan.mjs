@@ -235,6 +235,17 @@ function isSiteRootFile(file) {
   return SITE_ROOT_FILES.has(path.basename(file)) && fs.existsSync(path.join(path.dirname(file), '.vitepress', 'config.mts'))
 }
 
+// 例外：CT 發行物（skills 原始檔、解開的 zip）有兩處要寫允許清單上的公開資訊：
+// adapter 描述檔（references/adapters/ 下的 .yaml）的 guide.url 是方法論指南的公開 repo 網址；
+// ct-adapter-* 目錄的 LICENSE 是外部 adapter 的授權檔，著作權行要寫著作權人的帳號名（同站點根的 LICENSE）。
+// 只放行「允許清單網址寫在設定以外」這一類：同一行的私有詞表、路徑、信箱等類別照舊比對；
+// adapters/ 子目錄的檔、其他 .yaml、其他目錄的 LICENSE 照舊不放行。路徑先轉絕對路徑，在這些目錄裡直接掃也成立
+function isReleaseAllowedFile(file) {
+  const abs = path.resolve(file)
+  if (/(^|\/)references\/adapters\/[^/]+\.yaml$/.test(abs.split(path.sep).join('/'))) return true
+  return path.basename(abs) === 'LICENSE' && path.basename(path.dirname(abs)).startsWith('ct-adapter-')
+}
+
 function main() {
   const args = parseArgs(process.argv.slice(2))
   const terms = loadTerms(args.terms)
@@ -265,7 +276,7 @@ function main() {
       let line = raw
       for (const entry of allow) {
         if (!line.includes(entry)) continue
-        if (!isBuildOutput(file) && !isConfig(file) && !isSiteRootFile(file)) add(file, i + 1, '允許清單網址寫在設定以外')
+        if (!isBuildOutput(file) && !isConfig(file) && !isSiteRootFile(file) && !isReleaseAllowedFile(file)) add(file, i + 1, '允許清單網址寫在設定以外')
         line = line.split(entry).join(' ')
       }
       for (const [category, re] of PATTERNS) {
