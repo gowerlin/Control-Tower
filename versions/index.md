@@ -29,14 +29,14 @@ CT 採 Semantic Versioning，`MAJOR.MINOR.PATCH`：
   caption="CT 的 SemVer 慣例"
 />
 
-到目前為止，CHANGELOG 記錄的 63 個版本裡只有一次 MAJOR，就是 5.0.0。
+到目前為止，CHANGELOG 記錄的 64 個版本裡只有一次 MAJOR，就是 5.0.0。
 
 ## 版號寫在哪裡
 
 Skill 的 YAML frontmatter 只放執行時需要的欄位（至少 `name` 和 `description`），**不放 `version:`**。原因是 Codex 的 skill 驗證會把不認得的欄位當成錯誤。版號的事實來源改成內文的第一個註解：
 
 ```markdown
-<!-- control-tower-version: 5.12.8 -->
+<!-- control-tower-version: 5.13.0 -->
 ```
 
 8 個 CT skill 各自有一行，名稱換成 skill 自己的（例如 `ct-exec-version`），Guide 是 `control-tower-guide-version`。同一個版號還會出現在幾個地方，發版時要一起改：
@@ -82,6 +82,6 @@ grep -h -o "[a-z-]*-version: [0-9.]*" ~/.claude/skills/{control-tower,ct-*}/SKIL
 
 - CT `version-governance.md` § 版號事實來源、§ SemVer 慣例、§ 歷史版號表、§ 相容性注意
 - CT 安裝與使用指南 § 4.1 安裝／升級（現行流程）：確認現行版號、Codex 端
-- CT `CHANGELOG.md`（63 個版本）
+- CT `CHANGELOG.md`（64 個版本）
 
 Portal 是摘要，不具權威；與 CT reference 有出入時，以 reference 為準。

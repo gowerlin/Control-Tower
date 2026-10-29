@@ -101,10 +101,10 @@ CT 是在執行時去讀 `bmad-guide` 的 reference，不把它的內容寫死�
 
 ### `PARTIAL` 會一直掛著嗎？ {#partial}
 
-::: details 不會，卡點解除就補正
-`PARTIAL` 是時間點上的狀態。之後的工單、範圍決定或最終驗收解除了原本的卡點，塔台（或 `ct-done`）會補一段事後註記，把它改成 `DONE`；如果是設計方向被淘汰，就改成 `ABANDONED` 這類退役狀態。
+::: details 不會，塔台一裁示就收尾
+`PARTIAL` 是時間點上的狀態。Worker 照停止條件回報 `PARTIAL` 是對的，收尾是塔台的事：v5.13.0 起，塔台一決定剩下的部分怎麼處理（另開接手單，或判定不需再做），**當下**就在原工單文末補〈塔台收尾補記〉並改成 `DONE`，不等到歸檔；接手單完成後再回頭確認。剩下的部分被設計方向淘汰時，改成 `ABANDONED` 這類退役狀態。只有真的在等外部條件（廠商、客戶、環境、還沒給的輸入）才保留 `PARTIAL` 或改 `BLOCKED`。以前漏收的，用 `ct-done` 補救收尾時也會補上註記、改成 `DONE`。
 
-出處：`control-tower/references/work-order-system.md` § Resolved `PARTIAL` 補正規則；`ct-done/SKILL.md` § Status Selection。
+出處：`control-tower/references/work-order-system.md` § PARTIAL 當下收尾（含 resolved `PARTIAL` 補正）；`ct-done/SKILL.md` § Status Selection。
 :::
 
 ### 塔台 session 斷了怎麼辦？ {#tower-lost}
@@ -186,7 +186,7 @@ CT 是在執行時去讀 `bmad-guide` 的 reference，不把它的內容寫死�
 ::: details 派工不是一個命令
 CT 沒有 `*dispatch`。派工是開單之後的一個步驟：塔台依 `auto-session` 設定自動派，或給你指令讓你自己開。舊版的 `*help roles`（職責速查卡）也已在 v5.0.3 刪除。完整的現行命令見[指令參考大全](/reference/commands)。
 
-出處：`control-tower/SKILL.md` § Built-In Commands；CT 安裝與使用指南 § 14. 命令速查表（v5.12.8）。
+出處：`control-tower/SKILL.md` § Built-In Commands；CT 安裝與使用指南 § 14. 命令速查表（v5.13.0）。
 :::
 
 ## BAT 相關問題 {#bat}

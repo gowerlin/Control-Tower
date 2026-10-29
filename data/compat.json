@@ -1,6 +1,6 @@
 {
   "_note": "相容版本對照（/versions/compatibility 的資料）。每列 feature、ct（CT 起始版本）、bat／codex（最低版本，不需要就省略）、note、source（權威出處：檔案 § 章節）。CT 發版時相容性有變才改（CT 每次發版都要同步更新 Portal）。",
-  "ctVersion": "5.12.8",
+  "ctVersion": "5.13.0",
   "rows": [
     {
       "feature": "帶前綴的工單 ID 走結構化派工（--workorder 帶前綴）",
@@ -113,6 +113,13 @@
       "bat": ">= 0.6.1-pre.4",
       "note": "沒有新的 BAT 門檻，與 v5.1.0 相同。舊 BAT 回 exit 1：一行提示後照常派工，本 session 不再嘗試。",
       "source": "CHANGELOG.md [5.12.3]；work-order-system.md § 重派前回收舊 Worker 分頁（v5.12.0+）；Guide bat-integration.md § 版本對照表"
+    },
+    {
+      "feature": "BAT 指揮塔總覽顯示下一個編號與待辦（塔台寫 _tower-state.md 的機器可讀摘要）",
+      "ct": "v5.13.0",
+      "bat": ">= 0.7.1-pre.7",
+      "note": "這個 BAT 版本是預覽版。更舊的 BAT 不讀摘要，總覽只是少這兩項。舊專案沒有摘要不算錯，塔台下次寫 _tower-state.md 時補上。沒有新的 CT 最低 BAT 版本。",
+      "source": "CHANGELOG.md [5.13.0]；memory-protocol.md § 機器可讀摘要（YAML frontmatter）、§ BAT 塔台面板讀取契約"
     },
     {
       "feature": "Level 2：外部 bmad-guide 的 BMad workflow 路由",

@@ -28,7 +28,7 @@ description: ct-status 從檔案讀狀態並抓出 drift；決策日誌是 appen
 
 ## 決策日誌：append-only 的選項分析 {#decision-log}
 
-`_decision-log.md` 記下每一個值得留下來的決策。格式固定：上方是倒序的索引表（編號、日期、決策、相關工單），下方是倒序的詳細紀錄，每條一個 `### D### 日期 — 標題` 區段，必填五個欄位：
+`_decision-log.md` 記下每一個值得留下來的決策。格式固定：上方是倒序的索引表（`ID`、日期、決策、相關工單），下方是倒序的詳細紀錄，每條一個 `### D### 日期 — 標題` 區段，必填五個欄位：
 
 - **背景**：當時的情境
 - **選項**：至少兩個，以 `[A]`、`[B]` 標記並附簡短說明
@@ -39,6 +39,20 @@ description: ct-status 從檔案讀狀態並抓出 drift；決策日誌是 appen
 觸發方式有兩種：你主動說「記錄一個決策」或「我們決定了……」，或塔台在討論中認出重要的架構決策，主動問你要不要記。塔台會先以選項分析的格式整理出預覽，**你確認後才寫入**，同時更新索引與 `_tower-state.md` 的編號追蹤。決策日誌是 **append-only**：塔台不刪除也不修改已有的紀錄。塔台也不會主動建立這個檔，只在環境偵測時提示可以建立。
 
 決策日誌也是其他機制的依據：yolo 下塔台代決 Worker 的提問要記進決策日誌，Workflow 授權要引用你同意的那條決策，`*sync` 會驗證索引與詳細紀錄的數量一致。
+
+v5.13.0 起格式寫得更嚴，因為 BAT 指揮塔的決策頁也讀這個檔：索引表頭是 `ID`（舊寫法是 `#`）、每一列都以 `|` 開頭和結尾、格子裡不放 `|`、熱檔裡的每一筆決策都要有索引列、詳細紀錄的標題固定是 `### D### YYYY-MM-DD — 標題`。人看起來一樣的表格，解析器不一定一樣：少一個列尾的 `|`，BAT 就從那一列截斷，後面的決策全部看不到。`*sync` 的格式驗證會指出要改的地方，但不會自動改。
+
+append-only 的檔總會越長越大。超過大小預算時塔台會提示**收斂**，何時做由你決定：較舊的詳細紀錄**原文**搬到 `_archive/decisions/` 的封存檔，熱檔保留涵蓋全部決策的索引表，標了 🔴 的危害規則整段留在熱檔。搬的是位置、不是內容，所以和 append-only 不衝突。
+
+## BAT 塔台面板為什麼會空 {#bat-panel}
+
+BAT 視窗裡的指揮塔面板（總覽、決策、臭蟲、待辦池、工單）直接讀 CT 寫的檔。v5.13.0 把 BAT 依賴的部分寫成一份讀取契約，最常碰到的是檔案大小：
+
+- **BAT 的讀檔上限是 524,288 bytes（512 KiB）**，超過就整檔不讀。多數頁**不報錯**：決策頁顯示「沒有找到決策」，臭蟲與待辦池是空清單，太大的工單直接從清單消失；只有總覽會說檔案太大。所以面板空了，先量檔案大小。
+- **CT 的預算是 400 KB（409,600 bytes）**，比上限低一截，留空間給「已經提示、還沒收斂」的那幾個 session。
+- **量位元組，不數字元**：中文一個字佔 3 bytes。bash 用 `stat -c %s <檔>`，PowerShell 用 `(Get-Item <檔>).Length`。塔台啟動和 `*sync` 會量 `_tower-state.md`、`_decision-log.md`、`_bug-tracker.md`、`_backlog.md` 等熱檔（`*sync` 另量熱區單據），超過時印一行提示並指出收斂方式：決策日誌照上一節收斂，BUG 與待辦索引靠 `*archive` 歸檔後重建，單張工單把長篇證據移到另一個檔。提示不阻擋，塔台也不自動收斂。
+
+大小之外，契約也列出各檔 BAT 依賴的格式。例如 BUG 索引的狀態只看那一列所在的區段標題；嚴重度格子要寫 `🔴 High`，只寫 emoji 時 BAT 顯示 Unknown，按等級篩選就會漏掉。CT 不為了面板去改單據本身的值，只照契約寫索引。
 
 ## `ct-insights`：從紀錄看健康度 {#insights}
 
@@ -102,7 +116,8 @@ Worker 遇到問題時，塔台依序建議三層：
 ## 延伸閱讀 {#further-reading}
 
 - `ct-status/SKILL.md`（§ Modes、§ Read Order、§ Landing Zone Check、§ Status Buckets、§ Output）
-- `control-tower/references/decision-log-system.md` § 格式規格、§ 塔台操作流程
+- `control-tower/references/decision-log-system.md` § 格式規格、§ 塔台操作流程、§ 與 `*sync` 的關係、§ 收斂
+- `control-tower/references/memory-protocol.md` § BAT 塔台面板讀取契約（§ 大小預算、§ 各檔要求、§ 值域對照（嚴重度／優先級））
 - `ct-insights/SKILL.md`（§ Scope、§ Analysis Flow、§ Report Rules）、`ct-insights/references/report-template.md` § 工單健康度（5 項指標）、§ 完整報告結構（Project / Global）
 - `spec/CT設計規格-ct-insights使用模式分析.md` § 三、分析維度、§ 四、三個作用域的詳細行為
 - `control-tower/references/fieldguide-commands.md`（§ 命令總覽）、`ct-fieldguide/SKILL.md`

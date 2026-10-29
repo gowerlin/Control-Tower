@@ -1,19 +1,54 @@
 ---
 title: 更版紀錄
-description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.12.8），更早的版本見演進史。
+description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.13.0），更早的版本見演進史。
 ---
 
 <!-- 本頁由 scripts/sync-ct-release.mjs 從 CT CHANGELOG 產生，請勿手改；要改內容請改來源後重跑。 -->
 
 # 更版紀錄
 
-目前版本 **v5.12.8**（2026-10-27）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 53 版（v2.1.1 ～ v5.10.0）請看[演進史](./evolution)。
+目前版本 **v5.13.0**（2026-10-29）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 54 版（v2.1.1 ～ v5.11.0）請看[演進史](./evolution)。
 
 ::: tip 摘要不具權威
 本頁照錄 CT 的 CHANGELOG，只拿掉工單、決策、驗收回函等內部編號與出處註記。規則的權威定義在 CT 各 skill 與 references，兩者有出入時以 CT 本體為準。
 :::
 
 ::: v-pre
+
+## 5.13.0 <small>2026-10-29</small> {#v5-13-0}
+
+
+> **MINOR：BUG／工單狀態衛生、BAT 塔台面板讀取契約、`_tower-state.md` 機器可讀摘要契約 v1，新增 3 個設定。**
+> 讓 BAT 指揮塔面板（總覽、決策、臭蟲、待辦池、工單）穩定讀得到 CT 寫的檔，並讓未結清單只留真的還要做的事。
+> 新設定依 `version-governance.md` § SemVer 慣例屬 MINOR（原規劃為 PATCH，中間沒有另發 PATCH）。
+> BAT 介面不變、最低 BAT 版本不變；對照 BAT `0.7.1-pre.8` 的解析器。升級無需遷移（見安裝指南 § 2.54）。
+
+### Added
+
+- `_tower-state.md` 機器可讀摘要契約 v1（`memory-protocol.md` § 機器可讀摘要（YAML frontmatter），唯一權威）：塔台每次寫入 `_tower-state.md` 都同步更新檔頭 frontmatter（`schema_kind`、`summary_version`、`updated_at`、`session`、`next_ids`、`todo`），BAT 指揮塔總覽讀得到待辦與下一個編號。與 v6 同一份契約，欄位與 BAT 逐欄一致；舊專案沒有摘要不算錯，下次寫入時補上。Startup Protocol 與 `*pause`／`*resume` 都指回這一節
+- BAT 塔台面板讀取契約（`memory-protocol.md` 新節，唯一權威）：熱檔大小預算 400 KB（409,600 bytes，以磁碟 UTF-8 位元組計）與 BAT 讀檔上限 524,288 bytes、超過時 BAT 各頁的表現、各檔 BAT 依賴的格式、嚴重度／優先級值域對照、frontmatter 與 BOM 共通規則。對照 BAT `0.7.1-pre.8`
+- `_bug-tracker.md`／`_backlog.md` 索引格式（`bug-plan-system.md` § 索引格式，唯一權威）：原本指向的「SKILL.md `*sync` 段落」不存在，補上完整格式
+- Startup Protocol 與 `*sync` 量熱檔大小，超過預算或上限各印一行提示（不阻擋）
+- 決策日誌收斂程序（`decision-log-system.md` § 收斂）：較舊的詳細紀錄原文搬到 `_archive/decisions/_decision-log-D###-D###.md`，熱檔保留涵蓋全部決策的索引表，🔴 危害規則逐字留在熱檔
+- BUG 結案判準（`bug-plan-system.md` § 結案判準）：七種情況對應 `FIXED`／`CLOSED`／`WONTFIX`／`OPEN`；不新增狀態值，改用選填欄位 `closed_reason`（`not_a_defect`、`superseded`、`duplicate`、`obsolete`、`external`、`deferred`）；延後的 BUG 列進 `_backlog.md`〈後續待辦（延後的 BUG）〉、留在熱區、可重開
+- 未結 BUG 清理提示：`*sync`／`*insights` 在未結張數或久未更新天數超過門檻時印一行，新設定 `bug_review_open_threshold`（預設 `20`）、`bug_review_stale_days`（預設 `30`）
+- 客戶驗收不回歸閘（可選）：新設定 `customer_acceptance_gate`（預設 `off`）；`on` 時會改程式或資料的工單多〈相關通過案例〉段，Worker 動工前逐案判定，會改變通過案例就停下交使用者
+
+### Changed
+
+- 決策日誌索引表頭 `#` 改 `ID`；寫明每列 `|` 開頭與結尾、格子內不得有 `|`、索引涵蓋熱檔每一筆、標題固定 `### D### YYYY-MM-DD — 標題`、熱檔不放其他含 `ID` 欄的表格；`*sync` 格式驗證加 BAT 可讀性與大小
+- `_bug-tracker.md` 索引：未結區段時間欄改 `報修時間`、CLOSED／WONTFIX 為 `關閉時間`，加 `相關工單` 欄；嚴重度／優先級格子一律 `🔴 High`／`🟡 Medium`／`🟢 Low`（`critical` 寫 `🔴 High（critical）`），不再只寫 emoji；寫明狀態只由區段標題決定
+- `_backlog.md` 索引：`## Dropped` 表頭改 `| ID | 標題 | 原因 | 連結 |`（原刪除線表頭讓整區讀不到）
+- `PARTIAL` 收尾時點提前到塔台裁示當下（`work-order-system.md` § PARTIAL 當下收尾）：補〈塔台收尾補記〉並改 `DONE`，接手單完成後回頭確認；歸檔前覆核改為最後防線
+- 改了 BUG／PLAN 狀態要同一批重建 `_bug-tracker.md`／`_backlog.md`
+- 版號：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表；安裝指南新增 § 2.54，§ 4.1 版號範例同步（`OLD=5.12.8`、`VER=5.13.0`、發行物檔名），§ 13 Config 速查表加 3 個新設定
+
+### Unchanged
+
+- BAT 介面、CT 最低 BAT 版本、派工與通知的指令、旗標、exit code 不變。
+- BUG 狀態值不變（`OPEN／FIXING／FIXED／VERIFY／CLOSED／WONTFIX`，與 BAT 一對一）；工單狀態值不變。
+- 既有設定的值域與預設不變；三個新設定不設就用預設，行為與 5.12.8 相同（清理提示只多印一行）。
+- 歷史段落（本檔舊段落、版號表舊列、安裝指南舊章節）不改；安裝指南 § 2.13 只加一行 📌 註。
 
 ## 5.12.8 <small>2026-10-27</small> {#v5-12-8}
 
@@ -264,58 +299,12 @@ description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.12.8），
 - BAT 介面不變，CT 最低 BAT 版本不變；舊 BAT（不支援 `--close-worker`，exit `1`）只多一行提示，照常派工，之後同 session 不再嘗試。
 - 塔台與 Worker 請同版安裝（Worker 端行為無變化）。
 
-## 5.11.0 <small>2026-10-20</small> {#v5-11-0}
-
-
-> **MINOR：Workflow 精簡版——閘門 G2（至少一個具名 workflow 回測達標、升到 🟡）未通過後只做不花 workflow token 的部分。** 新設定 `workflow_integration`
-> （`off`／`ask`／`on`，預設 `on`）；Worker 只有在工單明文授權時才呼叫 Workflow 工具、自發子代理要在回報區記錄（`ct-exec`）；
-> 預篩腳本隨 `ct-insights` 發行、修三處偵測缺漏，只做排除守門與按需提示（`*insights workflow`）；另修補幾項先前驗收記下的小問題。
-> **不做**：具名 workflow 的派發與執行、`execution`／`workflow_run_id`／`workflow_stats` 等工單欄位（待卡片達 🟡 後再定）。
-> BAT 無最低版本需求。派工命令、`--set-role`、斷點、提問通道、隔離派工、合併流程、`worker_auto_close` 與 `ct-exec` 其他執行流程不變。
-
-### Added
-
-- `tower-config.md` § 可用選項：`workflow_integration`（`off` / `ask` / `on`，預設 `on`；有效值與預設的唯一權威），持久化範例補一行。
-- `workflow-engine.md` § `workflow_integration` 的行為：三個值對塔台寫 Workflow 授權與工具型 workflow 的影響；`off` 時規則分析、預篩腳本、
-  `--workflow` brief 照常；Worker 不讀設定，塔台在工單裡決定；只管 Workflow 工具，不管 Worker 的一般子代理。
-- `ct-exec/SKILL.md` § Workflow And Sub-Agents（唯一權威）：工單有「Workflow 使用授權」段落才可以呼叫 Workflow，只做列出的執行，
-  重跑、加資料、超過 agent 上限先問塔台；token 超過事後上限 → 記錄、不重跑、下一次授權執行前先問塔台；每次執行記 `runId`／agent／tokens／耗時／`dropped`；
-  沒有 Workflow 工具（Codex）不模擬。自發的唯讀子代理不需授權，但回報區 `### 子代理與 Workflow 使用` 要記數量、用途、唯讀與保證方式、約略 tokens（或估算方式）。
-  § Phase 4 第 3 步與 Reference Routing 補引用。
-- `work-order-template.md` § 撰寫 Workflow 使用授權：塔台的授權段落範本，`workflow_integration: off` 時不得寫、只派 Claude Code Worker。
-- `ct-insights/scripts/ct-workflow-prefilter.py`（新檔，Python 3 標準函式庫）：既有的預篩腳本隨 skill 發行並修正三處偵測缺漏——X2 加來源
-  ④ `intervention_type: decision-requiring`（frontmatter 頂層或 `interaction:` 底下、內文元資料鏡像行）與 ⑤「DP 裁定紀錄」；S1 的 cue 也看 `title`；
-  X4(a) 補「逐一＋複製／雜湊／計數」；新增 `--ids` 逐張輸出守門結論與證據位置、摘要加排除守門統計。
-- `ct-insights/references/analysis-rules.md` § 預篩腳本：排除守門與按需提示（唯一權威）：只用 X2、X3、X5 守門（X5 提示 Playbook）、X1／X4 只標需人工；
-  按需提示只在塔台主動呼叫時列候選與證據位置、不自動標記或修改工單；塔台入口 `*insights workflow [T#### …]`；沒有 Python 3 時改人工判定。
-- `workflow-engine.md` § 現況：G2 未通過（refuter 會確認錯誤發現、reader 實測 100–180k／組、成立的扇出多為 Worker 自發）與 § 尚未定案
-  （具名 workflow 的派發與執行、frontmatter 欄位與 BAT 契約、預篩升級為自動建議）。
-- `data-layer-architecture.md` § Layer 3 附屬：專案 workflow 腳本 補語法檢查做法（`export const meta` 改 `const`、包進 async function 再 `node --check`）。
-- `ct-help/SKILL.md` § Claude Code Workflow：整合開關、授權、`*insights workflow`、G2 現況的摘要。
-
-### Changed
-
-- `workflow-engine.md`：前言改為 v5.11.0 精簡版說明並列出兩個例外權威；派工型的狀態、🟡 等級的「可做什麼」、§ 同意治理（落到工單授權，依 `workflow_integration` 決定問不問）、
-  § Codex（有授權的工單只派 Claude Code Worker）改寫；R4 加註 Explore 型仍有 Bash／PowerShell，唯讀靠 prompt 明文禁止；成本基準補 reader 實測區間；
-  § 本版不做 改為 § 尚未定案。
-- `playbook-engine.md`：§ `*evolve` 擴展子命令 新增 `*evolve --workflow [name]` 轉交 `/ct-evolve --workflow`；§ 塔台自動建議 改為「待卡片達 🟡 後再定」並指向 `*insights workflow`。
-- `ct-evolve.md` 長版說明新增 § `--workflow [name]`（權威仍在 `ct-evolve/SKILL.md`）。
-- `control-tower/SKILL.md` § Built-In Commands 新增 `*evolve --workflow`、`*insights workflow` 兩列（摘要＋引用）；Reference Routing 的 `workflow-engine.md` 說明更新。
-- `ct-insights/SKILL.md`：Scope 表、Analysis Flow 第 5 步、Reference Routing 補預篩腳本。`ct-evolve/SKILL.md` brief 的 R3 說明改為「through v5.11.0」。
-
-### Compatibility
-
-- 新設定預設 `on`；沒有新的工單 frontmatter 欄位。既有工單沒有授權段落，Worker 不會呼叫 Workflow——v5.10.0 也沒有這條路徑，行為相同。
-- `*insights workflow` 需要 Python 3（標準函式庫即可）；沒有時改依規則人工判定。`ct-insights` 多一個 `scripts/` 目錄，安裝流程照舊整個目錄複製。
-- BAT 面板顯示 `execution` 等欄位的功能延後到知識卡達 🟡。
-- 塔台與 Worker 請同版安裝。
-
 :::
 
 ## 延伸閱讀 {#further-reading}
 
-- CT `CHANGELOG.md`（共 63 個版本；本頁列最近 10 版）
+- CT `CHANGELOG.md`（共 64 個版本；本頁列最近 10 版）
 - CT `version-governance.md` § 歷史版號表
-- [演進史](./evolution)：更早的 53 版與八個世代
+- [演進史](./evolution)：更早的 54 版與八個世代
 
 Portal 是摘要，不具權威；與 CT reference 有出入時，以 reference 為準。

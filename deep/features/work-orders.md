@@ -91,9 +91,9 @@ BUG、PLAN、EXP 單據有自己的編號規則，不適用這個正則（見 [B
 - `DONE` → 派下一張，或宣布階段完成
 - `FAILED` → 啟動 Debug 策略
 - `BLOCKED` → 記下卡點，評估有沒有可以並行的工單
-- `PARTIAL` → 先判斷卡點是否還在；已經被後續工單或範圍決策解除的，補正為 `DONE` 並保留原始回報
+- `PARTIAL` → 先判斷卡點是否還在；塔台一裁示剩下的部分怎麼處理（另開接手單，或判定不需再做），當下就補正為 `DONE`（v5.13.0 起），並保留原始回報
 
-`PARTIAL` 是某個時間點的未完成狀態，不應該永久掛在待辦清單上。補正時不覆寫歷史結論，而是在原工單加一段補正說明，寫明由哪張工單或哪個決策解決。
+`PARTIAL` 是某個時間點的未完成狀態，不應該永久掛在待辦清單上。補正時不覆寫歷史結論，而是在原工單文末加一段〈塔台收尾補記〉，寫明剩下的部分由哪張工單完成，或依哪個決策不需再做；接手單完成後塔台再回頭確認。只有真的在等外部條件（廠商、客戶、環境）的才保留 `PARTIAL` 或改 `BLOCKED`。
 
 進度同步用「雙重保障」：Worker 在工單指示裡被要求更新 `sprint-status.yaml`，塔台每次收單時再複查補漏。需要全面對齊時執行 `*sync`：塔台列出所有工單檔，交叉比對塔台記憶、工單檔與 `sprint-status.yaml` 三方，**以工單檔為唯一事實來源**修正差異。
 
@@ -105,7 +105,7 @@ BUG、PLAN、EXP 單據有自己的編號規則，不適用這個正則（見 [B
 
 ## 延伸閱讀 {#further-reading}
 
-- `control-tower/references/work-order-system.md` § 工單編號規則（含「工單 ID 格式（權威定義）」）、§ 工單粒度原則、§ Story → Dev 之間的品質檢查點、§ 派發前 overlap check（v4.4.0+）、§ 回報處理流程、§ sprint-status.yaml 同步
+- `control-tower/references/work-order-system.md` § 工單編號規則（含「工單 ID 格式（權威定義）」）、§ 工單粒度原則、§ Story → Dev 之間的品質檢查點、§ 派發前 overlap check（v4.4.0+）、§ 回報處理流程、§ PARTIAL 當下收尾（含 resolved `PARTIAL` 補正）、§ sprint-status.yaml 同步
 - `control-tower/references/work-order-template.md` § 填寫 `intervention_type` 指引、§ 填寫 `affects_files` 指引、§ 填寫 `memory_overrides` 指引、§ Sprint 2 transition — YAML frontmatter SoT (v5.0.0+)
 - `control-tower/references/doctrine.md` § `intervention_type` / `affects_files` / `spec_level_check` 的設計依據
 - 本站：[一張工單的一生](/lifecycle)、[檔案即真相來源](/deep/principles/files-as-truth)

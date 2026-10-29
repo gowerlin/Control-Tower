@@ -67,7 +67,7 @@ H1 標題、塔台面板、`_tower-state.md` 都是它的鏡像；要讀版號�
 | 新指令、新設定、新的向下相容能力 | MINOR |
 | 文件補完、BAT 規則修正、觸發描述調整 | PATCH |
 
-CHANGELOG 記錄的 63 個版本裡，只有一次升主版號：v5.0.0，工單的事實來源從內文表格搬到 frontmatter（見 [檔案即真相來源](/deep/principles/files-as-truth)）。
+CHANGELOG 記錄的 64 個版本裡，只有一次升主版號：v5.0.0，工單的事實來源從內文表格搬到 frontmatter（見 [檔案即真相來源](/deep/principles/files-as-truth)）。
 
 ## 棄用條款：寫明棄用什麼、理由是什麼
 

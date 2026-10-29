@@ -231,6 +231,9 @@ const towerRows = [
   | `enable_experiments` | `true`／`false` | `false` | 啟用 EXP 實驗單（`*exp`） |
   | `archive_days` | `0`–`365` | `7` | 最終態超過幾天成為歸檔候選；`0` = 立即可歸檔 |
   | `auto_archive_prompt` | `on`／`off` | `off` | `*sync` 結束後是否提示歸檔候選數量 |
+  | `bug_review_open_threshold` | `0`–`500` | `20` | v5.13.0 起。熱區未結 BUG 多於這個張數時，`*sync`／`*insights` 印一行提示，建議逐張核對；`0` = 停用這個條件 |
+  | `bug_review_stale_days` | `0`–`365`（天） | `30` | v5.13.0 起。有未結 BUG 超過這個天數沒更新時，同上提示；`0` = 停用這個條件 |
+  | `customer_acceptance_gate` | `on`／`off` | `off` | v5.13.0 起。客戶驗收不回歸閘：`on` 時會改程式或資料的工單多一段〈相關通過案例〉，Worker 動工前逐案判定，會改變通過案例就停下交你決定。專案進入客戶驗收、有驗收案例表時才開 |
   | `research_interaction` | `true`／`false` | `true` | 研究型工單是否允許 Worker 互動；yolo 下一律不互動、改問塔台 |
   | `research_max_questions` | `1`–`5` | `3` | 研究型工單 Worker 每次提問的上限 |
   | `auto_commit` | `on`／`ask`／`off` | `ask` | 塔台直接處理小變動後的 commit 行為；只對「小且無邏輯變動」的修改生效 |
@@ -262,22 +265,27 @@ const towerRows = [
 
 - **語法**：`*sync`
 - **做什麼**：列出所有工單，讀每張的 metadata，交叉比對**塔台記憶、工單檔、`sprint-status.yaml`** 三方，以工單檔為唯一事實來源修正差異，顯示同步摘要。啟用了 BUG／PLAN 時一併掃描並重建 `_bug-tracker.md` 與 `_backlog.md`；不掃冷區。`auto_archive_prompt: on` 時，結尾提示歸檔候選數量。
-- **起始版本**：v3.2.0（多類型掃描：v4.0.0）
-- **權威出處**：`control-tower/references/work-order-system.md` § sprint-status.yaml 同步；`control-tower/references/bug-plan-system.md`；`control-tower/references/archive-system.md` § 與 `*sync` 的協作
+- **v5.13.0 起多做的事**（都只多印一行，不阻擋）：
+  - 量熱檔大小（`_tower-state.md`、`_decision-log.md`、`_bug-tracker.md`、`_backlog.md` 等，以及熱區單據檔），超過 400 KB 預算或 BAT 的 512 KiB 讀檔上限時提示，並指出怎麼收斂（見[觀測與改進 › BAT 塔台面板為什麼會空](/deep/features/observability#bat-panel)）。
+  - 啟用 BUG 追蹤時，未結 BUG 張數或久未更新的天數超過門檻（`bug_review_open_threshold`、`bug_review_stale_days`），就建議照結案判準逐張核對（見 [BUG 結案判準](/deep/features/record-types#bug-closing)）。
+  - 決策日誌的格式驗證多檢查 BAT 讀不讀得到（表頭 `ID`、每列以 `|` 開頭與結尾、標題格式）和檔案大小。
+  - 索引格式照新規則重建；舊索引在下一次 `*sync` 時換成新格式。塔台改了 BUG／PLAN 狀態，同一批就重建索引，不等下一次 `*sync`。
+- **起始版本**：v3.2.0（多類型掃描：v4.0.0；大小提示、未結 BUG 提示：v5.13.0）
+- **權威出處**：`control-tower/references/work-order-system.md` § sprint-status.yaml 同步；`control-tower/references/bug-plan-system.md` § 索引格式、§ 未結 BUG 清理提示；`control-tower/references/decision-log-system.md` § 格式驗證；`control-tower/references/memory-protocol.md` § BAT 塔台面板讀取契約 › 大小預算；`control-tower/references/archive-system.md` § 與 `*sync` 的協作
 
 ### `*pause [原因]` {#pause}
 
 - **語法**：`*pause [原因]`，例如 `*pause 正式版的登入 API 回 500`
-- **做什麼**：不管塔台正在說什麼，立刻：凍結進行中的工單（狀態改成 `PAUSED`，記下原因與時間）→ 記進 `_tower-state.md` → 評估緊急任務的範圍與要不要另開分支 → 開一張標成 `URGENT` 的緊急工單 → 把原工單排進回歸佇列。在 yolo 派工前的緩衝時間裡輸入，也能手動介入。
+- **做什麼**：不管塔台正在說什麼，立刻：凍結進行中的工單（狀態改成 `PAUSED`，記下原因與時間）→ 記進 `_tower-state.md` → 評估緊急任務的範圍與要不要另開分支 → 開一張標成 `URGENT` 的緊急工單 → 把原工單排進回歸佇列。在 yolo 派工前的緩衝時間裡輸入，也能手動介入。v5.13.0 起，寫 `_tower-state.md` 時同一次寫入更新檔頭的機器可讀摘要，BAT 指揮塔總覽跟著更新。
 - **起始版本**：v3.2.0
 - **權威出處**：`control-tower/references/interrupt-protocol.md` § 中斷協議
 
 ### `*resume [工單編號]` {#resume}
 
 - **語法**：`*resume`（自動找最近一張 `PAUSED` 工單）、`*resume T0005`（恢復指定工單）
-- **做什麼**：把暫停的工單接回來，並顯示當時的上下文摘要。
+- **做什麼**：把暫停的工單接回來，並顯示當時的上下文摘要。v5.13.0 起，清除 `_tower-state.md` 的暫停紀錄時同一次寫入更新機器可讀摘要。
 - **起始版本**：v3.2.0
-- **權威出處**：`control-tower/references/interrupt-protocol.md` § HOTFIX 完成後恢復（`*resume`）
+- **權威出處**：`control-tower/references/interrupt-protocol.md` § HOTFIX 完成後恢復（`*resume`）；`control-tower/references/memory-protocol.md` § 機器可讀摘要（YAML frontmatter）
 
 ### `*bug` {#bug}
 
@@ -342,9 +350,9 @@ const towerRows = [
 ### `*insights` {#insights}
 
 - **語法**：`*insights`
-- **做什麼**：在塔台角色裡，依 session 與工單歷史做有證據的使用模式分析，不離開塔台。完整報告用 [`/ct-insights`](#ct-insights)。
+- **做什麼**：在塔台角色裡，依 session 與工單歷史做有證據的使用模式分析，不離開塔台。完整報告用 [`/ct-insights`](#ct-insights)。v5.13.0 起，未結 BUG 超過門檻時，報告也帶和 `*sync` 同一行的清理提示。
 - **起始版本**：v3.4.0
-- **權威出處**：`control-tower/SKILL.md` § Built-In Commands；`ct-insights/SKILL.md` § Scope
+- **權威出處**：`control-tower/SKILL.md` § Built-In Commands；`ct-insights/SKILL.md` § Scope；`control-tower/references/bug-plan-system.md` § 未結 BUG 清理提示
 
 #### `*insights workflow [T#### …]` {#insights-workflow}
 
@@ -442,7 +450,7 @@ yolo 下塔台另外也接受 `T#### 失敗`。不是這些格式的訊息，會
 - `control-tower/SKILL.md` § Built-In Commands
 - `ct-help/SKILL.md` § Command Families
 - 各 skill 的 `SKILL.md`（`ct-exec`、`ct-done`、`ct-status`、`ct-evolve`、`ct-insights`、`ct-fieldguide`、`control-tower-guide`）
-- CT 安裝與使用指南 § 13. Config 速查表（v5.12.8）、§ 14. 命令速查表（v5.12.8）
+- CT 安裝與使用指南 § 13. Config 速查表（v5.13.0）、§ 14. 命令速查表（v5.13.0）
 - `control-tower/references/tower-config.md` § `*config` 命令、§ 可用選項（表下註明 `gp-prefix` 不是選項）
 - `control-tower/references/multi-tower-protocol.md` § `gp-prefix` 設定（唯一權威定義）
 - `control-tower/references/fieldguide-commands.md`

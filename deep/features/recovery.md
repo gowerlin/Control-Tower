@@ -20,7 +20,7 @@ description: 進度存在檔案裡，所以塔台可以被打斷：*pause／*res
 塔台收到 `*pause` 之後：
 
 1. **凍結當前任務**：進行中的工單改為 ⏸ `PAUSED`，把暫停原因和時間記進工單檔。
-2. **記錄暫停狀態**：更新 `_tower-state.md` 的暫停欄位（哪張工單、原因、時間）。
+2. **記錄暫停狀態**：更新 `_tower-state.md` 的暫停欄位（哪張工單、原因、時間）。v5.13.0 起，塔台每次寫 `_tower-state.md`（包括這裡和 `*resume`）都在同一次寫入更新檔頭的機器可讀摘要（下一個編號、待辦），BAT 指揮塔總覽讀的就是它。
 3. **評估緊急任務**：判斷範圍、影響、要不要用不同分支，以選項式提問和你確認。
 4. **派發緊急工單**：標記 🔥 `URGENT`，附分支策略建議。
 5. **排入回歸佇列**：確保緊急任務結束後原任務接得回來。
@@ -113,6 +113,7 @@ description: 進度存在檔案裡，所以塔台可以被打斷：*pause／*res
 ## 延伸閱讀 {#further-reading}
 
 - `control-tower/references/interrupt-protocol.md` § 中斷協議、§ 任務佇列（含中斷狀態）、§ HOTFIX 完成後恢復（`*resume`）、§ Git Worktree 平行作業
+- `control-tower/references/memory-protocol.md` § 機器可讀摘要（YAML frontmatter）
 - `control-tower/references/work-order-system.md` § 中斷復原、§ 重派前回收舊 Worker 分頁（v5.12.0+）
 - `control-tower/references/research-workorder.md` § Renew 機制（F-07）
 - `ct-done/SKILL.md`（§ Workflow、§ Status Selection、§ Report Repair、§ Commit Check、§ BAT Notify）

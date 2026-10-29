@@ -40,6 +40,25 @@ OPEN → FIXING → FIXED → VERIFY → CLOSED
 
 修復本身仍然由標準工單執行，工單裡引用 BUG 編號。修復完成後塔台把 BUG 改為 `FIXED`，並詢問要不要派驗證工單；高嚴重度建議用獨立的驗證工單。`*sync` 會掃描所有 BUG 單，重建 `_bug-tracker.md` 索引。
 
+### 結案判準與 `closed_reason`（v5.13.0） {#bug-closing}
+
+未結清單只該放還要做的事。留著已經修好、過時或不打算修的 BUG，會讓人誤判工作量與風險。v5.13.0 寫下一張判準表，平常處理 BUG、逐張核對舊 BUG 都照它決定落在哪個狀態：
+
+| 情況 | 狀態 | 要寫的 |
+|---|---|---|
+| 現行程式已經修好 | `FIXED` | 修正的 commit 或 `檔案:行` |
+| 前提錯了、設計本來如此 | `CLOSED` | `closed_reason: not_a_defect`，加上當初為什麼以為是 BUG |
+| 屬實但不修（你接受、交付版走不到） | `WONTFIX` | 寫進交付文件的已知限制 |
+| 過時：功能退場、被別張單取代或重複、規劃改了 | `CLOSED` | `closed_reason: superseded`／`duplicate`／`obsolete`，加上被誰取代或為什麼過時 |
+| 不是我方的責任 | `CLOSED` | `closed_reason: external`，加上已經告知誰、何時 |
+| 仍然成立，但優先度低、短期不做 | `CLOSED` | `closed_reason: deferred`；列進 `_backlog.md` 的〈後續待辦〉，要做時重開成 `OPEN` |
+| 仍然成立，而且要做 | `OPEN` | 標「上線前」或「後續」，重新核定嚴重度 |
+
+- **證據不足就維持 `OPEN`**，不猜。核對時看現行程式碼和後續的工單、決策，不只看單裡寫了什麼。
+- **為什麼不新增狀態值**：BUG 的六個狀態和 BAT 一對一，多一個值 BAT 就認不得。結案原因因此放在選填欄位 `closed_reason`（本文也寫一行「結案原因」）；BAT 不讀這個欄位，面板不受影響。一般驗收通過的 `CLOSED` 不必填。
+- **延後的 BUG 留在熱區**，不列為歸檔候選，〈後續待辦〉才完整；重開時改回 `OPEN`，拿掉 `closed_reason` 與 `closed_at`。
+- **清理提示**：`*sync` 與 `*insights` 在未結 BUG 多於 `bug_review_open_threshold` 張（預設 20），或有 BUG 超過 `bug_review_stale_days` 天（預設 30）沒更新時，印一行提示，建議照上表逐張核對，可以分批派唯讀工單。改不改狀態由塔台依核對結果決定；改了就同一批重建 `_bug-tracker.md`，因為 BAT 看板讀的是索引。
+
 ## PLAN：一個想法到多張工單 {#plan}
 
 ```
@@ -107,7 +126,7 @@ EXP 建議搭配 git worktree，讓失敗的實驗可以零污染丟棄。塔台
 
 ## 延伸閱讀 {#further-reading}
 
-- `control-tower/references/bug-plan-system.md` § 類型總覽、§ 編號管理、§ BUG 單據、§ PLAN 單據、§ EXP 實驗單據、§ 跨類型關聯、§ 未啟用時的行為
+- `control-tower/references/bug-plan-system.md` § 類型總覽、§ 索引格式、§ 編號管理、§ BUG 單據（§ 結案判準、§ 未結 BUG 清理提示）、§ PLAN 單據、§ EXP 實驗單據、§ 跨類型關聯、§ 未啟用時的行為
 - `control-tower/references/research-workorder.md` § 觸發條件、§ Worker 行為規格（research 類型專屬）、§ 塔台決策流程
 - `control-tower-guide/references/work-order-lifecycle.md` § BUG 生命週期、§ PLAN 生命週期、§ EXP 生命週期、§ 研究型工單
 - `control-tower/references/work-order-template.md` § BUG 單模板、§ PLAN 單模板、§ EXP 實驗單模板、§ 研究型工單模板
