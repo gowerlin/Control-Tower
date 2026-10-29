@@ -1,6 +1,6 @@
 ---
-title: Beta：方法論轉接（v6.0.0-beta.2）
-description: CT v6.0.0-beta.2 Beta 的方法論轉接：把「只認 BMad」換成可以抽換、分層疊加的 adapter，用實測決定怎麼防住其他方法論的 SessionStart 注入，並逐家說清楚哪些方法論值得引入、哪些只要共存。Beta 在 GitHub 預發行 Release 提供下載，與穩定版並行、不取代。
+title: Beta：方法論轉接（v6.0.0-beta.3）
+description: CT v6.0.0-beta.3 Beta 的方法論轉接：把「只認 BMad」換成可以抽換、分層疊加的 adapter，用實測決定怎麼防住其他方法論的 SessionStart 注入，並逐家說清楚哪些方法論值得引入、哪些只要共存；beta.3 另加狀態衛生與 BAT 塔台面板讀取契約（穩定版 v5.13.0 起也有）。Beta 在 GitHub 預發行 Release 提供下載，與穩定版並行、不取代。
 ---
 
 <script setup>
@@ -9,15 +9,15 @@ import { useData } from 'vitepress'
 const { theme } = useData()
 const stableVersion = theme.value.ctRelease.ctVersion
 // Beta 的預發行 Release：tag 與附件名固定，網址用 releasesUrl 組，內文不手寫網址
-const betaVersion = '6.0.0-beta.2'
+const betaVersion = '6.0.0-beta.3'
 const betaTag = `ct-v${betaVersion}`
 const betaPage = `${theme.value.releasesUrl}tag/${betaTag}`
 const betaAsset = (name) => `${theme.value.releasesUrl}download/${betaTag}/${name}`
 const betaFiles = [
-  { name: `BMad-Control-Tower-v${betaVersion}.zip`, size: '406 KB', note: '全量：根層直接是 8 個 skill 目錄' },
-  { name: `control-tower-guide-v${betaVersion}.zip`, size: '163 KB', note: 'CT Guide（教學 skill），Beta 內容在「Beta：方法論轉接」一章' },
+  { name: `BMad-Control-Tower-v${betaVersion}.zip`, size: '417 KB', note: '全量：根層直接是 8 個 skill 目錄' },
+  { name: `control-tower-guide-v${betaVersion}.zip`, size: '170 KB', note: 'CT Guide（教學 skill），Beta 內容在「Beta：方法論轉接」一章' },
   { name: `ct-adapter-pstack-v${betaVersion}.zip`, size: '17 KB', note: 'pstack 的 adapter（adapter_version 0.2.4）；選用，已經在用 pstack 才需要' },
-  { name: `control-tower-v${betaVersion}.zip`, size: '305 KB', note: '單一 skill（claude.ai 上傳用，下同）' },
+  { name: `control-tower-v${betaVersion}.zip`, size: '316 KB', note: '單一 skill（claude.ai 上傳用，下同）' },
   { name: `ct-exec-v${betaVersion}.zip`, size: '23 KB', note: '' },
   { name: `ct-done-v${betaVersion}.zip`, size: '4 KB', note: '' },
   { name: `ct-status-v${betaVersion}.zip`, size: '3 KB', note: '' },
@@ -28,14 +28,14 @@ const betaFiles = [
 ]
 </script>
 
-# Beta：方法論轉接（v6.0.0-beta.2）
+# Beta：方法論轉接（v6.0.0-beta.3）
 
 ::: warning Beta，與穩定版並行、不取代
-本頁介紹的是 **CT v6.0.0-beta.2（Beta）**。Beta 放在 GitHub 的**預發行 Release**，不是最新正式版；規則在正式版 6.0.0 前還可能調整。
+本頁介紹的是 **CT v6.0.0-beta.3（Beta）**。Beta 放在 GitHub 的**預發行 Release**，不是最新正式版；規則在正式版 6.0.0 前還可能調整。
 目前的穩定版仍是 **v{{ stableVersion }}**，首頁、安裝說明與下載連結都以穩定版為準。Beta 只提供 zip，不會取代你已經裝好的穩定版；想試用，建議裝在隔離的設定目錄（見[下載與試用](#download)）。
 :::
 
-<p class="ct-lead">一句話：CT 原本只認得 BMad-Method 這一種開發方法論；v6 把它換成一層「方法論轉接」，BMad 變成第一個、也是預設的 adapter，其他方法論只要寫一份描述檔就能接上，而且每一層（規劃、執行、審查、驗證、交付）可以各用不同的方法論。但「能接」不等於「該接」：beta.2 逐家說清楚哪些方法論值得引入、哪些只要在機器上共存就好。v6.0.0-pre.1 預覽版定下設計，兩輪隔離試用修補後成為 beta.1，再一輪試用與逐家定位後成為 beta.2。</p>
+<p class="ct-lead">一句話：CT 原本只認得 BMad-Method 這一種開發方法論；v6 把它換成一層「方法論轉接」，BMad 變成第一個、也是預設的 adapter，其他方法論只要寫一份描述檔就能接上，而且每一層（規劃、執行、審查、驗證、交付）可以各用不同的方法論。但「能接」不等於「該接」：beta.2 逐家說清楚哪些方法論值得引入、哪些只要在機器上共存就好。v6.0.0-pre.1 預覽版定下設計，兩輪隔離試用修補後成為 beta.1，再一輪試用與逐家定位後成為 beta.2；beta.3 再補上狀態衛生與 BAT 塔台面板讀取契約，這批規則穩定版 v5.13.0 起也有（見 [beta.3 改了什麼](#beta3)）。</p>
 
 ## 下載與試用 {#download}
 
@@ -59,6 +59,7 @@ Beta 的發行檔都在預發行 Release <a :href="betaPage" target="_blank" rel
 - **塔台與 Worker 用同一批。** 和穩定版一樣，同一個設定目錄裡的 8 個 skill 要一起換版。
 - **安裝方式和穩定版相同**（見[安裝](../install)）：解開全量 zip，把 8 個 skill 目錄放進隔離設定目錄的 `skills/`；已經在用 pstack 才另外放 `ct-adapter-pstack`。從穩定版的專案改用 Beta，先看 [BUG／PLAN／EXP 預設開啟](#bug-plan-exp)的升級影響。
 - **從 beta.1 升到 beta.2 沒有設定變更**：契約仍是 `ct-methodology-adapter/v1`，設定鍵與預設值都和 beta.1 相同，8 個 skill 照樣一起換即可。
+- **從 beta.2 升到 beta.3 不需要遷移**：三個新設定不設就用預設、行為和 beta.2 相同；舊的 `_bug-tracker.md`、`_backlog.md` 在下一次 `*sync` 照新格式重建。契約仍是 `ct-methodology-adapter/v1`，`ct-adapter-pstack` 不用換。
 
 ## 方法論不是一定要引入：各家定位 {#adopt-or-not}
 
@@ -92,6 +93,26 @@ v6 讓 CT 能接任何方法論，但接一家的成本是確定的：每個 ses
 - 派工摘要的常駐 token 寫「未量測」，不填估值。
 - 「設計核准前不准實作」的硬閘門：沒有指名 Superpowers 的工單，Worker 在無人值守（yolo）下不會被它擋住（試用 2/2）。
 - 想省掉常駐注入，只能在 CT 管理的機器上停用它（上游沒有只關注入的開關）。這是使用者的安裝選擇，塔台只提示、不代做。
+
+## beta.3 改了什麼 {#beta3}
+
+beta.3 加的是**狀態衛生與 BAT 塔台面板讀取契約**：BUG 怎麼結案、`PARTIAL` 何時收尾、未結 BUG 何時提示清理、客戶驗收開始後怎麼避免改壞已通過的功能，以及 CT 寫的檔案要長什麼樣、BAT 指揮塔面板才讀得到。**這批規則穩定版 v5.13.0 起也有，不是 Beta 才有**，所以本頁不重講，內容看穩定版的說明：
+
+| 主題 | 穩定版的說明 |
+|---|---|
+| BAT 塔台面板為什麼會空、400 KB 預算、怎麼量 | [BAT 塔台面板為什麼會空](../deep/features/observability#bat-panel) |
+| 決策日誌的嚴格格式與收斂 | [決策日誌](../deep/features/observability#decision-log) |
+| BUG 結案判準與 `closed_reason`、未結 BUG 清理提示 | [結案判準與 `closed_reason`](../deep/features/record-types#bug-closing) |
+| `PARTIAL` 在塔台裁示當下收尾 | [`PARTIAL` 會一直掛著嗎？](../faq#partial) |
+| `*sync` 多做的事：熱檔大小提示、未結 BUG 提示、改狀態同一批重建索引 | [`*sync`](../reference/commands#sync) |
+| 三個新設定：`bug_review_open_threshold`（預設 `20`）、`bug_review_stale_days`（預設 `30`）、`customer_acceptance_gate`（客戶驗收不回歸閘，預設 `off`） | [`*config`](../reference/commands#config) |
+
+只跟 Beta 有關的幾點：
+
+- **從 beta.2 升級不需要遷移**（見[下載與試用](#download)）。BUG 狀態值仍是六個，沒有新增；方法論契約與 `ct-adapter-pstack`（0.2.4）都沒改。
+- **塔台狀態摘要**：穩定版 v5.13.0 補進的，是 v6 自 pre.1 起就有的同一份[機器可讀摘要](#tower-state-summary)，beta.3 沒有改它。
+- **BAT 介面沒變**：面板讀取契約對照 BAT `0.7.1-pre.8`（預覽版）寫成，規範的是 CT 寫檔的格式與大小，不提高 CT 要求的最低 BAT 版本（見[相容版本對照的 Beta 一節](../versions/compatibility#preview)）。
+- 本版新規則的已知未驗，是[還沒驗證的事](#unverified)第 10～13 項。
 
 ## beta.2 改了什麼 {#beta2}
 
@@ -334,7 +355,7 @@ v6 另外替塔台狀態檔 `_tower-state.md` 加了一段機器可讀的摘要�
 
 塔台每次寫入狀態檔都順手更新摘要。**進行中的工單刻意不放進摘要**：BAT 直接從工單檔的 `status` 自己算，避免兩份資料不一致。舊專案沒有摘要不是錯誤，塔台下次寫入時補上（第一輪隔離試用實測如此）。摘要只給外部顯示用，塔台自己恢復狀態仍以本文為準。
 
-BAT 端在 `0.7.1-pre.7`（預覽版）加上這個總覽：沒有摘要的專案也能看到最後更新時間與進行中工單；「下一個編號」與「待辦」要 CT v6 寫出摘要後才有。版本需求見[相容版本對照的 Beta 一節](../versions/compatibility#preview)。
+BAT 端在 `0.7.1-pre.7`（預覽版）加上這個總覽：沒有摘要的專案也能看到最後更新時間與進行中工單；「下一個編號」與「待辦」要塔台寫出摘要後才有：v5.13.0 起穩定版也寫這份摘要，v6 自 pre.1 起就寫。版本需求見[相容版本對照的 Beta 一節](../versions/compatibility#preview)。
 
 ## 向下相容 {#compat}
 
@@ -344,10 +365,11 @@ BAT 端在 `0.7.1-pre.7`（預覽版）加上這個總覽：沒有摘要的專�
 - 工單沒有 `methodology` 欄位時，Worker 的執行方式和穩定版相同。
 - BAT 介面與 CT 要求的最低 BAT 版本沒有因為方法論轉接而改變。
 - beta.1 升 beta.2 沒有設定變更，契約與設定鍵都相同。
+- beta.2 升 beta.3 不需要遷移：三個新設定不設就是舊行為；舊的 BUG／PLAN 索引在下一次 `*sync` 照新格式重建。
 
 ## 還沒驗證的事 {#unverified}
 
-beta.2 把下列 9 項明確標成「已知未驗」，正式版前可能因實測結果調整：
+beta.3 把下列 13 項明確標成「已知未驗」，正式版前可能因實測結果調整（第 10～13 項是 beta.3 新增，穩定版 v5.13.0 的同一批規則也一樣還沒實機跑過）：
 
 1. Codex 互動分頁的「Hooks need review」畫面，以及 Codex 設定裡 hook 的啟用狀態（`hooks.state.<key>.enabled`）：目前是依程式內字串與既有文件推論。
 2. Codex 在 resume、compact 後是否重新注入。
@@ -358,6 +380,10 @@ beta.2 把下列 9 項明確標成「已知未驗」，正式版前可能因實�
 7. 方法論疊加：一般疊加與雙注入＋疊加各驗過一次；跨層的 story spec 交接與狀態回寫還沒驗。
 8. 工單沒寫「不開分支、不 push」時，pstack 的 poteto-mode 會不會委派子代理或開 PR：沒有邊界段、但工單 frontmatter 寫明交付層 `none`、子代理不得寫入時，poteto-mode 仍跳過了開 PR 與委派（驗過一次）；frontmatter 也沒寫的情況還沒驗。
 9. 啟用即產生空索引、塔台語言規則、暫存目錄退路、子代理回報要求，以及 beta.2 的環境偵測新寫法，都是文件規則，還沒有實機跑過。
+10. BAT 塔台面板讀取契約：新的檔案範本只用 BAT `0.7.1-pre.8`（預覽版）的解析器實測過（決策、BUG、待辦含 Dropped 都讀得到，索引格子沒有 Unknown），還沒有在 BAT 實機面板逐頁看過。已知差異：`_backlog.md` 的 Completed／Dropped 列沒有優先級欄，BAT 從 PLAN 檔補值時，frontmatter 寫 `priority: critical` 會顯示 Unknown。
+11. `customer_acceptance_gate: on`：開單時列出相關通過案例、Worker 動工前逐案判定、會改變就停下、部署後走場必跑、已完成的修正回溯核對，整條工單流程都是文件規則，還沒有實機跑過。
+12. 決策日誌收斂：只在一個專案做過（較舊的三百多筆詳細紀錄搬進封存檔，熱檔從 583,571 降到 188,989 bytes，BAT 決策頁 408 筆全讀到）；決策數量、標題格式不同的其他專案還沒做過。
+13. 未結 BUG 清理提示、熱檔大小提示、`PARTIAL` 當下收尾、`closed_reason` 與延後 BUG 的重開：文件規則，還沒有實機跑過。
 
 ## 出處與名稱 {#notices}
 
@@ -380,8 +406,9 @@ beta.2 把下列 9 項明確標成「已知未驗」，正式版前可能因實�
 - `control-tower/references/auto-session.md` § BAT 內部終端路由 › 偵測條件：環境偵測只列名稱、`compgen -e` 與一個變數一個指令
 - `ct-adapter-pstack/`：`README.md`（選用定位、引入方式建議、限制與實測摘要）、`NOTICE.md`（出處與授權）
 - `control-tower/references/memory-protocol.md` § 機器可讀摘要（YAML frontmatter）
+- beta.3 的狀態衛生與面板契約（穩定版 v5.13.0 也有）：`memory-protocol.md` § BAT 塔台面板讀取契約、`decision-log-system.md` § 收斂、`bug-plan-system.md` § 結案判準、§ 未結 BUG 清理提示、`work-order-system.md` § PARTIAL 當下收尾、`work-order-template.md` § 撰寫〈相關通過案例〉（都在 `control-tower/references/`）；beta.3 與 beta.2 的差異見 zip 內 `docs/CHANGELOG.md` `[6.0.0-beta.3]`
 - `ct-exec/SKILL.md` § Methodology：Worker 端的帶入、注入自查與紀錄規則（含「方法論 skill」的範圍）
-- CT Guide `references/preview-methodology.md`「Beta：方法論轉接」：§ 方法論不是一定要引入：各家定位、§ 在 CT 專案使用 mattpocock/skills、§ 實測（③ 部分參考與 HARD-GATE，beta.2）、§ 引入方式（附三種引入方式的圖）、§ 隔離試用、§ BUG／PLAN／EXP 預設開啟、§ 環境偵測只列名稱、§ 全域路徑、§ 已知未驗
+- CT Guide `references/preview-methodology.md`「Beta：方法論轉接」：§ beta.3：狀態衛生與 BAT 塔台面板讀取契約、§ 方法論不是一定要引入：各家定位、§ 在 CT 專案使用 mattpocock/skills、§ 實測（③ 部分參考與 HARD-GATE，beta.2）、§ 引入方式（附三種引入方式的圖）、§ 隔離試用、§ BUG／PLAN／EXP 預設開啟、§ 環境偵測只列名稱、§ 全域路徑、§ 已知未驗
 
 ::: warning 摘要不具權威
 Portal 是摘要，不具權威，與 reference 有出入時以 reference 為準。本頁介紹的是 Beta，正式版的規則以正式發布的 CT 為準。

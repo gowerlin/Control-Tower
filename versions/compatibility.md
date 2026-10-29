@@ -51,16 +51,18 @@ BAT 站也有一張相容表，是從 BAT 的角度列（<BatLink path="compatib
 
 ## Beta {#preview}
 
-上面的表格只列**穩定版**。CT v6.0.0-beta.2 是 Beta，放在 GitHub 預發行 Release、與穩定版並行，不列入表格；它的內容與下載見[Beta：方法論轉接](../preview/methodology-adapters)。
+上面的表格只列**穩定版**。CT v6.0.0-beta.3 是 Beta，放在 GitHub 預發行 Release、與穩定版並行，不列入表格；它的內容與下載見[Beta：方法論轉接](../preview/methodology-adapters)。
 
-和 BAT 有關的只有一項，BAT 指揮塔總覽讀塔台狀態摘要；v5.13.0 起穩定版也寫同一份摘要（上表也列了這一項）：
+BAT 指揮塔總覽讀塔台狀態摘要的版本需求如下；v5.13.0 起穩定版也寫同一份摘要（上表也列了這一項）：
 
 | 功能 | BAT | CT |
 |---|---|---|
 | 總覽顯示最後更新與進行中工單 | `>= 0.7.1-pre.7`（預覽版） | 不限版本（BAT 直接讀工單檔） |
-| 總覽顯示下一個編號與待辦 | `>= 0.7.1-pre.7`（預覽版） | 穩定版 `>= v5.13.0`；v6 預覽版 `>= v6.0.0-pre.1`（含 Beta v6.0.0-beta.1、v6.0.0-beta.2）。塔台寫出 `_tower-state.md` 的機器可讀摘要 |
+| 總覽顯示下一個編號與待辦 | `>= 0.7.1-pre.7`（預覽版） | 穩定版 `>= v5.13.0`；v6 預覽版 `>= v6.0.0-pre.1`（含 Beta v6.0.0-beta.1～v6.0.0-beta.3）。塔台寫出 `_tower-state.md` 的機器可讀摘要 |
 
-CT 版本不夠時，總覽只是少了這兩項，其他照常顯示。方法論轉接本身沒有改變 BAT 介面，也沒有提高 CT 要求的最低 BAT 版本；beta.1、beta.2 的 BAT 介面與最低 BAT 版本都和 v6.0.0-pre.1 相同；beta.2 改的環境偵測寫法（bash 用 `compgen -e` 只列名稱）是 CT 這一側的指令寫法，不需要新的 BAT 版本。
+CT 版本不夠時，總覽只是少了這兩項，其他照常顯示。方法論轉接本身沒有改變 BAT 介面，也沒有提高 CT 要求的最低 BAT 版本；beta.1～beta.3 的 BAT 介面與最低 BAT 版本都和 v6.0.0-pre.1 相同；beta.2 改的環境偵測寫法（bash 用 `compgen -e` 只列名稱）是 CT 這一側的指令寫法，不需要新的 BAT 版本。
+
+beta.3 新增 BAT 塔台面板讀取契約：CT 寫的決策日誌、BUG／PLAN 索引、塔台狀態等檔案要長什麼樣、多大以內，BAT 指揮塔面板才讀得到（見 [BAT 塔台面板為什麼會空](../deep/features/observability#bat-panel)）。契約對照 BAT `0.7.1-pre.8`（預覽版）寫成，規範的是 CT 寫檔的格式與大小，不是新的最低 BAT 版本；穩定版 v5.13.0 起也有同一份契約。
 
 beta.1 改成 BUG／PLAN／EXP 預設開啟，啟用時立即產生 `_bug-tracker.md`、`_backlog.md`，BAT 指揮塔面板的「臭蟲」與「待辦池」因此不必等第一次 `*sync` 就有檔可讀；這不需要新的 BAT 版本。
 
