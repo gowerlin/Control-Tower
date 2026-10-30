@@ -304,6 +304,9 @@ export default () => {
       'scripts/**',
       'data/**',
       'dist-artifact/**',
+      // 公開 repo 根目錄的 plugin marketplace（匯出時產生）：skill 原文不是頁面，裡面的 <名稱> 寫法也過不了 Vue 編譯
+      '.claude-plugin/**',
+      'plugins/**',
       ...(SHOWCASE ? [] : ['_showcase/**'])
     ],
 
