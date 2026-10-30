@@ -16,7 +16,7 @@ Layer 1: Core Skills（唯讀，升級時整份覆蓋）
   ~/.claude/skills/ct-help/
   ~/.claude/skills/ct-insights/
   ~/.codex/skills/<同上 8 個 skill>/   ← Codex 端安裝位置
-  ~/.claude/plugins/、$CODEX_HOME/plugins/ …  ← plugin 安裝位置（v5.14.0+；完整清單見 § 寫入規則）
+  ${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}/、$CODEX_HOME/plugins/ …  ← plugin 安裝位置（v5.14.0+；完整清單見 § 寫入規則）
 
 Layer 2: Global Learning（使用者級，跨專案，升級不碰）
   ~/.claude/control-tower-data/
@@ -56,9 +56,9 @@ Project (Layer 3) > Global (Layer 2) > Core (Layer 1)
 > 🔴 **本節是「什麼可以／不可以寫進 Layer 1 skill 安裝路徑」的唯一權威定義。**
 > Layer 1 skill 安裝路徑（下稱「Layer 1 路徑」）=
 > - **手動安裝**（zip）：**`~/.claude/skills/` 與 `~/.codex/skills/`** 兩處
-> - **plugin 安裝**（v5.14.0+）：**`~/.claude/plugins/`**（整個目錄，含 `cache/`、`marketplaces/`；有設定 `CLAUDE_CODE_PLUGIN_CACHE_DIR`
->   時，cache 在它指的目錄，`installed_plugins.json`、`known_marketplaces.json` 也一起改到該目錄（v5.14.1 補記，T0357 實測），
->   該目錄同樣算 Layer 1 路徑）、**`$CODEX_HOME/plugins/`**、**`$CODEX_HOME/.tmp/marketplaces/`**
+> - **plugin 安裝**（v5.14.0+）：**`${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}/`**（整個目錄，含 `installed_plugins.json`、`known_marketplaces.json`、
+>   `cache/`、`marketplaces/`；只有這一處：設了 `CLAUDE_CODE_PLUGIN_CACHE_DIR` 就是它指的目錄，只設 `CLAUDE_CONFIG_DIR` 就是
+>   `${CLAUDE_CONFIG_DIR}/plugins/`，都沒設是 `~/.claude/plugins/`；v5.14.4 改寫，T0357、T0374 實測）、**`$CODEX_HOME/plugins/`**、**`$CODEX_HOME/.tmp/marketplaces/`**
 >   （`CODEX_HOME` 未設定時是 `~/.codex`）
 >
 > Q1 ~ Q4 對上列每一處**同樣適用**，差異只在各題明列之處（Q2 機制實證與 plugin 機制、Q3 plugin 的安裝方式、Q4 備份落點與 plugin 不備份）。
@@ -69,7 +69,7 @@ Project (Layer 3) > Global (Layer 2) > Core (Layer 1)
 |----|------|--------|------|
 | Layer 1 | `~/.claude/skills/` | ❌ 永遠不可寫入（唯一例外見 Q3） | **整個路徑**，不限於 skill 定義檔 |
 | Layer 1 | `~/.codex/skills/` | ❌ 永遠不可寫入（唯一例外見 Q3） | **整個路徑**，不限於 skill 定義檔 |
-| Layer 1 | `~/.claude/plugins/`（含 `cache/`、`marketplaces/`）；`CLAUDE_CODE_PLUGIN_CACHE_DIR`（有設定時） | ❌ 永遠不可寫入（唯一例外見 Q3：只能透過 plugin 指令） | **整個路徑**，不限於 skill 定義檔（v5.14.0+） |
+| Layer 1 | `${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}/`（含 `cache/`、`marketplaces/`） | ❌ 永遠不可寫入（唯一例外見 Q3：只能透過 plugin 指令） | **整個路徑**，不限於 skill 定義檔（v5.14.0+） |
 | Layer 1 | `$CODEX_HOME/plugins/`、`$CODEX_HOME/.tmp/marketplaces/`（`CODEX_HOME` 預設 `~/.codex`） | ❌ 永遠不可寫入（唯一例外見 Q3：只能透過 plugin 指令） | **整個路徑**，不限於 skill 定義檔（v5.14.0+） |
 | Layer 2 | `~/.claude/control-tower-data/` | ✅ 學習萃取、設定修改 | — |
 | Layer 3 | `<project>/_ct-workorders/` | ✅ 工單執行、學習記錄 | — |

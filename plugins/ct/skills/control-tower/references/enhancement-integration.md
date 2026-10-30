@@ -99,24 +99,42 @@ Control Tower 不內嵌 `BMad-Guide-Skill` 或 `BMad-Method` 內容。Level 2 �
 
 檢查 `bmad-guide` skill 是否可用：
 
-1. 依下列順序找 `bmad-guide/SKILL.md`，**第一個讀得到的就用它**，不再往下找（v5.14.1+）：
+1. 先認定塔台自己跑在哪個 runtime（Claude Code 或 Codex，即塔台所在的 agent），再依下列順序找 `bmad-guide/SKILL.md`，
+   **第一個讀得到的就用它**，不再往下找（v5.14.1+；v5.14.4 起依 runtime 分開）：
 
-   | 順序 | 安裝方式 | 去哪裡找 |
-   |---|---|---|
-   | (a) | 手動安裝（zip） | `skills/bmad-guide/SKILL.md`：`~/.claude/skills/`、`~/.codex/skills/`、`~/.agents/skills/` |
-   | (b) | Claude plugin | `${CLAUDE_CODE_PLUGIN_CACHE_DIR:-~/.claude/plugins}/installed_plugins.json` 中 key 為 `bmad-guide@<任一 marketplace>` 的 `installPath` → `<installPath>/skills/bmad-guide/SKILL.md`。有設定 `CLAUDE_CONFIG_DIR` 時也查 `${CLAUDE_CONFIG_DIR}/plugins/installed_plugins.json`（它是否影響 plugin 位置尚未驗證） |
-   | (c) | Codex plugin | `${CODEX_HOME:-~/.codex}/config.toml` 中有 `[plugins."bmad-guide@<任一 marketplace>"]` 且 `enabled = true` → `${CODEX_HOME:-~/.codex}/plugins/cache/<marketplace>/bmad-guide/<version>/skills/bmad-guide/SKILL.md`（有多個 `<version>` 目錄時取最新版號） |
+   | 順序 | 找什麼 | Claude Code 塔台 | Codex 塔台 |
+   |---|---|---|---|
+   | ① | 本 runtime 的手動安裝（zip） | Claude 手動 | Codex 手動 |
+   | ② | 本 runtime 的 plugin | Claude plugin | Codex plugin |
+   | ③ | 另一個 runtime 的手動安裝，再來是它的 plugin（**只當讀檔來源**） | Codex 手動 → Codex plugin | Claude 手動 → Claude plugin |
 
-   - **手動優先**：(a) 與 (b)／(c) 並存時用手動安裝那份，和 agent 實際載入的一致（同名的一般 skill 存在時 plugin 版不生效，
-     見 [auto-session.md](auto-session.md) § 依安裝方式的 skill 呼叫字串）。
+   各來源的位置：
+
+   | 來源 | 去哪裡找 |
+   |---|---|
+   | Claude 手動 | `${CLAUDE_CONFIG_DIR:-~/.claude}/skills/bmad-guide/SKILL.md` |
+   | Codex 手動 | `${CODEX_HOME:-~/.codex}/skills/bmad-guide/SKILL.md`，再來是 `~/.agents/skills/bmad-guide/SKILL.md`（Codex 文件列的使用者層 skill 位置；Claude Code 不讀這裡） |
+   | Claude plugin | `${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}/installed_plugins.json` 中 key 為 `bmad-guide@<任一 marketplace>` 的 `installPath` → `<installPath>/skills/bmad-guide/SKILL.md` |
+   | Codex plugin | `${CODEX_HOME:-~/.codex}/config.toml` 中有 `[plugins."bmad-guide@<任一 marketplace>"]` 且 `enabled = true` → `${CODEX_HOME:-~/.codex}/plugins/cache/<marketplace>/bmad-guide/<version>/skills/bmad-guide/SKILL.md`（有多個 `<version>` 目錄時取最新版號） |
+
+   - **同一個 runtime 內手動優先**：① 與 ② 並存時用手動安裝那份，和本 runtime 的 agent 實際載入的一致（同名的一般 skill 存在時
+     plugin 版不生效，見 [auto-session.md](auto-session.md) § 依安裝方式的 skill 呼叫字串）。這個理由只在同一個 runtime 內成立：
+     Claude Code 不載入 `~/.codex/skills/`、`~/.agents/skills/`，Codex 也不載入 Claude 的 `skills/`，所以另一個 runtime 的手動安裝
+     排在本 runtime 的 plugin 之後（v5.14.4+）。
+   - **③ 只當讀檔來源**：本 runtime 的 agent 沒有載入這一份，版本與 `references/` 可能和使用者在本 runtime 呼叫得到的不同（本 runtime
+     ①、② 都沒有時，使用者在這裡根本叫不到 bmad-guide）。照常用它查 workflow routing，並在第一次用到時（派工摘要的備註或回覆裡）
+     註明一次「bmad-guide 讀自 〈另一個 runtime〉 的安裝，不是本 runtime 載入的」，不阻塞 Tower；第 2 步的版本提示照常。
+   - **Claude plugin 根目錄只有一處**：`${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}`。
+     `installed_plugins.json`、`known_marketplaces.json`、`cache/`、`marketplaces/` 都在這一處：設了 `CLAUDE_CODE_PLUGIN_CACHE_DIR`
+     就在它指的目錄；只設 `CLAUDE_CONFIG_DIR` 就在 `${CLAUDE_CONFIG_DIR}/plugins/`（T0357、T0374 實測）。設了其中任一個時，
+     `~/.claude/plugins/` 屬於另一份設定，不是本 session 載入的 plugin，不查。
    - marketplace 名稱不寫死：以 `bmad-guide@*` 比對（官方 marketplace 是 `control-tower`，見
      [version-governance.md](version-governance.md) § plugin 安裝／升級）。
-   - `CLAUDE_CODE_PLUGIN_CACHE_DIR` 有設定時，`installed_plugins.json` 與 `cache/` 都在它指的目錄（T0357 實測），不在 `~/.claude/plugins/`。
-   - 🔴 **只讀**：(b)、(c) 是 plugin 安裝路徑，屬 Layer 1，不得寫入（[data-layer-architecture.md](data-layer-architecture.md) § 寫入規則）。
+   - 🔴 **只讀**：Claude plugin、Codex plugin 是 plugin 安裝路徑，屬 Layer 1，不得寫入（[data-layer-architecture.md](data-layer-architecture.md) § 寫入規則）。
 2. 讀取 `current_version` marker；若低於任務所需版本，顯示升級提示但不阻塞 Tower。
 3. 嘗試讀取 `references/workflow-map.md`；成功即視為 Level 2 可用。`references/` 以及其他 bmad-guide 檔案一律**相對於第 1 步找到的
    `SKILL.md` 所在目錄**（plugin 安裝是 `<installPath>/skills/bmad-guide/references/`），不另外假設 `~/.claude/skills/`。
-4. 三處都找不到或讀不到時，改用手動 workflow 欄位：
+4. 第 1 步的來源全部找不到或讀不到時，改用手動 workflow 欄位：
    - **可用 skill 清單裡有 `bmad-guide` 或 `bmad-guide:bmad-guide`**（表示已安裝，只是塔台讀不到）→ **提示使用者一次**（本 session 一次，
      一句話＋建議），例：「偵測到 bmad-guide 已安裝但讀不到它的檔案，BMad workflow 欄位先改手動；可告訴我 `SKILL.md` 的位置，或改用
      zip 手動安裝」。之後照常改手動欄位，不阻塞 Tower。
@@ -183,7 +201,7 @@ brownfield-reverse-eng playbook 已在 2 個專案中驗證。
 要我更新 bmad-guide 的 brownfield.md 嗎？
 ```
 
-bmad-guide 是 plugin 安裝（§ 偵測 第 1 步 (b)、(c)）時，不改已安裝的檔案（Layer 1，見 § 偵測 的「只讀」）；改成提議修改 bmad-guide 的
+bmad-guide 是 plugin 安裝（§ 偵測 第 1 步的 Claude plugin、Codex plugin）時，不改已安裝的檔案（Layer 1，見 § 偵測 的「只讀」）；改成提議修改 bmad-guide 的
 原始碼，隨 bmad-guide 下一版發布（v5.14.1+）。
 
 ## Level 3：mem0 REST（memsync CLI 橋接）

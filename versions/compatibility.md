@@ -16,7 +16,7 @@ description: 每個 CT 功能從哪一版開始、需要哪一版 BAT 與 codex�
 
 ## 每個功能需要的版本
 
-「CT 起始版本」是這個功能在 CT 出現的版本；「BAT 最低版本」與「codex」是功能完整生效需要的版本。BAT 的最低門檻從 `0.5.9-pre.1` 一路提高到 `0.7.1-pre.1`；v5.10 到 v5.13 沒有再提高門檻。v5.14.2 只有「Codex 用 plugin 安裝又接 BAT 派工」需要 `0.7.2-pre.1`，其他功能的門檻不變。v5.14.3 是文件配置，沒有新門檻。
+「CT 起始版本」是這個功能在 CT 出現的版本；「BAT 最低版本」與「codex」是功能完整生效需要的版本。BAT 的最低門檻從 `0.5.9-pre.1` 一路提高到 `0.7.1-pre.1`；v5.10 到 v5.13 沒有再提高門檻。v5.14.2 只有「Codex 用 plugin 安裝又接 BAT 派工」需要 `0.7.2-pre.1`，其他功能的門檻不變。v5.14.3 是文件配置，v5.14.4 是 bmad-guide 偵測的規則修正，都沒有新門檻。
 
 <VersionMatrix />
 
@@ -30,7 +30,7 @@ CT 不內嵌 BMad-Method 的內容。需要 BMad 的 workflow 路由時，塔台
 
 - bmad-guide 顯示 BMad-Method v6.10.0 或更新時，塔台改用 v6.10 起的替代名稱，例如 `bmad-investigate` 已退役、改開 CT 研究型工單或一般調查，`bmad-automator` 改建議 `bmad-loop`。
 - 版本低於任務需要時，塔台只顯示升級提示，不阻塞。
-- bmad-guide 用 plugin marketplace 安裝（`bmad-guide@control-tower`）時，CT 5.14.1 起塔台偵測得到：依序找手動安裝、Claude Code plugin、Codex plugin，兩種並存時用手動那份。CT 5.14.0 與 6.0.0-beta.5 以前的 beta 只查 `skills/` 目錄，搭配它們時仍建議用 zip 手動安裝（6.0.0-beta.6 起 adapter 也偵測得到，尚未實機驗證），見 [BMad Guide Skill › 用 plugin 安裝](/guide/bmad-guide#install-plugin)。
+- bmad-guide 用 plugin marketplace 安裝（`bmad-guide@control-tower`）時，CT 5.14.1 起塔台偵測得到。CT 5.14.4 起先找塔台所在 agent（Claude Code 或 Codex）自己的安裝：這個 agent 的手動安裝 → 這個 agent 的 plugin → 另一個 agent 的安裝（只拿來讀檔，第一次用到時註明一次）；同一個 agent 裡兩種並存時用手動那份。CT 5.14.0 與 6.0.0-beta.5 以前的 beta 只查 `skills/` 目錄，搭配它們時仍建議用 zip 手動安裝（6.0.0-beta.6 起 adapter 也偵測得到，beta.7 實機驗證過），見 [BMad Guide Skill › 用 plugin 安裝](/guide/bmad-guide#install-plugin)。
 - Portal 的內容以 **bmad-guide v6.12.4** 為準。
 
 ## BAT 太舊時會怎樣

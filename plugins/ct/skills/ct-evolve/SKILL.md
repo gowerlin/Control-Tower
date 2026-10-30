@@ -2,7 +2,7 @@
 name: ct-evolve
 description: "Control Tower learning extraction skill for distilling work order experience into reusable patterns, anti-patterns, playbooks, or skill candidates. Use when the user invokes $ct-evolve or /ct-evolve, asks what was learned, wants to promote learnings with --playbook, --skill, --workflow, or --status, or needs FIELDGUIDE candidate tagging from repeated execution evidence."
 ---
-<!-- ct-evolve-version: 5.14.3 -->
+<!-- ct-evolve-version: 5.14.4 -->
 
 # ct-evolve
 

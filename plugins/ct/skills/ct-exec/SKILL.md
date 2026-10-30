@@ -2,7 +2,7 @@
 name: ct-exec
 description: "Control Tower Worker skill for executing a work order end to end from any sub-session. Use when the user invokes $ct-exec or /ct-exec with a T#### work order, asks a worker to start or resume scoped execution, or needs the full lifecycle of reading the work order, marking IN_PROGRESS, implementing only the listed scope, validating, writing the report, committing when required, and notifying Tower or providing a fallback completion message."
 ---
-<!-- ct-exec-version: 5.14.3 -->
+<!-- ct-exec-version: 5.14.4 -->
 
 # ct-exec
 

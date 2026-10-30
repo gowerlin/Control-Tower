@@ -54,7 +54,7 @@ CT 是 8 個 skill，裝在你電腦上 Agent CLI 的 skill 目錄裡：可以�
 |---|---|---|---|
 | Claude Code（zip 手動安裝） | `~/.claude/skills/<skill>/` | `~/.claude/skill-backups/` | `/`（例：`/ct-exec T0001`） |
 | Codex（zip 手動安裝） | `~/.codex/skills/<skill>/` | `~/.codex/skill-backups/` | `$`（例：`$ct-exec T0001`） |
-| Claude Code（plugin） | `~/.claude/plugins/` 底下，由 Claude Code 管理 | 不備份 | `/`（例：`/ct-exec T0001`，完整寫法 `/ct:ct-exec T0001`） |
+| Claude Code（plugin） | `~/.claude/plugins/` 底下（設了 `CLAUDE_CONFIG_DIR` 或 `CLAUDE_CODE_PLUGIN_CACHE_DIR` 時跟著搬，只算一處），由 Claude Code 管理 | 不備份 | `/`（例：`/ct-exec T0001`，完整寫法 `/ct:ct-exec T0001`） |
 | Codex（plugin） | `~/.codex/plugins/` 底下，由 Codex 管理 | 不備份 | `$ct:`（例：`$ct:ct-exec T0001`） |
 
 兩端是**各自獨立的安裝**：升級其中一端不會更新另一端，請分別確認版號。plugin 的安裝目錄只能用 plugin 指令安裝、更新或移除，不要手動複製或修改裡面的檔案。
@@ -78,7 +78,7 @@ BMad Guide 裝在同一層：Claude Code 是 `~/.claude/skills/bmad-guide/`，Co
 
 ## 確認現行版號 {#check-version}
 
-版號寫在每個 `SKILL.md` 正文的第一個註解（例如 `<!-- control-tower-version: 5.14.3 -->`），frontmatter 不放版號。下面是 zip 手動安裝的查法；用 plugin 安裝的看 `plugin list --json`，見[確認 plugin 版號](#plugin-version)。
+版號寫在每個 `SKILL.md` 正文的第一個註解（例如 `<!-- control-tower-version: 5.14.4 -->`），frontmatter 不放版號。下面是 zip 手動安裝的查法；用 plugin 安裝的看 `plugin list --json`，見[確認 plugin 版號](#plugin-version)。
 
 ::: code-group
 
@@ -368,7 +368,7 @@ BMad Guide（`bmad-guide`）是 BMad-Method 的互動式學習指南，也是 CT
 - **安裝路徑**：目錄名用 skill 名稱 `bmad-guide`，解壓後把 `bmad-guide-v<版號>/` 的**內容**放進 Claude Code 的 `~/.claude/skills/bmad-guide/` 或 Codex 的 `~/.codex/skills/bmad-guide/`。不要把帶版號的資料夾原封不動放進 `skills/`。兩端是各自獨立的安裝。
 - **升級**：沿用 CT 的同一套流程：先備份到 `skills/` 之外、複製到暫存區複驗後才替換、替換時不先刪除舊目錄，最後逐檔比對 IDENTICAL（見[升級：四步](#upgrade)、[回退](#rollback)）。套用上面那份完整指令時，`SKILLS` 只放 `bmad-guide`；指令是以 skill 名稱找來源目錄，所以先把解壓出來的 `bmad-guide-v<版號>/` 改名為 `bmad-guide/`，`NEW` 指向它的上一層。現行版號看 `SKILL.md` 裡的 `current_version`。
 - **新版從下一個 session 才生效**：和 CT 一樣，正在跑的 session 已經載入舊版。
-- **也可以用 plugin 安裝**：`bmad-guide@control-tower`，和 CT 放在同一個 marketplace（見[用 plugin marketplace 安裝](#plugin)）。zip 與 plugin 擇一；Codex 用 plugin 時呼叫寫法是 `$bmad-guide:bmad-guide`。CT 5.14.1 起塔台的 Level 2 偵測得到 plugin 版；搭配 CT 5.14.0 或 6.0.0-beta.5 以前的 beta 時仍建議用 zip 手動安裝（beta.6 起 adapter 也偵測得到，尚未實機驗證），見 [BMad Guide Skill › 用 plugin 安裝](/guide/bmad-guide#install-plugin)。
+- **也可以用 plugin 安裝**：`bmad-guide@control-tower`，和 CT 放在同一個 marketplace（見[用 plugin marketplace 安裝](#plugin)）。zip 與 plugin 擇一；Codex 用 plugin 時呼叫寫法是 `$bmad-guide:bmad-guide`。CT 5.14.1 起塔台的 Level 2 偵測得到 plugin 版，5.14.4 起先找塔台所在 agent 自己的安裝；搭配 CT 5.14.0 或 6.0.0-beta.5 以前的 beta 時仍建議用 zip 手動安裝（beta.6 起 adapter 也偵測得到，beta.7 實機驗證過），見 [BMad Guide Skill › 用 plugin 安裝](/guide/bmad-guide#install-plugin)。
 
 詳細步驟、claude.ai 的打包方式與 `*update` 怎麼用，見 [BMad Guide Skill](/guide/bmad-guide#install)。
 
@@ -378,7 +378,7 @@ CT 不預先判斷你的 BAT 是哪一版：照常呼叫，失敗時依結束碼
 
 ## 延伸閱讀 {#further}
 
-- CT 安裝與使用指南 § 4. 安裝（4.1 安裝／升級（現行流程，含〈用 plugin marketplace 安裝／升級〉）、4.2 Agent CLI 選擇、4.3 Skill 架構（v5.14.3））、§ 2.56、§ 2.57、§ 2.58
+- CT 安裝與使用指南 § 4. 安裝（4.1 安裝／升級（現行流程，含〈用 plugin marketplace 安裝／升級〉）、4.2 Agent CLI 選擇、4.3 Skill 架構（v5.14.4））、§ 2.56、§ 2.57、§ 2.58
 - `control-tower/references/version-governance.md` § 安裝／升級流程（含 plugin 安裝／升級）、§ 版號事實來源
 - `control-tower/references/data-layer-architecture.md` § 寫入規則（Q1～Q4：Layer 1 路徑（含 plugin 安裝路徑）、備份落點、唯一例外）
 - `control-tower/references/auto-session.md` § BAT 內部終端路由（Better Agent Terminal），派工指令的權威；§ 依安裝方式的 skill 呼叫字串

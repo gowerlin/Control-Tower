@@ -63,14 +63,30 @@ BMad 的知識就只有一個事實來源——外部 `bmad-guide`。這與 `gov
 | 2 | Claude Code plugin | plugin 安裝清單裡 `bmad-guide@<任一 marketplace>` 指的安裝目錄 |
 | 3 | Codex plugin | Codex 設定裡啟用的 `bmad-guide@<任一 marketplace>`，到 plugin cache 取該版本 |
 
+**5.14.4 改成依 runtime 分開。** 上表的第 1 列把 Claude 與 Codex 的 `skills/` 一起查。Claude Code 只裝 plugin、Codex 用 zip 時，
+Claude 塔台第 1 列就命中 Codex 那份——版本和 `references/` 都取自一份 Claude 根本沒載入的安裝（實機驗證時就推導出這個情況）。
+所以順序改成：
+
+| 順序 | 塔台去哪裡讀 |
+|---|---|
+| ① | 本 runtime 的手動安裝（Claude：`${CLAUDE_CONFIG_DIR:-~/.claude}/skills/`；Codex：`${CODEX_HOME:-~/.codex}/skills/`，再 `~/.agents/skills/`） |
+| ② | 本 runtime 的 plugin |
+| ③ | 另一個 runtime 的手動安裝與 plugin——只當讀檔來源，第一次用到時註明一次「不是本 runtime 載入的」 |
+
+同一版也把 Claude plugin 的位置收成一處：`${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}`。原本「設了 `CLAUDE_CONFIG_DIR` 時也查
+`${CLAUDE_CONFIG_DIR}/plugins/`」標著尚未驗證；實測只設 `CLAUDE_CONFIG_DIR` 時，plugin 清單、cache、marketplace 全跟著搬過去，
+`~/.claude/plugins/` 就成了另一份設定的東西，查它只會命中本 session 沒載入的 plugin。
+
 幾個設計上的選擇：
 
-- **第一個讀得到的就用，手動優先。** 兩種都裝時，agent 實際載入的是手動那份（`governance.md` 的並存表），塔台讀同一份，才不會路由和 agent 用的版本對不上
+- **第一個讀得到的就用；同一個 runtime 內手動優先。** 兩種都裝時，agent 實際載入的是手動那份（`governance.md` 的並存表），塔台讀同一份，才不會路由和 agent 用的版本對不上。
+  這個理由只在同一個 runtime 內成立：Claude Code 不載入 Codex 的 `skills/`，反之亦然，所以另一個 runtime 的手動安裝排在本 runtime 的 plugin 之後（v5.14.4）
+- **另一個 runtime 的安裝還是讀，但說一聲。** 本 runtime 都沒裝時，讀另一邊的 reference 仍比改成手動欄位好；只是使用者在這裡叫不到它，版本也可能不同，所以註明一次、不阻斷（v5.14.4）
 - **marketplace 名稱不寫死。** 只比對 `bmad-guide@*`，從別的 marketplace 裝也找得到
 - **`references/` 相對於找到的 SKILL.md。** plugin 版的 reference 不在 `skills/` 底下，所以不另外假設路徑
 - **只讀。** plugin 目錄也是 Layer 1（`three-layer-arch.md` § plugin 安裝路徑也是 Layer 1），偵測只讀不寫
 
-**已安裝卻讀不到：提示一次（v5.14.1）。** 可用 skill 清單裡有 `bmad-guide`（或 plugin 寫法 `bmad-guide:bmad-guide`），三處卻都讀不到檔案時，
+**已安裝卻讀不到：提示一次（v5.14.1）。** 可用 skill 清單裡有 `bmad-guide`（或 plugin 寫法 `bmad-guide:bmad-guide`），搜尋順序裡的每一處卻都讀不到檔案時，
 表示裝了但塔台找不到——這和「沒裝」不一樣，靜默降級會讓使用者誤會。所以塔台在本 session 提示一次（建議告訴塔台 SKILL.md 的位置或改用 zip），
 再照常改手動欄位、不阻斷。清單裡也沒有，才是真的沒裝，照舊靜默。
 

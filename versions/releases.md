@@ -1,19 +1,49 @@
 ---
 title: 更版紀錄
-description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.14.3），更早的版本見演進史。
+description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.14.4），更早的版本見演進史。
 ---
 
 <!-- 本頁由 scripts/sync-ct-release.mjs 從 CT CHANGELOG 產生，請勿手改；要改內容請改來源後重跑。 -->
 
 # 更版紀錄
 
-目前版本 **v5.14.3**（2026-10-30）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 59 版（v2.1.1 ～ v5.12.4）請看[演進史](./evolution)。
+目前版本 **v5.14.4**（2026-10-30）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 60 版（v2.1.1 ～ v5.12.5）請看[演進史](./evolution)。
 
 ::: tip 摘要不具權威
 本頁照錄 CT 的 CHANGELOG，只拿掉工單、決策、驗收回函等內部編號與出處註記。規則的權威定義在 CT 各 skill 與 references，兩者有出入時以 CT 本體為準。
 :::
 
 ::: v-pre
+
+## 5.14.4 <small>2026-10-30</small> {#v5-14-4}
+
+
+> **PATCH：塔台找 bmad-guide 時先找自己這個 runtime 的安裝；Claude plugin 的位置改成單一路徑。**
+> Claude Code 與 Codex 用不同方式裝 bmad-guide 時（例如 Claude 只裝 plugin、Codex 用 zip），Claude 塔台會先讀到 Codex 那份，版本和 `references/` 都可能和 Claude 實際載入的不同；Codex 塔台也一樣，兩邊都有手動安裝時會先讀到 Claude 那份。另外，設了 `CLAUDE_CONFIG_DIR` 的人，塔台會多查一個屬於另一份設定的 plugin 清單。
+> 沒有新命令、新設定、新欄位；BAT 介面、CT 派工命令、斷點 A 正則、exit code 不變。升級只換 skill 檔案（見安裝指南 § 2.60）。
+
+### Fixed
+
+- **Claude 與 Codex 裝法不同時，塔台讀到另一個 runtime 的 bmad-guide**：`enhancement-integration.md` § Level 2 › 偵測（唯一權威）的搜尋順序改成依 runtime 分開——① 本 runtime 的手動安裝 → ② 本 runtime 的 plugin → ③ 另一個 runtime 的手動安裝與 plugin。③ 只當讀檔來源，第一次用到時註明一次「不是本 runtime 載入的」，不阻塞。Claude 手動安裝看 `${CLAUDE_CONFIG_DIR:-~/.claude}/skills/`；Codex 手動安裝看 `${CODEX_HOME:-~/.codex}/skills/`，再看 `~/.agents/skills/`（Codex 文件列的使用者層位置，Claude Code 不讀）。「手動優先」的理由改寫成只在同一個 runtime 內成立
+- **設了 `CLAUDE_CONFIG_DIR` 時查到不屬於本 session 的 plugin 清單**：Claude plugin 的位置改成單一路徑 `${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}`，刪掉「也查 `${CLAUDE_CONFIG_DIR}/plugins/`（尚未驗證）」。實測只設 `CLAUDE_CONFIG_DIR` 時，`installed_plugins.json`、`known_marketplaces.json`、`cache/`、`marketplaces/` 全在 `${CLAUDE_CONFIG_DIR}/plugins/`；兩個變數都設時全在 `CLAUDE_CODE_PLUGIN_CACHE_DIR`
+
+### Changed
+
+- `data-layer-architecture.md` § 寫入規則：Layer 1 的 Claude plugin 路徑同步成上面的單一路徑（範圍不變，只是寫法）
+- 安裝指南：§ 4.1〈安裝路徑與備份落點〉的 Claude plugin 那列同步；§ 1 加一列；新增 § 2.60
+- 版號：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表；安裝指南 § 1、§ 4.1 版號範例與發行物檔名同步（`OLD=5.14.3`、`VER=5.14.4`）
+
+### Notes
+
+- 依 runtime 分開的搜尋順序是依規則推得；之前的實機驗證看到的是舊順序的問題（Claude 塔台推得會取 Codex 那份），新順序本身還沒有實機跑過
+- Codex 手動安裝的兩處（`${CODEX_HOME:-~/.codex}/skills/`、`~/.agents/skills/`）都有 bmad-guide 時，塔台取前者；Codex 不合併同名 skill，兩份都可能出現在選單
+
+### Unchanged
+
+- bmad-guide 找不到時的降級（提示一次、改手動 workflow 欄位）、Codex plugin 的位置、plugin 路徑只讀、`references/` 相對於找到的 `SKILL.md` 不變
+- CT 派工命令（`--skill` + `--workorder`）、BAT 介面、斷點 A 正則、exit code、設定、工單欄位、狀態值不變
+- zip 手動安裝流程、發行物版面（全量 zip、8 個單一 skill zip、Guide zip）、plugin 名稱與內容組成不變
+- 歷史段落（本檔舊段落、版號表舊列、安裝指南舊章節）不改
 
 ## 5.14.3 <small>2026-10-30</small> {#v5-14-3}
 
@@ -269,51 +299,12 @@ description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.14.3），
 - 保留的公開值：BAT 預設安裝路徑（`Program Files` 下的 `BetterAgentTerminal`）、`auto-session.md` § A.1 偵測變數完整表 SSH 列的文件範例位址。
 - 歷史段落只換可識別的名稱，記載的事件、日期與版本內容不改。
 
-## 5.12.5 <small>2026-10-23</small> {#v5-12-5}
-
-
-> **PATCH：退役 `control-tower/references/` 其餘三份 Worker 命令長版說明，仍有效的規則補進 SKILL／reference；`ct-status` 的 `INTERRUPTED` 歸 Needs Tower judgment（文件補完，行為不變）。**
-> 塔台與 Worker 行為以現行 SKILL 為準、不變；設定的值域與預設、工單 metadata、BAT 介面都不變。
-
-### Removed
-
-- **`control-tower/references/ct-done.md`**（57 行）、**`ct-status.md`**（80 行）、**`ct-evolve.md`**（135 行）：ct-* 斜線指令時期的長版說明。
-  原因：三份都不在 `control-tower/SKILL.md` 的 Reference Routing，`control-tower` 與 `ct-*` 的關係由 `control-tower/SKILL.md` 建立；內容又有幾處和現行 SKILL 衝突——
-  `ct-done.md` 先改狀態再填回報區（現行為反序收尾）、收尾後一律回報「完成」（現行依狀態分 `完成`／`部分完成`／`需要協助`）；`ct-status.md` 只讀前 15 行（現行以 frontmatter 為準）；
-  `ct-evolve.md` 偵測到就寫入、結案時「強制生成 playbook（不需確認）」、Playbook 門檻「3+ 工單、100% 成功率」與指錯檔的格式連結（現行為蒸餾＋分流、🟢＋完整序列＋使用者確認）。
-  `ct-evolve.md` 又被 `self-learning-core.md` 連成「完整規範」，照連結讀過去的塔台或 Worker 會拿到錯的規則。仍有效的內容先搬走（見 Changed）再刪。
-  升級後已安裝的這三個檔案不再存在（安裝指南 § 4.1 為整個 skill 目錄替換，舊檔隨舊目錄移走；見 § 2.50）。
-
-### Changed
-
-- `ct-done/SKILL.md`：§ Error Handling 加「工單還是 `PENDING`：說明尚未開工、建議 `ct-exec`、不改工單並停止」；§ Report Repair 加「工單本身要求同步 `sprint-status.yaml` 而漏做時，補救時一併補上」
-  （塔台收單時仍會複查，`work-order-system.md` § sprint-status.yaml 同步）。來源 `ct-done.md` 錯誤處理與 Step 6。
-- `ct-status/SKILL.md` § Output：sync 有落差時，最後一句交給塔台（`*sync` 或說「重新同步」），`ct-status` 本身維持唯讀。來源 `ct-status.md` § sync 差異報告。
-- `ct-evolve/SKILL.md`：§ Extraction Flow 第 2 步估時偏差寫明「actual vs estimate off by more than 50%」；第 6 步後加「完整且 🟢 以上的 recurring sequence 只建議 `--playbook`，萃取模式不自己寫 playbook」；
-  § Reference Routing 加 `enhancement-integration.md` § /ct-evolve Level 1 增強（有 ECC 時；原本只能經 `self-learning-core.md` 間接到達）。
-- `self-learning-core.md` § 學習觸發時機 › `### 3. /ct-evolve`：「完整規範」連結改到 `ct-evolve/SKILL.md`；塔台主動提議的時機搬進來——「Sprint 結束」「Epic 完成」「回顧」、
-  累積 ≥10 筆觀察紀錄且尚未萃取，以及提議格式；結案（「結案」「專案完成」）改成提議對 🟢 以上候選跑 `--playbook`、照 `playbook-engine.md` 確認與分流提問後寫入，
-  外加 ⭐ 候選提議全局化與專案學習總結。「強制生成 playbook（不需確認）」**不搬**（已廢棄的 v4.0 做法）。
-- `playbook-engine.md` § 與 `/ct-evolve` 的整合：首句與表頭的「`/ct-evolve` Step 4」改成「`/ct-evolve`（學習萃取模式）」，「候選來源」改成 `ct-evolve/SKILL.md` § Extraction Flow 找到的 recurring sequences、再由使用者決定是否 `--playbook`。
-
-### Fixed
-
-- **`ct-status` 的 `INTERRUPTED` 沒有 bucket**：它是合法狀態（`work-order-system.md` § 中斷復原、`work-order-template.md`），但 § Status Buckets 三組都沒列。
-  現在歸 **Needs Tower judgment**，並寫明依據：session 中斷後塔台已另開接續工單或重派的原工單，塔台確認接續工單接手後可結掉。
-- 安裝指南新增 § 2.50；§ 4.1 版號範例同步（`OLD=5.12.4`、`VER=5.12.5`、發行物檔名）。
-
-### Unchanged
-
-- 歷史段落（本檔舊版段，含 [5.12.4]「其他三份……保留」、[5.11.0] `ct-evolve.md` 補 `--workflow`、mem0 REST 改寫、[4.0] `ct-evolve.md` 獨立 reference 等條目；
-  `version-governance.md` 版號表舊列；安裝指南 § 2.4x 等舊章節）不改。
-- 塔台 `*evolve`、`*sync`、補救收尾的流程不讀這三份說明，行為不變；`ct-status` 長版的狀態符號表是顯示慣例，不搬。
-
 :::
 
 ## 延伸閱讀 {#further-reading}
 
-- CT `CHANGELOG.md`（共 69 個版本；本頁列最近 10 版）
+- CT `CHANGELOG.md`（共 70 個版本；本頁列最近 10 版）
 - CT `version-governance.md` § 歷史版號表
-- [演進史](./evolution)：更早的 59 版與八個世代
+- [演進史](./evolution)：更早的 60 版與八個世代
 
 Portal 是摘要，不具權威；與 CT reference 有出入時，以 reference 為準。

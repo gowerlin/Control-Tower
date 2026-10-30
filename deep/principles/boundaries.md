@@ -53,7 +53,7 @@ v5.14.0 起用 plugin marketplace 安裝也算寫入 Layer 1，一樣要工單�
 
 ## Layer 1 整個路徑都不能寫，連備份也不行
 
-Layer 1 的保護範圍是**整個** `~/.claude/skills/` 與 `~/.codex/skills/` 路徑，不只是 skill 定義檔；v5.14.0 起也包括 plugin 的安裝路徑（`~/.claude/plugins/`、`~/.codex/plugins/` 等），而且更嚴，連 skill 定義檔都只能由 plugin 指令寫入。備份、暫存檔、封存的舊版、`.bak` 檔，或任何「順手放在旁邊」的目錄，都不得放在這底下。
+Layer 1 的保護範圍是**整個** `~/.claude/skills/` 與 `~/.codex/skills/` 路徑，不只是 skill 定義檔；v5.14.0 起也包括 plugin 的安裝路徑（`~/.claude/plugins/`、`~/.codex/plugins/` 等；Claude Code 的 plugin 目錄設了 `CLAUDE_CONFIG_DIR` 或 `CLAUDE_CODE_PLUGIN_CACHE_DIR` 時跟著搬，只算一處），而且更嚴，連 skill 定義檔都只能由 plugin 指令寫入。備份、暫存檔、封存的舊版、`.bak` 檔，或任何「順手放在旁邊」的目錄，都不得放在這底下。
 
 為什麼連備份都不行？因為 skill 掃描器會把這個路徑**第一層的每個子目錄**當成一個 skill 註冊。一份根層帶 `SKILL.md` 的備份，會以舊版的 description 進入路由候選；它和現役版本高度重疊，路由時可能命中舊版，答出已經被新版推翻的內容，而且沒有任何錯誤訊息。這件事在 Claude Code 端實際發生過；Codex 端未實測，保守起見比照辦理。
 

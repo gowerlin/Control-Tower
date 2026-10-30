@@ -2,7 +2,7 @@
 name: ct-insights
 description: "Control Tower insights skill for analyzing work order history, decision logs, learning records, and usage patterns. Use when the user invokes $ct-insights or /ct-insights, requests project or global workflow health, asks what patterns are good or bad, wants conflicts or improvement suggestions, or wants an evidence-based report from Control Tower records."
 ---
-<!-- ct-insights-version: 5.14.3 -->
+<!-- ct-insights-version: 5.14.4 -->
 
 # ct-insights
 

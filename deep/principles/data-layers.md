@@ -15,7 +15,7 @@ description: Core Skills、Global、Project 三層資料怎麼載入、誰覆蓋
 
 | 層 | 路徑 | 生命週期 | 誰可以寫 |
 |---|---|---|---|
-| Layer 1 Core | `~/.claude/skills/`、`~/.codex/skills/`；plugin 安裝的 `~/.claude/plugins/`、`~/.codex/plugins/` 等（v5.14.0 起） | 隨 skill 版本，升級時整份覆蓋 | 日常運作中**沒有人**；唯一例外是工單明文授權的安裝或升級，plugin 安裝只能用 plugin 指令 |
+| Layer 1 Core | `~/.claude/skills/`、`~/.codex/skills/`；plugin 安裝的 `~/.claude/plugins/`（設了 `CLAUDE_CONFIG_DIR` 或 `CLAUDE_CODE_PLUGIN_CACHE_DIR` 時跟著搬，只算一處）、`~/.codex/plugins/` 等（v5.14.0 起） | 隨 skill 版本，升級時整份覆蓋 | 日常運作中**沒有人**；唯一例外是工單明文授權的安裝或升級，plugin 安裝只能用 plugin 指令 |
 | Layer 2 Global | `~/.claude/control-tower-data/` | 跨專案永久保存，升級不碰 | 塔台、`ct-evolve`（學習萃取、設定修改） |
 | Layer 3 Project | `<專案根目錄>/_ct-workorders/` | 專案層永久保存，跟著專案進版控 | 塔台、Worker（工單執行、學習紀錄） |
 

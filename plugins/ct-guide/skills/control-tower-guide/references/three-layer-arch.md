@@ -13,7 +13,7 @@ Layer 1: Core（唯讀，升級時整份覆蓋）
   ├ ct-exec/  ct-done/  ct-status/
   ├ ct-evolve/  ct-help/  ct-insights/  ct-fieldguide/
   └ （Codex 端對應 ~/.codex/skills/）
-  ~/.claude/plugins/、$CODEX_HOME/plugins/ …  ← plugin 安裝位置（v5.14.0+），同樣是 Layer 1
+  ${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}/、$CODEX_HOME/plugins/ …  ← plugin 安裝位置（v5.14.0+），同樣是 Layer 1
 
 Layer 2: Global（使用者級，跨專案，升級不碰）
   ~/.claude/control-tower-data/
@@ -59,7 +59,7 @@ v5.14.0 起 CT 也能用 plugin 安裝（見 `governance.md` § plugin marketpla
 
 | Agent | plugin 安裝路徑 |
 |---|---|
-| Claude Code | `~/.claude/plugins/`（含 `cache/`、`marketplaces/`；設了 `CLAUDE_CODE_PLUGIN_CACHE_DIR` 時，cache 在它指的目錄） |
+| Claude Code | `${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}/`（含 `installed_plugins.json`、`known_marketplaces.json`、`cache/`、`marketplaces/`；只有這一處，都沒設時是 `~/.claude/plugins/`；v5.14.4 依實測改寫） |
 | Codex | `$CODEX_HOME/plugins/`、`$CODEX_HOME/.tmp/marketplaces/`（`CODEX_HOME` 預設 `~/.codex`） |
 
 這些路徑和 `skills/` 一樣受保護，而且更嚴：連 skill 定義檔本身都只能由 plugin 指令寫入。plugin 目錄由 plugin manager 管理，

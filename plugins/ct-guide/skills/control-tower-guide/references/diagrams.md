@@ -66,7 +66,7 @@
 
 ### 3. 三層架構圖（資料歸屬）
 **When**：「三層是什麼」「設定覆蓋」「為什麼不能在 skills 目錄放備份」
-**節點**：三個水平容器由下到上——Layer 1 Core `~/.claude/skills/`（整個路徑，附註 Codex 端 `~/.codex/skills/`；v5.14.0 起再附註 plugin 安裝路徑 `~/.claude/plugins/`、`$CODEX_HOME/plugins/`，同屬 Layer 1）、Layer 2 Global `~/.claude/control-tower-data/`、Layer 3 Project `_ct-workorders/`（`c-green`）。Layer 1 容器**外側**畫兄弟節點 `~/.claude/skill-backups/`（`c-gray`，附註 Codex 端 `~/.codex/skill-backups/`），與 `skills/` 同層、不在其內
+**節點**：三個水平容器由下到上——Layer 1 Core `~/.claude/skills/`（整個路徑，附註 Codex 端 `~/.codex/skills/`；v5.14.0 起再附註 plugin 安裝路徑 `${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}/`、`$CODEX_HOME/plugins/`，同屬 Layer 1）、Layer 2 Global `~/.claude/control-tower-data/`、Layer 3 Project `_ct-workorders/`（`c-green`）。Layer 1 容器**外側**畫兄弟節點 `~/.claude/skill-backups/`（`c-gray`，附註 Codex 端 `~/.codex/skill-backups/`），與 `skills/` 同層、不在其內
 **連線**：設定覆蓋箭頭 Default → Global → Project → Session（右側直排）；Layer 1 容器邊框標註「日常不寫入；唯一例外 = 工單明文授權的安裝（plugin 只能用 plugin 指令）」
 **變體（同構對照）**：被問到「三層與 memory hierarchy」時，改畫兩個並列面板（資料歸屬 vs 知識存取），遵守上方繪圖禁忌
 **Drill-down**：Layer 1 → `sendPrompt('介紹 Layer 1 寫入規則')` → `three-layer-arch.md` § Layer 1 寫入規則；`skill-backups` → `governance.md` § Layer 1 寫入機制；覆蓋箭頭 → `three-layer-arch.md` § 設定的四層覆蓋

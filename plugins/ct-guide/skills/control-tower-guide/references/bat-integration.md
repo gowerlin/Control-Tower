@@ -631,6 +631,7 @@ CT 從不預先判斷 BAT 版本：一律先照常呼叫，失敗才依 exit cod
 | v5.14.1 | 塔台端派工與回收範本（`--workorder`、`--close-worker`、`--worktree-status`）改寫 `<工單 ID>`，與 v5.13.1 的 Worker 端相同；另有 Level 2 偵測 plugin 版 bmad-guide（不涉 BAT 介面） | 無新門檻（BAT 介面、參數與順序不變） | — |
 | v5.14.2 | Codex 用 plugin 安裝也能接 BAT 派工：BAT 依 Codex 端的安裝方式送 `$ct-exec` 或 `$ct:ct-exec`（CT 派工命令不變；端到端派工未實機驗證） | `>= 0.7.2-pre.1` | 對 Codex 一律送 `$ct-exec`：只裝 plugin 的 Codex Worker 叫不到 CT skill，照 v5.14.0 用 zip 手動安裝；Claude Code 不受影響 |
 | v5.14.3 | 「一個塔台、多個巢狀的獨立 repo」配置（文件）：Worker 在上層執行，派工 `--cwd` 與面板一鍵派工的 cwd 都是上層＝BAT workspace 根；這種工單不能 `isolation: worktree`（不涉 BAT 介面；面板一鍵派工未實機驗證） | 無新門檻（BAT 介面、參數與順序不變） | — |
+| v5.14.4 | Level 2 找 bmad-guide 依 runtime 分開（本 runtime 手動 → 本 runtime plugin → 另一個 runtime 只當讀檔來源）、Claude plugin 位置只有一處 `${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}`（不涉 BAT 介面） | 無新門檻（BAT 介面、參數與順序不變） | — |
 
 `BAT_HELPER_NODE`（v5.2.1）沒有版本門檻：本機沒有這個變數就用 `node`，只有遠端分頁會由 BAT 注入。
 版號以 CT 的 `version-governance.md` § 歷史版號表 與 `auto-session.md` § 依賴的 BAT 基礎設施 為準；v5.1.0 的 BAT 版本出自 CT `CHANGELOG.md` [5.12.3]：[5.1.0] 原寫 `0.6.1-pre.3`，v5.12.3 依 BAT 塔台回覆更正為 `>= 0.6.1-pre.4`（歷史段落不改）。
