@@ -30,7 +30,7 @@ CT 不內嵌 BMad-Method 的內容。需要 BMad 的 workflow 路由時，塔台
 
 - bmad-guide 顯示 BMad-Method v6.10.0 或更新時，塔台改用 v6.10 起的替代名稱，例如 `bmad-investigate` 已退役、改開 CT 研究型工單或一般調查，`bmad-automator` 改建議 `bmad-loop`。
 - 版本低於任務需要時，塔台只顯示升級提示，不阻塞。
-- bmad-guide 用 plugin marketplace 安裝（`bmad-guide@control-tower`）時，CT 5.14.1 起塔台偵測得到：依序找手動安裝、Claude Code plugin、Codex plugin，兩種並存時用手動那份。CT 5.14.0 與 6.0.0 beta 只查 `skills/` 目錄，搭配它們時仍建議用 zip 手動安裝，見 [BMad Guide Skill › 用 plugin 安裝](/guide/bmad-guide#install-plugin)。
+- bmad-guide 用 plugin marketplace 安裝（`bmad-guide@control-tower`）時，CT 5.14.1 起塔台偵測得到：依序找手動安裝、Claude Code plugin、Codex plugin，兩種並存時用手動那份。CT 5.14.0 與 6.0.0-beta.5 以前的 beta 只查 `skills/` 目錄，搭配它們時仍建議用 zip 手動安裝（6.0.0-beta.6 起 adapter 也偵測得到，尚未實機驗證），見 [BMad Guide Skill › 用 plugin 安裝](/guide/bmad-guide#install-plugin)。
 - Portal 的內容以 **bmad-guide v6.12.4** 為準。
 
 ## BAT 太舊時會怎樣
@@ -52,22 +52,24 @@ BAT 站也有一張相容表，是從 BAT 的角度列（<BatLink path="compatib
 
 ## Beta {#preview}
 
-上面的表格只列**穩定版**。CT v6.0.0-beta.5 是 Beta，放在 GitHub 預發行 Release、與穩定版並行，不列入表格；它的內容與下載見[Beta：方法論轉接](../preview/methodology-adapters)。
+上面的表格只列**穩定版**。CT v6.0.0-beta.6 是 Beta，放在 GitHub 預發行 Release、與穩定版並行，不列入表格；它的內容與下載見[Beta：方法論轉接](../preview/methodology-adapters)。
 
 BAT 指揮塔總覽讀塔台狀態摘要的版本需求如下；v5.13.0 起穩定版也寫同一份摘要（上表也列了這一項）：
 
 | 功能 | BAT | CT |
 |---|---|---|
 | 總覽顯示最後更新與進行中工單 | `>= 0.7.1-pre.7`（預覽版） | 不限版本（BAT 直接讀工單檔） |
-| 總覽顯示下一個編號與待辦 | `>= 0.7.1-pre.7`（預覽版） | 穩定版 `>= v5.13.0`；v6 預覽版 `>= v6.0.0-pre.1`（含 Beta v6.0.0-beta.1～v6.0.0-beta.5）。塔台寫出 `_tower-state.md` 的機器可讀摘要 |
+| 總覽顯示下一個編號與待辦 | `>= 0.7.1-pre.7`（預覽版） | 穩定版 `>= v5.13.0`；v6 預覽版 `>= v6.0.0-pre.1`（含 Beta v6.0.0-beta.1～v6.0.0-beta.6）。塔台寫出 `_tower-state.md` 的機器可讀摘要 |
 
-CT 版本不夠時，總覽只是少了這兩項，其他照常顯示。方法論轉接本身沒有改變 BAT 介面，也沒有提高 CT 要求的最低 BAT 版本；beta.1～beta.5 的 BAT 介面與最低 BAT 版本都和 v6.0.0-pre.1 相同；beta.2 改的環境偵測寫法（bash 用 `compgen -e` 只列名稱）是 CT 這一側的指令寫法，不需要新的 BAT 版本。
+CT 版本不夠時，總覽只是少了這兩項，其他照常顯示。方法論轉接本身沒有改變 BAT 介面，也沒有提高 CT 要求的最低 BAT 版本；beta.1～beta.6 的 BAT 介面與最低 BAT 版本都和 v6.0.0-pre.1 相同；beta.2 改的環境偵測寫法（bash 用 `compgen -e` 只列名稱）是 CT 這一側的指令寫法，不需要新的 BAT 版本。
 
 beta.3 新增 BAT 塔台面板讀取契約：CT 寫的決策日誌、BUG／PLAN 索引、塔台狀態等檔案要長什麼樣、多大以內，BAT 指揮塔面板才讀得到（見 [BAT 塔台面板為什麼會空](../deep/features/observability#bat-panel)）。契約對照 BAT `0.7.1-pre.8`（預覽版）寫成，規範的是 CT 寫檔的格式與大小，不是新的最低 BAT 版本；穩定版 v5.13.0 起也有同一份契約，v5.13.1 把穩定版契約的對照版本改成 BAT `0.7.1-pre.9`（讀不到時顯示「無法讀取」），一樣沒有提高最低 BAT 版本。
 
 beta.4 的 BAT 介面同 beta.3；面板讀取契約改成對照 BAT `0.7.1-pre.9`（預覽版）：pre.9 起讀不到檔時顯示「無法讀取」、`critical` 在任何讀取路徑都算 High，更舊的 BAT 照舊靜默變空，所以 400 KB 預算保留。這和穩定版 v5.13.1 是同一份契約，同樣不是新的最低 BAT 版本。beta.4 另把通知改成用完整工單 ID（設了前綴就含前綴），這是 CT 這一側的寫法，派工命令與 BAT 介面不變，不需要新的 BAT 版本。
 
 beta.5 的 BAT 介面同 beta.4：移植的是穩定版 v5.14.0 的 plugin 安裝就緒規則，派工命令、斷點 A 的判定格式與最低 BAT 版本都不變，不需要新的 BAT 版本。BAT 對 Codex 派工送的是 `$ct-exec`，plugin 版的 Codex 叫不到，所以接 BAT 派工的 Codex 用 zip 手動安裝；Beta 本來就只提供 zip、沒有 plugin，不受影響。
+
+beta.6 的 BAT 介面同 beta.5：移植的是穩定版 v5.14.1、v5.14.2 的規則，派工命令、斷點 A 的判定格式與 CT 要求的最低 BAT 版本都不變。其中 Codex 搭配 BAT 派工改成依 BAT 版本：BAT `>= 0.7.2-pre.1` 依 Codex 端的安裝方式送 `$ct-exec` 或 `$ct:ct-exec`，zip 與 plugin 都能接派工；更舊的 BAT 一律送 `$ct-exec`，只有 zip 手動安裝叫得到。Codex 用 plugin 接 BAT 派工才需要 BAT `>= 0.7.2-pre.1`；Beta 本身只提供 zip，只有同一台機器另裝穩定版的 CT plugin 時才相關，這條端到端流程還沒實機驗證。
 
 beta.1 改成 BUG／PLAN／EXP 預設開啟，啟用時立即產生 `_bug-tracker.md`、`_backlog.md`，BAT 指揮塔面板的「臭蟲」與「待辦池」因此不必等第一次 `*sync` 就有檔可讀；這不需要新的 BAT 版本。
 

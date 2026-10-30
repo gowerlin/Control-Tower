@@ -137,7 +137,7 @@
     {
       "feature": "Level 2 偵測得到 plugin 安裝的 bmad-guide；塔台端派工與回收範本用完整工單 ID",
       "ct": "v5.14.1",
-      "note": "BAT 介面、派工命令的參數與順序、最低 BAT 版本都不變。塔台依序找手動安裝、Claude Code plugin、Codex plugin，並存時用手動那份；已安裝卻讀不到時提示一次。CT 5.14.0 與 6.0.0 beta 只查 skills/ 目錄，搭配它們時 bmad-guide 仍建議用 zip 手動安裝。",
+      "note": "BAT 介面、派工命令的參數與順序、最低 BAT 版本都不變。塔台依序找手動安裝、Claude Code plugin、Codex plugin，並存時用手動那份；已安裝卻讀不到時提示一次。CT 5.14.0 與 6.0.0-beta.5 以前的 beta 只查 skills/ 目錄，搭配它們時 bmad-guide 仍建議用 zip 手動安裝；6.0.0-beta.6 起 adapter 也偵測得到，尚未實機驗證。",
       "source": "CHANGELOG.md [5.14.1]；enhancement-integration.md § Level 2：外部 bmad-guide › 偵測；auto-session.md § 執行方式"
     },
     {

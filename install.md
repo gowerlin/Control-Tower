@@ -368,7 +368,7 @@ BMad Guide（`bmad-guide`）是 BMad-Method 的互動式學習指南，也是 CT
 - **安裝路徑**：目錄名用 skill 名稱 `bmad-guide`，解壓後把 `bmad-guide-v<版號>/` 的**內容**放進 Claude Code 的 `~/.claude/skills/bmad-guide/` 或 Codex 的 `~/.codex/skills/bmad-guide/`。不要把帶版號的資料夾原封不動放進 `skills/`。兩端是各自獨立的安裝。
 - **升級**：沿用 CT 的同一套流程：先備份到 `skills/` 之外、複製到暫存區複驗後才替換、替換時不先刪除舊目錄，最後逐檔比對 IDENTICAL（見[升級：四步](#upgrade)、[回退](#rollback)）。套用上面那份完整指令時，`SKILLS` 只放 `bmad-guide`；指令是以 skill 名稱找來源目錄，所以先把解壓出來的 `bmad-guide-v<版號>/` 改名為 `bmad-guide/`，`NEW` 指向它的上一層。現行版號看 `SKILL.md` 裡的 `current_version`。
 - **新版從下一個 session 才生效**：和 CT 一樣，正在跑的 session 已經載入舊版。
-- **也可以用 plugin 安裝**：`bmad-guide@control-tower`，和 CT 放在同一個 marketplace（見[用 plugin marketplace 安裝](#plugin)）。zip 與 plugin 擇一；Codex 用 plugin 時呼叫寫法是 `$bmad-guide:bmad-guide`。CT 5.14.1 起塔台的 Level 2 偵測得到 plugin 版；搭配 CT 5.14.0 或 6.0.0 beta 時仍建議用 zip 手動安裝，見 [BMad Guide Skill › 用 plugin 安裝](/guide/bmad-guide#install-plugin)。
+- **也可以用 plugin 安裝**：`bmad-guide@control-tower`，和 CT 放在同一個 marketplace（見[用 plugin marketplace 安裝](#plugin)）。zip 與 plugin 擇一；Codex 用 plugin 時呼叫寫法是 `$bmad-guide:bmad-guide`。CT 5.14.1 起塔台的 Level 2 偵測得到 plugin 版；搭配 CT 5.14.0 或 6.0.0-beta.5 以前的 beta 時仍建議用 zip 手動安裝（beta.6 起 adapter 也偵測得到，尚未實機驗證），見 [BMad Guide Skill › 用 plugin 安裝](/guide/bmad-guide#install-plugin)。
 
 詳細步驟、claude.ai 的打包方式與 `*update` 怎麼用，見 [BMad Guide Skill](/guide/bmad-guide#install)。
 

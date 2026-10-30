@@ -160,7 +160,7 @@ codex plugin add bmad-guide@control-tower</code></pre></div>
 - **zip 與 plugin 擇一**：兩種並存時，`skills/bmad-guide/` 裡手動安裝的那份會生效，plugin 版不生效，而且看不出差別。改用 plugin 前，先把手動安裝備份到 `skills/` 之外再移走，做法同[安裝 › 從 zip 手動安裝改用 plugin](/install#plugin)。
 - **呼叫寫法**：Claude Code 照常用 `/bmad-guide`（完整寫法 `/bmad-guide:bmad-guide`）；Codex 一律帶前綴 `$bmad-guide:bmad-guide`，從 shell 帶參數時用單引號包住。
 - **更新交給 plugin 指令**：`claude plugin marketplace update control-tower` 再 `claude plugin update bmad-guide@control-tower`；Codex 啟動時自動升級 marketplace。plugin 版**不要用 `*update`**：`*update` 會改寫已安裝 skill 的目錄，而 plugin 的安裝目錄由 Agent CLI 管理，改了會在下次 plugin 更新時被蓋掉，內容也會和 plugin 的版號對不上。等新版 bmad-guide 發布後，用 plugin 指令更新。
-- **CT 塔台的 Level 2**：CT 5.14.1 起，塔台依序找手動安裝的 `skills/bmad-guide/`、Claude Code 的 plugin、Codex 的 plugin，用 plugin 安裝也偵測得到；兩種並存時用手動那份。CT 5.14.0 只查 `skills/` 目錄，6.0.0 beta 的方法論 adapter 也只查 `skills/bmad-guide/`，搭配這兩者時仍建議用 zip 手動安裝，否則塔台找不到它，會安靜地改成手動填寫工作流程欄位。
+- **CT 塔台的 Level 2**：CT 5.14.1 起，塔台依序找手動安裝的 `skills/bmad-guide/`、Claude Code 的 plugin、Codex 的 plugin，用 plugin 安裝也偵測得到；兩種並存時用手動那份。CT 5.14.0 只查 `skills/` 目錄，6.0.0-beta.5 以前的 beta 的方法論 adapter 也只查 `skills/bmad-guide/`，搭配這兩者時仍建議用 zip 手動安裝（6.0.0-beta.6 起 adapter 也偵測得到 plugin 版，尚未實機驗證），否則塔台找不到它，會安靜地改成手動填寫工作流程欄位。
 - 其他指令（確認版號、移除）和 CT 的 plugin 相同，見[安裝 › 用 plugin marketplace 安裝](/install#plugin)。
 
 **在 claude.ai 使用**：claude.ai 一次只接受一個 skill 的 zip，而且 zip 的最上層必須是和 `SKILL.md` 的 `name` 同名的資料夾（見[安裝 › 打包](/install#claude-ai-zip)）。發行 zip 的最上層是 `bmad-guide-v<版號>/`，名稱不符，所以要先把資料夾改名為 `bmad-guide/` 再壓一次：
