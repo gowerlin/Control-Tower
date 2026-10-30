@@ -62,7 +62,7 @@ BAT 指揮塔總覽讀塔台狀態摘要的版本需求如下；v5.13.0 起穩�
 
 CT 版本不夠時，總覽只是少了這兩項，其他照常顯示。方法論轉接本身沒有改變 BAT 介面，也沒有提高 CT 要求的最低 BAT 版本；beta.1～beta.3 的 BAT 介面與最低 BAT 版本都和 v6.0.0-pre.1 相同；beta.2 改的環境偵測寫法（bash 用 `compgen -e` 只列名稱）是 CT 這一側的指令寫法，不需要新的 BAT 版本。
 
-beta.3 新增 BAT 塔台面板讀取契約：CT 寫的決策日誌、BUG／PLAN 索引、塔台狀態等檔案要長什麼樣、多大以內，BAT 指揮塔面板才讀得到（見 [BAT 塔台面板為什麼會空](../deep/features/observability#bat-panel)）。契約對照 BAT `0.7.1-pre.8`（預覽版）寫成，規範的是 CT 寫檔的格式與大小，不是新的最低 BAT 版本；穩定版 v5.13.0 起也有同一份契約。
+beta.3 新增 BAT 塔台面板讀取契約：CT 寫的決策日誌、BUG／PLAN 索引、塔台狀態等檔案要長什麼樣、多大以內，BAT 指揮塔面板才讀得到（見 [BAT 塔台面板為什麼會空](../deep/features/observability#bat-panel)）。契約對照 BAT `0.7.1-pre.8`（預覽版）寫成，規範的是 CT 寫檔的格式與大小，不是新的最低 BAT 版本；穩定版 v5.13.0 起也有同一份契約，v5.13.1 把穩定版契約的對照版本改成 BAT `0.7.1-pre.9`（讀不到時顯示「無法讀取」），一樣沒有提高最低 BAT 版本。
 
 beta.1 改成 BUG／PLAN／EXP 預設開啟，啟用時立即產生 `_bug-tracker.md`、`_backlog.md`，BAT 指揮塔面板的「臭蟲」與「待辦池」因此不必等第一次 `*sync` 就有檔可讀；這不需要新的 BAT 版本。
 

@@ -94,7 +94,7 @@ CT 的功能隨可選元件遞增。每項偵測各自獨立，可以任意組�
 
 - `control-tower/SKILL.md` § Built-In Commands、§ Hard Boundaries
 - `ct-help/SKILL.md` § Command Families
-- CT 安裝與使用指南 § 4.3 Skill 架構（v5.13.0）、§ 5. 四級能力等級、§ 13. Config 速查表（v5.13.0）、§ 14. 命令速查表（v5.13.0）
+- CT 安裝與使用指南 § 4.3 Skill 架構（v5.13.1）、§ 5. 四級能力等級、§ 13. Config 速查表（v5.13.1）、§ 14. 命令速查表（v5.13.1）
 - CT Guide `references/ecosystem.md` § 八個 Skill 元件、§ 三軌前綴：`*`、`/`、`$`、§ 能力等級（Level 0-3）
 - `control-tower/references/tower-config.md` § `*config` 命令、§ 可用選項、§ 作用域與持久化
 

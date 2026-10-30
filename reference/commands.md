@@ -82,9 +82,9 @@ const towerRows = [
 - **參數**：一個工單編號或路徑。同一個編號在 `_ct-workorders/` 下找到多張時，Worker 停下來請你指定。
 - **執行環境**：由塔台派工時傳入，Worker 不讀設定檔決定模式。`CT_MODE`：`yolo`／`ask`／`off`／`on`（沒有或不合法時當成 `ask`）；`CT_INTERACTIVE`：`1` 允許研究型互動、`0` 禁止；`CT_HOME`：在 BAT 的 worktree 隔離分頁裡才有，指向主 checkout。
 - **在哪用**：Worker session（一張工單一個新的 session）。
-- **做什麼**：執行一張工單的完整生命週期——讀專案規則與整張工單 → **落點檢查**（任何寫入之前；`repo` 不符就停）→ 標 `IN_PROGRESS` → 只在範圍內執行 → 跑驗收、證據分道記錄 → **反序收尾**（產品 commit → 回報區 → 最終狀態 → 工單 commit）→ 通知塔台。工單原本就是 `IN_PROGRESS` 時記成接續執行。`CT_MODE=yolo` 時不問你，有問題寫進工單問塔台。
-- **起始版本**：v2.1.1（獨立 skill：v3.1.0；`$` 入口：v5.0.3；落點檢查：v5.0.4；yolo 向塔台提問：v5.5.0）
-- **權威出處**：`ct-exec/SKILL.md`（§ Startup、§ Mode And Environment、§ Landing Zone Check、§ Phase 1～4、§ Questions For Tower (`CT_MODE=yolo`, v5.5.0+)、§ BAT Notify And Fallback）
+- **做什麼**：執行一張工單的完整生命週期——讀專案規則與整張工單 → **落點檢查**（任何寫入之前；`repo` 不符就停）→ 標 `IN_PROGRESS` → 只在範圍內執行 → 跑驗收、證據分道記錄 → **反序收尾**（產品 commit → 回報區 → 最終狀態 → 工單 commit）→ 通知塔台。通知與提問用收到的**完整工單 ID**：`/ct-exec CP-T0113` 回的是 `CP-T0113 完成`，不會截成 `T0113`；送出前先和工單 frontmatter 的 `id` 比對，不一致就改用 `id`（v5.13.1 起）。工單原本就是 `IN_PROGRESS` 時記成接續執行。`CT_MODE=yolo` 時不問你，有問題寫進工單問塔台。
+- **起始版本**：v2.1.1（獨立 skill：v3.1.0；`$` 入口：v5.0.3；落點檢查：v5.0.4；yolo 向塔台提問：v5.5.0；完整工單 ID 通知：v5.13.1）
+- **權威出處**：`ct-exec/SKILL.md`（§ Startup、§ Mode And Environment、§ Landing Zone Check、§ Phase 1～4、§ Questions For Tower (`CT_MODE=yolo`, v5.5.0+)、§ BAT Notify And Fallback）；`control-tower/references/work-order-system.md` § 回報與通知用的工單 ID
 - **相關**：[一張工單的一生](/lifecycle#worker)、[落點檢查](/deep/features/landing-check)、[Worker 向塔台提問](/deep/features/worker-questions)
 
 ### `/ct-done T#### [狀態]` {#ct-done}
@@ -92,9 +92,9 @@ const towerRows = [
 - **語法**：`/ct-done T#### [DONE|FIXED|PARTIAL|BLOCKED|FAILED]`（Codex：`$ct-done …`）
 - **參數**：工單編號或路徑；可選的最終狀態。沒給狀態時，依回報區的證據判斷，判斷不了就問你。`ABANDONED` 這類退役狀態只在範圍決定要退役這張工單時使用。
 - **在哪用**：Worker session（補救用）。
-- **做什麼**：只做收尾的修補，**不做新的產品工作**——落點檢查 → 收集現況證據（`git status`、變更檔、最近的 commit）→ 先補齊回報區缺的欄位 → 再更新狀態 → commit 工單檔本身 → 通知塔台。產品改動不替你 commit，只告訴你哪些看起來還沒 commit。遇到原本是 `PARTIAL`、但卡點已經解除的工單，補一段事後註記並改成 `DONE`。不會送 `T#### 提問`。
+- **做什麼**：只做收尾的修補，**不做新的產品工作**——落點檢查 → 收集現況證據（`git status`、變更檔、最近的 commit）→ 先補齊回報區缺的欄位 → 再更新狀態 → commit 工單檔本身 → 通知塔台（和 `/ct-exec` 一樣用完整工單 ID）。產品改動不替你 commit，只告訴你哪些看起來還沒 commit。遇到原本是 `PARTIAL`、但卡點已經解除的工單，補一段事後註記並改成 `DONE`。不會送 `T#### 提問`。
 - **起始版本**：v2.1.1（獨立 skill：v3.1.0）
-- **權威出處**：`ct-done/SKILL.md` § Workflow、§ Status Selection、§ Commit Check、§ BAT Notify
+- **權威出處**：`ct-done/SKILL.md` § Workflow、§ Status Selection、§ Commit Check、§ BAT Notify；`control-tower/references/work-order-system.md` § 回報與通知用的工單 ID
 - **相關**：[常見問題 › 卡在 IN_PROGRESS](/faq#in-progress)、[中斷、Renew 與補救收尾](/deep/features/recovery)
 
 ### `/ct-status [參數]` {#ct-status}
@@ -225,7 +225,7 @@ const towerRows = [
   | `auto-session` | `on`／`ask`／`off`／`yolo` | `ask` | 派工後的行為：`on` 靜默開新分頁；`ask` 先問；`off` 只給文字提示；`yolo` 是 `on` 的超集，Worker 自動送出、塔台自主決定下一張 |
   | `yolo_max_retries` | `0`–`10` | `3` | 斷點 B 的門檻（Renew 次數或連續 `FAILED` 張數）；`0` = 停用斷點 B |
   | `worker_question_timeout` | `0`–`120`（分鐘） | `30` | yolo Worker 問塔台後最多等多久；逾時以 `BLOCKED` 收尾；`0` = 不等 |
-  | `project-prefix` | 2–4 個大寫英文字母，或空 | 空 | 跨專案協調用的工單編號前綴 |
+  | `project-prefix` | 2–4 個大寫英文字母，或空 | 空 | 跨專案協調用的工單編號前綴。設了前綴時，Worker 回報、通知、提問一律用含前綴的完整 ID（v5.13.1 起） |
   | `enable_bug_tracking` | `true`／`false` | `false` | 啟用 BUG 單（`*bug`） |
   | `enable_plan_tracking` | `true`／`false` | `false` | 啟用 PLAN 單（`*plan`） |
   | `enable_experiments` | `true`／`false` | `false` | 啟用 EXP 實驗單（`*exp`） |
@@ -421,7 +421,7 @@ const towerRows = [
 
 ### 回報字串 {#report-strings}
 
-Worker 收尾時送回塔台的是固定的一行，前面是工單編號：
+Worker 收尾時送回塔台的是固定的一行，前面是工單的**完整 ID**。下表的 `T####` 代表訊息的種類，實際送的是收到的那個 ID，設了前綴就含前綴（例 `CP-T0113 完成`）；v5.13.1 起 Worker 送出前會和工單 frontmatter 的 `id` 比對，不一致就改用 `id`。
 
 | 字串 | 什麼時候 |
 |---|---|
@@ -432,7 +432,9 @@ Worker 收尾時送回塔台的是固定的一行，前面是工單編號：
 
 yolo 下塔台另外也接受 `T#### 失敗`。不是這些格式的訊息，會觸發斷點 A。
 
-- **權威出處**：`ct-exec/SKILL.md` § BAT Notify And Fallback；`control-tower/references/yolo-mode.md` § 斷點 A：Worker 回報非預期狀態
+漏了前綴的回報（例 `T0113 完成`，熱區只有 `CP-T0113`）格式仍然合法，不算斷點 A：塔台在熱區恰好找到一張「前綴＋同號」的工單時，就當成那一張收單，並記一行「回報 ID 缺前綴」；同號的有好幾張或找不到，才停下來問你。這只保住塔台收單，BAT 能不能把 Worker 分頁標成 Done，仍看 Worker 送的 ID。
+
+- **權威出處**：`ct-exec/SKILL.md` § BAT Notify And Fallback；`control-tower/references/work-order-system.md` § 回報與通知用的工單 ID、§ 回報處理流程 › 回報 ID 對不上時；`control-tower/references/yolo-mode.md` § 斷點 A：Worker 回報非預期狀態
 
 ## 不要找：不存在或已刪除的指令 {#not-commands}
 
@@ -450,7 +452,7 @@ yolo 下塔台另外也接受 `T#### 失敗`。不是這些格式的訊息，會
 - `control-tower/SKILL.md` § Built-In Commands
 - `ct-help/SKILL.md` § Command Families
 - 各 skill 的 `SKILL.md`（`ct-exec`、`ct-done`、`ct-status`、`ct-evolve`、`ct-insights`、`ct-fieldguide`、`control-tower-guide`）
-- CT 安裝與使用指南 § 13. Config 速查表（v5.13.0）、§ 14. 命令速查表（v5.13.0）
+- CT 安裝與使用指南 § 13. Config 速查表（v5.13.1）、§ 14. 命令速查表（v5.13.1）
 - `control-tower/references/tower-config.md` § `*config` 命令、§ 可用選項（表下註明 `gp-prefix` 不是選項）
 - `control-tower/references/multi-tower-protocol.md` § `gp-prefix` 設定（唯一權威定義）
 - `control-tower/references/fieldguide-commands.md`

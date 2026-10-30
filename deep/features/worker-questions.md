@@ -51,8 +51,10 @@ Worker 不得預寫答覆行或任何佔位文字（例如「塔台答覆 Q-1：
 
 | 通道 | 條件 | Worker 怎麼送、怎麼等 |
 |---|---|---|
-| **BAT 結構化通道**（v5.7.0+） | BAT `>= 0.7.0-pre.7`，且 `worker_question_timeout` 不是 `0` | 每題送一次 `bat-notify.mjs --ask`（它自己就會通知塔台 `T#### 提問`），再反覆呼叫 `bat_wait_question` 等答覆 |
-| **工單通道** | 任何 BAT 版本都能用 | 送一般的 `T#### 提問` 通知，然後每 30 秒以上重讀自己的工單檔，直到每題都出現答覆行 |
+| **BAT 結構化通道**（v5.7.0+） | BAT `>= 0.7.0-pre.7`，且 `worker_question_timeout` 不是 `0` | 每題送一次 `bat-notify.mjs --ask`（它自己就會通知塔台 `<工單 ID> 提問`），再反覆呼叫 `bat_wait_question` 等答覆 |
+| **工單通道** | 任何 BAT 版本都能用 | 送一般的 `<工單 ID> 提問` 通知，然後每 30 秒以上重讀自己的工單檔，直到每題都出現答覆行 |
+
+兩個通道的 `<工單 ID>` 都是工單的完整 ID，等於 frontmatter 的 `id`：設了前綴就含前綴（例 `CP-T0113 提問`），不能截成 `T` 加數字；Worker 送出前會和 `id` 比對一次（v5.13.1 起）。
 
 BAT 通道的題目只存在 BAT 主行程的記憶體裡，不寫檔、日誌也不記內容；所以題目**一律先寫進工單**（雙寫），工單的問答紀錄是唯一留下來的紀錄。這也代表 BAT 通道任何時候失效，都能退回工單通道，不會留下塔台看不到的題目。
 
@@ -64,8 +66,8 @@ BAT 通道有幾條必須遵守的規則：
 - 不必事先判斷 BAT 版本：直接送，失敗了照降級表處理。
 
 ```bash
-"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR/bat-notify.mjs" --ask --source T#### --target "$BAT_TOWER_TERMINAL_ID" \
-  --submit --expires-min <worker_question_timeout> "T#### 提問" <<'JSON'
+"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR/bat-notify.mjs" --ask --source "<工單 ID>" --target "$BAT_TOWER_TERMINAL_ID" \
+  --submit --expires-min <worker_question_timeout> "<工單 ID> 提問" <<'JSON'
 {"question":"Q-n：<一句話問題>","options":["<選項 A>","<選項 B>"],"detail":"Worker 建議：…","blocking":true}
 JSON
 ```
@@ -74,7 +76,7 @@ JSON
 
 ## 多題、晚退回與備援 {#edge-cases}
 
-**多題**：一次問好幾題時，Worker 先把所有題的 `--ask` 送完，才開始等。某題 `--ask` 失敗，就在該題最後加一行 `- **通道**：工單`，表示這題改等工單答覆；全部送完後，有任何一題加了標記，就 commit 工單，再送**一次**一般的 `T#### 提問`。這個順序保證塔台處理通知時一定看得到標記：工單裡沒有標記、BAT 列表裡也還沒有的題，一定還有後續通知，塔台可以先不答。
+**多題**：一次問好幾題時，Worker 先把所有題的 `--ask` 送完，才開始等。某題 `--ask` 失敗，就在該題最後加一行 `- **通道**：工單`，表示這題改等工單答覆；全部送完後，有任何一題加了標記，就 commit 工單，再送**一次**一般的 `<工單 ID> 提問`。這個順序保證塔台處理通知時一定看得到標記：工單裡沒有標記、BAT 列表裡也還沒有的題，一定還有後續通知，塔台可以先不答。
 
 **晚退回**：`--ask` 成功、等到一半才失效的題（BAT 重開讓題目 `lost`，或被取消），一樣加 `通道` 標記、commit 一次、送一則一般 `提問`，剩下的時間改等工單答覆行。這是工單通道「等待期間對工單只讀不寫」的唯一例外，範圍只限標記行、一次 commit、一則通知。
 
@@ -85,7 +87,7 @@ JSON
 - 要走工單通道，但平台沒有可用的等待工具
 - 提問通知送不出去
 
-這時 Worker 照常完成回報區，題目與 `tower_question: open` 原樣保留，把工單收成 `BLOCKED`，commit 之後才送 `T#### 需要協助`。塔台在 `## 塔台補充（Renew #N）` 區段逐題寫答覆、把狀態改回 `PENDING`，再派一個新 Worker；在 BAT 內會先回收舊分頁，不對舊分頁送任何按鍵。走到這一步，它就是一次普通的 `BLOCKED` 與 Renew，照常計入斷點 B。
+這時 Worker 照常完成回報區，題目與 `tower_question: open` 原樣保留，把工單收成 `BLOCKED`，commit 之後才送 `<工單 ID> 需要協助`。塔台在 `## 塔台補充（Renew #N）` 區段逐題寫答覆、把狀態改回 `PENDING`，再派一個新 Worker；在 BAT 內會先回收舊分頁，不對舊分頁送任何按鍵。走到這一步，它就是一次普通的 `BLOCKED` 與 Renew，照常計入斷點 B。
 
 `worker_question_timeout` 是塔台的設定，只存在塔台的記憶裡，Worker 看不到。所以塔台在 yolo 派工前把生效值寫進工單 frontmatter，Worker 先讀工單、再讀專案與全域設定、最後用預設值。值是 `0` 或工單已經 `BLOCKED` 時，塔台不在題目下答，只在 Renew 區段答，避免同一題出現兩個答案。
 

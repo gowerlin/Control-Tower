@@ -54,7 +54,7 @@ BMad Guide 裝在同一層：Claude Code 是 `~/.claude/skills/bmad-guide/`，Co
 
 ## 確認現行版號 {#check-version}
 
-版號寫在每個 `SKILL.md` 正文的第一個註解（例如 `<!-- control-tower-version: 5.13.0 -->`），frontmatter 不放版號。
+版號寫在每個 `SKILL.md` 正文的第一個註解（例如 `<!-- control-tower-version: 5.13.1 -->`），frontmatter 不放版號。
 
 ::: code-group
 
@@ -208,9 +208,10 @@ done
 
 ```bash
 "${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-notify.mjs" \
-  --source "T####" --target "$BAT_TOWER_TERMINAL_ID" [--submit] "T#### 完成"
+  --source "<工單 ID>" --target "$BAT_TOWER_TERMINAL_ID" [--submit] "<工單 ID> 完成"
 ```
 
+- `<工單 ID>` 是收到的完整工單 ID，等於工單 frontmatter 的 `id`：設了前綴就含前綴（例 `CP-T0113 完成`），不能截成 `T` 加數字，否則 BAT 對不上 Worker 分頁、無法標成 Done（v5.13.1 起）
 - 路徑用 Windows 形式；不要改成 POSIX 形式，Node 會誤判為相對路徑
 - 塔台派工必要的環境變數：`BAT_SESSION=1`、`BAT_REMOTE_PORT`、`BAT_REMOTE_TOKEN`、`BAT_TERMINAL_ID`、`BAT_WORKSPACE_ID`
 - `--workspace` 與 `--cwd` 都要傳，兩者修的是不同的事，不能互相取代
@@ -294,7 +295,7 @@ CT 不預先判斷你的 BAT 是哪一版：照常呼叫，失敗時依結束碼
 
 ## 延伸閱讀 {#further}
 
-- CT 安裝與使用指南 § 4. 安裝（4.1 安裝／升級（現行流程）、4.2 Agent CLI 選擇、4.3 Skill 架構（v5.13.0））
+- CT 安裝與使用指南 § 4. 安裝（4.1 安裝／升級（現行流程）、4.2 Agent CLI 選擇、4.3 Skill 架構（v5.13.1））
 - `control-tower/references/version-governance.md` § 安裝／升級流程、§ 版號事實來源
 - `control-tower/references/data-layer-architecture.md` § 寫入規則（Q1～Q4：Layer 1 路徑、備份落點、唯一例外）
 - `control-tower/references/auto-session.md` § BAT 內部終端路由（Better Agent Terminal），派工指令的權威

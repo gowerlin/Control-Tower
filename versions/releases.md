@@ -1,19 +1,45 @@
 ---
 title: 更版紀錄
-description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.13.0），更早的版本見演進史。
+description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.13.1），更早的版本見演進史。
 ---
 
 <!-- 本頁由 scripts/sync-ct-release.mjs 從 CT CHANGELOG 產生，請勿手改；要改內容請改來源後重跑。 -->
 
 # 更版紀錄
 
-目前版本 **v5.13.0**（2026-10-29）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 54 版（v2.1.1 ～ v5.11.0）請看[演進史](./evolution)。
+目前版本 **v5.13.1**（2026-10-30）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 55 版（v2.1.1 ～ v5.12.0）請看[演進史](./evolution)。
 
 ::: tip 摘要不具權威
 本頁照錄 CT 的 CHANGELOG，只拿掉工單、決策、驗收回函等內部編號與出處註記。規則的權威定義在 CT 各 skill 與 references，兩者有出入時以 CT 本體為準。
 :::
 
 ::: v-pre
+
+## 5.13.1 <small>2026-10-30</small> {#v5-13-1}
+
+
+> **PATCH：通知用工單完整 ID、BAT 塔台面板讀取契約對齊 BAT `0.7.1-pre.9`、BMad 舊說法 4 項。**
+> 設了工單前綴的專案，Worker 收尾通知有時漏掉前綴，BAT 用 `--source` 對不上 Worker 分頁，無法標成 Done、也無法一次關掉已完成的 Worker 分頁。
+> 沒有新命令、新設定；BAT 介面、派工命令、斷點 A 正則不變。升級只換 skill 檔案（見安裝指南 § 2.55）。
+
+### Fixed
+
+- **通知用工單完整 ID**：ct-exec、ct-done、`auto-session.md`、`yolo-mode.md`、安裝指南的通知範本由 `T####` 改成 `<工單 ID>`——`/ct-exec` 收到什麼 ID 就照原樣用（等於 frontmatter `id`，含前綴，不得截短）。原範本讓 Worker 把帶前綴的 ID 截掉前綴，BAT 用 `--source` 對不上 Worker 分頁、無法標 Done。適用 `--source`、訊息字串、`--ask --source` 與手動備援訊息。唯一權威：`work-order-system.md` § 回報與通知用的工單 ID。
+- **Worker 送出前比對**：收尾通知、`--ask`、手動備援訊息送出前與 frontmatter `id` 比對（舊單沒有 `id` 時取檔名），不一致就改用 frontmatter 的值並在回報區記一行。
+- **塔台端容錯**：回報 ID 在熱區沒有完全相同的工單、但恰好一張是「前綴 + 同號」時，當作那一張處理並記錄「回報 ID 缺前綴」；多張同號或找不到就問使用者（yolo 屬斷點 A）。這只保住塔台收單，BAT 標 Done 仍靠 Worker 送對 `--source`。權威：`work-order-system.md` § 回報處理流程 › 回報 ID 對不上時。
+
+### Changed
+
+- `memory-protocol.md` § BAT 塔台面板讀取契約：BAT `>= 0.7.1-pre.9` 讀不到決策、臭蟲、待辦池、Epics、Sprint 的檔時顯示「無法讀取 &lt;檔名>」（太大時附 KB 數與 512 KB 上限），讀不到的工單仍列在清單（UNKNOWN）；`critical` 在任何讀取路徑都算 High。更舊的 BAT 照舊靜默變空，所以 **400 KB 預算保留**；512 KiB 上限不變。`bug-plan-system.md` 同步一句。
+- BMad 舊說法（以 bmad-guide v6.12.4 為準）：派發摘要範例的產出改為 `AGENTS.md` 的專案上下文區塊；「Quick Flow」改稱 Spec / Build；`bmad-automator` 的替代補 `bmad-build-auto`；「BMad v6.10」標題改 `v6.10+`；bmad-guide 範例版號更新。
+- 版號：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表；安裝指南新增 § 2.55，§ 4.1 版號範例同步（`OLD=5.13.0`、`VER=5.13.1`、發行物檔名），§ 13 `project-prefix` 列與 § 14 `/ct-exec`、`/ct-done` 列補完整 ID 一句。
+
+### Unchanged
+
+- BAT 介面、CT 最低 BAT 版本、派工命令（`--workorder`、`--close-worker`）、旗標、exit code 不變；斷點 A 正則本來就涵蓋前綴，不改。
+- 沒設工單前綴的專案行為不變（完整 ID 就是 `T` 加數字）。
+- 設定、工單欄位、狀態值不變；400 KB 預算與 512 KiB 上限的數字不變。
+- 歷史段落（本檔舊段落、版號表舊列、安裝指南舊章節）不改。
 
 ## 5.13.0 <small>2026-10-29</small> {#v5-13-0}
 
@@ -264,47 +290,12 @@ description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.13.0），
 - 歷史段落（本檔 [5.1.0]、`version-governance.md` 版號表舊列、安裝指南 § 2.21）不改；`work-order-system.md` § 重派前回收舊 Worker 分頁 與安裝指南 § 2.45
   的「等安靜 5 s、最多 60 s、使用者輸入取消」原本就與 BAT 一致，不改。
 
-## 5.12.0 <small>2026-10-22</small> {#v5-12-0}
-
-
-> **MINOR：重派前回收舊 Worker 分頁。** 塔台對同一張工單再派 Worker 之前，先以 `--close-worker … --delay-ms 0`
-> 回收舊 Worker 分頁，避免新 Worker `DONE` 後收單回收回 exit `5`（`AMBIGUOUS`）、兩個分頁都要手動關，以及 BAT 把兩個分頁都標 `✓`。
-> 不論 exit code 都照常派工。`--skill ct-done` 補救派工不回收、`worker_auto_close: off` 仍回收（使用者決定）。
-> BAT 介面不變，最低 BAT 版本不變（`--close-worker` 自 v5.1.0）；無新設定、無新工單欄位。派工命令、`--set-role`、斷點、提問通道（除「收到備援」加一句引用）、
-> 隔離派工、合併流程、`worker_question_timeout`、收單回收的條件與指令不變。
-
-### Added
-
-- `work-order-system.md` § 回報處理流程 › 重派前回收舊 Worker 分頁（唯一權威）：適用條件（BAT 內派工、同一張工單再派 `ct-exec`、曾在 BAT 派過；不確定時照樣呼叫）；
-  涵蓋 yolo 提問備援、`BLOCKED`／`FAILED` 後 Renew 重派、使用者停掉首派後重派、派工 exit `8` 後使用者決定重派；
-  不適用 `--skill ct-done` 補救派工（保留現場）、研究單使用者在原分頁重讀工單、`Unknown option '--wait-started'` 去參數重派、首派；
-  與 `worker_auto_close` 無關；指令 `--close-worker T#### --notify-id "$BAT_TERMINAL_ID" --delay-ms 0`（隔離工單加 `--worktree keep`）；
-  exit `0`／`3` 繼續派工、`5` 一行提示手動關舊分頁、`4`／`1`／其他一行提示，全部照常派工；`1` 與收單回收共用同一個「不支援 `--close-worker`」session 旗標；
-  為什麼安全（BAT 在呼叫當下鎖定唯一候選分頁、`--delay-ms 0` 仍等安靜 5 s、使用者輸入會取消）與為什麼要做。
-
-### Changed
-
-- `work-order-system.md` § 回報處理流程：`FAILED`、`BLOCKED` 列補「Renew 重派前先照新小節」；收單回收 exit `1` 列註明與新小節共用 session 旗標；§ 中斷復原「重派原工單」補引用。
-- `yolo-mode.md` § Worker 向塔台提問 › 塔台端「收到備援的 `T#### 需要協助`」：派新 Worker 前一句引用（仍不對舊分頁送按鍵）；§ 迴歸測試場景 T9 預期補一句。
-- `research-workorder.md` § Renew 機制 › 塔台操作流程：使用者在原分頁重讀工單時不回收；塔台改派新 Worker 時引用新小節。
-- `auto-session.md`：命令表「回收 Worker 分頁」列補重派前用途；§ 範圍權杖與分頁角色 第 5 點的 exit code 表引用改為兩張表；
-  § worktree 隔離派工「同工單重派沿用 worktree」補 `--worktree keep` 引用；§ Worker 啟動確認 第 4 點「要不要重派由使用者決定」後補引用。
-  § 安全規則 `--close-worker` 列不改（`--delay-ms` 已允許 `0`–`300000`）。
-- `tower-config.md` § 可用選項 `worker_auto_close` 列補「不影響重派前回收」。
-- `merge-workorder.md` § 合併判準「Renew 合併工單重做」補引用。
-- `control-tower/SKILL.md` § Status Handling 收單回收摘要之後補重派前回收摘要＋引用。
-
-### Compatibility
-
-- BAT 介面不變，CT 最低 BAT 版本不變；舊 BAT（不支援 `--close-worker`，exit `1`）只多一行提示，照常派工，之後同 session 不再嘗試。
-- 塔台與 Worker 請同版安裝（Worker 端行為無變化）。
-
 :::
 
 ## 延伸閱讀 {#further-reading}
 
-- CT `CHANGELOG.md`（共 64 個版本；本頁列最近 10 版）
+- CT `CHANGELOG.md`（共 65 個版本；本頁列最近 10 版）
 - CT `version-governance.md` § 歷史版號表
-- [演進史](./evolution)：更早的 54 版與八個世代
+- [演進史](./evolution)：更早的 55 版與八個世代
 
 Portal 是摘要，不具權威；與 CT reference 有出入時，以 reference 為準。
