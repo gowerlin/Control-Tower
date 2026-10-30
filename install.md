@@ -5,6 +5,7 @@ description: 在 Claude Code 或 Codex 安裝與升級 CT 的 8 個 skill：zip 
 
 <script setup>
 import { useData } from 'vitepress'
+import bmadGuide from './data/bmad-guide.json'
 
 const { theme } = useData()
 const mkt = theme.value.marketplaceRepo
@@ -208,12 +209,12 @@ v5.14.0 起，CT 也可以用 Claude Code 與 Codex 的 plugin marketplace 安�
 | 項目 | 內容 |
 |---|---|
 | marketplace | `control-tower`，放在本站的公開 repo <code>{{ mkt }}</code> |
-| plugin | `ct`：CT 的 8 個 skill，一定一起裝；`ct-guide`：CT Guide，可不裝 |
-| 版號 | `ct` 的版號 = CT 版號，`ct-guide` 的版號 = CT Guide 版號 |
+| plugin | `ct`：CT 的 8 個 skill，一定一起裝；`ct-guide`：CT Guide，可不裝；`bmad-guide`：[BMad Guide Skill](/guide/bmad-guide)，可不裝 |
+| 版號 | `ct` 的版號 = CT 版號，`ct-guide` 的版號 = CT Guide 版號；`bmad-guide` 的版號跟 BMad-Method 走（例如 6.12.4），不跟 CT |
 | beta | 不上架，beta 照舊用 zip 手動安裝 |
 
 ::: warning 從 zip 手動安裝改用 plugin：先移除手動安裝
-同名的手動安裝還留在 `skills/` 裡時，`/ct-exec`、`$ct-exec` 都會用手動那份，plugin 版不生效，而且看不出差別。所以先照[升級：四步](#upgrade)的 Step 1 把 8 個 skill（有裝 CT Guide 的話加上 `control-tower-guide`）備份到 `skill-backups/`、逐檔確認備份完整，再把它們從 `~/.claude/skills/`（Codex：`~/.codex/skills/`）**移**到備份目錄，不要直接刪除。之後才裝 plugin。
+同名的手動安裝還留在 `skills/` 裡時，`/ct-exec`、`$ct-exec` 都會用手動那份，plugin 版不生效，而且看不出差別。所以先照[升級：四步](#upgrade)的 Step 1 把 8 個 skill（有裝 CT Guide、BMad Guide 的話加上 `control-tower-guide`、`bmad-guide`）備份到 `skill-backups/`、逐檔確認備份完整，再把它們從 `~/.claude/skills/`（Codex：`~/.codex/skills/`）**移**到備份目錄，不要直接刪除。之後才裝 plugin。
 :::
 
 ::: warning Codex 搭配 BAT 派工：繼續用 zip 手動安裝
@@ -224,20 +225,22 @@ BAT 對 Codex 派工送的是 `$ct-exec T####`，而 plugin 版的 skill 在 Cod
 
 <div class="language-bash"><span class="lang">bash</span><pre><code>claude plugin marketplace add {{ mkt }}
 claude plugin install ct@control-tower
-claude plugin install ct-guide@control-tower      # 可選：CT Guide</code></pre></div>
+claude plugin install ct-guide@control-tower      # 可選：CT Guide
+claude plugin install bmad-guide@control-tower    # 可選：BMad Guide</code></pre></div>
 
-- 開新 session 後照常用 `/control-tower`、`/ct-exec T0001`。要確定叫到的是 plugin 版，用完整寫法 `/ct:ct-exec T0001`。
+- 開新 session 後照常用 `/control-tower`、`/ct-exec T0001`、`/bmad-guide`。要確定叫到的是 plugin 版，用完整寫法 `/ct:ct-exec T0001`、`/bmad-guide:bmad-guide`。
 - **自動更新**：第三方 marketplace 預設關閉。在 session 裡輸入 `/plugin`，到 Marketplaces 對 `control-tower` 開啟 auto-update。
-- **手動更新**：`claude plugin marketplace update control-tower`，再 `claude plugin update ct@control-tower`（有裝 CT Guide 再 `claude plugin update ct-guide@control-tower`）。Claude Code 看 plugin 的版號判斷有沒有新版。
+- **手動更新**：`claude plugin marketplace update control-tower`，再 `claude plugin update ct@control-tower`（有裝 CT Guide、BMad Guide 再 `claude plugin update ct-guide@control-tower`、`claude plugin update bmad-guide@control-tower`）。Claude Code 看 plugin 的版號判斷有沒有新版。
 - 新版從下一個 session 生效。
 
 ### Codex {#plugin-codex}
 
 <div class="language-bash"><span class="lang">bash</span><pre><code>codex plugin marketplace add {{ mkt }}
 codex plugin add ct@control-tower
-codex plugin add ct-guide@control-tower           # 可選：CT Guide</code></pre></div>
+codex plugin add ct-guide@control-tower           # 可選：CT Guide
+codex plugin add bmad-guide@control-tower         # 可選：BMad Guide</code></pre></div>
 
-- 呼叫一律帶前綴：`$ct:control-tower`、`$ct:ct-exec T0001`、`$ct-guide:control-tower-guide`。不帶前綴的 `$ct-exec` 叫不到 plugin 版。
+- 呼叫一律帶前綴：`$ct:control-tower`、`$ct:ct-exec T0001`、`$ct-guide:control-tower-guide`、`$bmad-guide:bmad-guide`。不帶前綴的 `$ct-exec` 叫不到 plugin 版。
 - 從 shell 帶參數啟動 Codex 時，用單引號包住（例如 `codex '$ct:ct-exec T0001'`），否則 bash 和 PowerShell 會把 `$ct` 當成變數。
 - **自動更新**：Codex 每次啟動會自動升級 git 型的 marketplace。手動升級：`codex plugin marketplace upgrade control-tower`。
 - 新版從下一個 session 生效。
@@ -249,11 +252,11 @@ claude plugin list --json        # ct@control-tower 的 version
 codex plugin list --json         # ct@control-tower 的 version
 ```
 
-`version` 應該等於 CT 版號（目前 <VersionBadge />）。
+`version` 應該等於 CT 版號（目前 <VersionBadge />）。`ct-guide@control-tower` 等於 CT Guide 版號；`bmad-guide@control-tower` 等於 bmad-guide 的版號，也就是它所教的 BMad-Method 版號（目前 v{{ bmadGuide.version }}）。
 
 ### 移除與回退 {#plugin-rollback}
 
-plugin 安裝不另做備份，回退就是用 plugin 指令移除：`claude plugin uninstall ct@control-tower`、`codex plugin remove ct@control-tower`。要回到 zip 手動安裝，照[回退](#rollback)把遷移前的備份裝回 `skills/`。plugin 的安裝目錄由 Agent CLI 管理，不要手動複製、修改或刪除裡面的檔案。
+plugin 安裝不另做備份，回退就是用 plugin 指令移除：`claude plugin uninstall ct@control-tower`、`codex plugin remove ct@control-tower`（`ct-guide`、`bmad-guide` 同樣寫法）。要回到 zip 手動安裝，照[回退](#rollback)把遷移前的備份裝回 `skills/`。plugin 的安裝目錄由 Agent CLI 管理，不要手動複製、修改或刪除裡面的檔案。
 
 ## 讓 CT Worker 代為安裝 {#worker-install}
 
@@ -365,6 +368,7 @@ BMad Guide（`bmad-guide`）是 BMad-Method 的互動式學習指南，也是 CT
 - **安裝路徑**：目錄名用 skill 名稱 `bmad-guide`，解壓後把 `bmad-guide-v<版號>/` 的**內容**放進 Claude Code 的 `~/.claude/skills/bmad-guide/` 或 Codex 的 `~/.codex/skills/bmad-guide/`。不要把帶版號的資料夾原封不動放進 `skills/`。兩端是各自獨立的安裝。
 - **升級**：沿用 CT 的同一套流程：先備份到 `skills/` 之外、複製到暫存區複驗後才替換、替換時不先刪除舊目錄，最後逐檔比對 IDENTICAL（見[升級：四步](#upgrade)、[回退](#rollback)）。套用上面那份完整指令時，`SKILLS` 只放 `bmad-guide`；指令是以 skill 名稱找來源目錄，所以先把解壓出來的 `bmad-guide-v<版號>/` 改名為 `bmad-guide/`，`NEW` 指向它的上一層。現行版號看 `SKILL.md` 裡的 `current_version`。
 - **新版從下一個 session 才生效**：和 CT 一樣，正在跑的 session 已經載入舊版。
+- **也可以用 plugin 安裝**：`bmad-guide@control-tower`，和 CT 放在同一個 marketplace（見[用 plugin marketplace 安裝](#plugin)）。zip 與 plugin 擇一；Codex 用 plugin 時呼叫寫法是 `$bmad-guide:bmad-guide`。要讓 CT 塔台的 Level 2 用到它，目前建議用 zip 手動安裝，理由見 [BMad Guide Skill › 用 plugin 安裝](/guide/bmad-guide#install-plugin)。
 
 詳細步驟、claude.ai 的打包方式與 `*update` 怎麼用，見 [BMad Guide Skill](/guide/bmad-guide#install)。
 

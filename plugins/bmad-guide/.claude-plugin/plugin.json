@@ -1,0 +1,9 @@
+{
+  "name": "bmad-guide",
+  "version": "6.12.4",
+  "description": "Interactive learning guide for BMad-Method: lifecycle phases, workflows and which bmad-* skill to run next (bmad-guide). Versioned with BMad-Method.",
+  "author": {
+    "name": "BMad Control Tower"
+  },
+  "license": "MIT"
+}

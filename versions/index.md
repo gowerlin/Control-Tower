@@ -64,7 +64,7 @@ Portal 的版本資料也要在同一輪更新：
 - **功能或規則有變時**（MINOR，或改了規則的 PATCH）：一併更新受影響的功能頁、進階頁與[指令參考大全](/reference/commands)，發版時列出受影響的 Portal 頁。
 - **進入新世代時**：由塔台判斷，更新[演進史](./evolution)。
 
-收一輪發版時要對四處版號：Portal 的版本資料、CT `SKILL.md` 的版號註解、Guide 的版號，以及 plugin marketplace 裡 plugin 的版號（v5.14.0 起，`ct` = CT 版號、`ct-guide` = Guide 版號）。四處一致才算收完。
+收一輪發版時要對四處版號：Portal 的版本資料、CT `SKILL.md` 的版號註解、Guide 的版號，以及 plugin marketplace 裡 plugin 的版號（v5.14.0 起，`ct` = CT 版號、`ct-guide` = Guide 版號）。四處一致才算收完。同一個 marketplace 裡的 `bmad-guide` 版號跟 bmad-guide 走，在 bmad-guide 發版時對。
 
 ## 怎麼查本機裝了哪一版
 

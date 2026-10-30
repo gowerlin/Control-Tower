@@ -1,6 +1,6 @@
 ---
-title: Beta：方法論轉接（v6.0.0-beta.4）
-description: CT v6.0.0-beta.4 Beta 的方法論轉接：把「只認 BMad」換成可以抽換、分層疊加的 adapter，用實測決定怎麼防住其他方法論的 SessionStart 注入，並逐家說清楚哪些方法論值得引入、哪些只要共存；beta.3 另加狀態衛生與 BAT 塔台面板讀取契約（穩定版 v5.13.0 起也有），beta.4 讓 Worker 回報一律帶完整工單 ID、面板契約對齊新版 BAT（穩定版 v5.13.1 也有）。Beta 在 GitHub 預發行 Release 提供下載，與穩定版並行、不取代。
+title: Beta：方法論轉接（v6.0.0-beta.5）
+description: CT v6.0.0-beta.5 Beta 的方法論轉接：把「只認 BMad」換成可以抽換、分層疊加的 adapter，用實測決定怎麼防住其他方法論的 SessionStart 注入，並逐家說清楚哪些方法論值得引入、哪些只要共存；beta.3 另加狀態衛生與 BAT 塔台面板讀取契約（穩定版 v5.13.0 起也有），beta.4 讓 Worker 回報一律帶完整工單 ID、面板契約對齊新版 BAT（穩定版 v5.13.1 也有），beta.5 移植 plugin 安裝就緒的規則（穩定版 v5.14.0 也有；Beta 本身不提供 plugin）。Beta 在 GitHub 預發行 Release 提供 zip 下載，與穩定版並行、不取代。
 ---
 
 <script setup>
@@ -9,15 +9,15 @@ import { useData } from 'vitepress'
 const { theme } = useData()
 const stableVersion = theme.value.ctRelease.ctVersion
 // Beta 的預發行 Release：tag 與附件名固定，網址用 releasesUrl 組，內文不手寫網址
-const betaVersion = '6.0.0-beta.4'
+const betaVersion = '6.0.0-beta.5'
 const betaTag = `ct-v${betaVersion}`
 const betaPage = `${theme.value.releasesUrl}tag/${betaTag}`
 const betaAsset = (name) => `${theme.value.releasesUrl}download/${betaTag}/${name}`
 const betaFiles = [
-  { name: `BMad-Control-Tower-v${betaVersion}.zip`, size: '421 KB', note: '全量：根層直接是 8 個 skill 目錄' },
-  { name: `control-tower-guide-v${betaVersion}.zip`, size: '175 KB', note: 'CT Guide（教學 skill），Beta 內容在「Beta：方法論轉接」一章' },
+  { name: `BMad-Control-Tower-v${betaVersion}.zip`, size: '426 KB', note: '全量：根層直接是 8 個 skill 目錄' },
+  { name: `control-tower-guide-v${betaVersion}.zip`, size: '182 KB', note: 'CT Guide（教學 skill），Beta 內容在「Beta：方法論轉接」一章' },
   { name: `ct-adapter-pstack-v${betaVersion}.zip`, size: '17 KB', note: 'pstack 的 adapter（adapter_version 0.2.4）；選用，已經在用 pstack 才需要' },
-  { name: `control-tower-v${betaVersion}.zip`, size: '319 KB', note: '單一 skill（claude.ai 上傳用，下同）' },
+  { name: `control-tower-v${betaVersion}.zip`, size: '324 KB', note: '單一 skill（claude.ai 上傳用，下同）' },
   { name: `ct-exec-v${betaVersion}.zip`, size: '23 KB', note: '' },
   { name: `ct-done-v${betaVersion}.zip`, size: '4 KB', note: '' },
   { name: `ct-status-v${betaVersion}.zip`, size: '3 KB', note: '' },
@@ -28,14 +28,14 @@ const betaFiles = [
 ]
 </script>
 
-# Beta：方法論轉接（v6.0.0-beta.4）
+# Beta：方法論轉接（v6.0.0-beta.5）
 
 ::: warning Beta，與穩定版並行、不取代
-本頁介紹的是 **CT v6.0.0-beta.4（Beta）**。Beta 放在 GitHub 的**預發行 Release**，不是最新正式版；規則在正式版 6.0.0 前還可能調整。
-目前的穩定版仍是 **v{{ stableVersion }}**，首頁、安裝說明與下載連結都以穩定版為準。Beta 只提供 zip，不會取代你已經裝好的穩定版；想試用，建議裝在隔離的設定目錄（見[下載與試用](#download)）。
+本頁介紹的是 **CT v6.0.0-beta.5（Beta）**。Beta 放在 GitHub 的**預發行 Release**，不是最新正式版；規則在正式版 6.0.0 前還可能調整。
+目前的穩定版仍是 **v{{ stableVersion }}**，首頁、安裝說明與下載連結都以穩定版為準。Beta 只提供 zip、**沒有 plugin**，不要用 plugin marketplace 裝 Beta（見 [beta.5 改了什麼](#beta5)）；Beta 不會取代你已經裝好的穩定版，想試用，建議裝在隔離的設定目錄（見[下載與試用](#download)）。
 :::
 
-<p class="ct-lead">一句話：CT 原本只認得 BMad-Method 這一種開發方法論；v6 把它換成一層「方法論轉接」，BMad 變成第一個、也是預設的 adapter，其他方法論只要寫一份描述檔就能接上，而且每一層（規劃、執行、審查、驗證、交付）可以各用不同的方法論。但「能接」不等於「該接」：beta.2 逐家說清楚哪些方法論值得引入、哪些只要在機器上共存就好。v6.0.0-pre.1 預覽版定下設計，兩輪隔離試用修補後成為 beta.1，再一輪試用與逐家定位後成為 beta.2；beta.3 再補上狀態衛生與 BAT 塔台面板讀取契約，這批規則穩定版 v5.13.0 起也有（見 [beta.3 改了什麼](#beta3)）；beta.4 讓 Worker 的回報一律帶完整工單 ID、面板讀取契約對齊新版 BAT，這批規則穩定版 v5.13.1 也有（見 [beta.4 改了什麼](#beta4)）。</p>
+<p class="ct-lead">一句話：CT 原本只認得 BMad-Method 這一種開發方法論；v6 把它換成一層「方法論轉接」，BMad 變成第一個、也是預設的 adapter，其他方法論只要寫一份描述檔就能接上，而且每一層（規劃、執行、審查、驗證、交付）可以各用不同的方法論。但「能接」不等於「該接」：beta.2 逐家說清楚哪些方法論值得引入、哪些只要在機器上共存就好。v6.0.0-pre.1 預覽版定下設計，兩輪隔離試用修補後成為 beta.1，再一輪試用與逐家定位後成為 beta.2；beta.3 再補上狀態衛生與 BAT 塔台面板讀取契約，這批規則穩定版 v5.13.0 起也有（見 [beta.3 改了什麼](#beta3)）；beta.4 讓 Worker 的回報一律帶完整工單 ID、面板讀取契約對齊新版 BAT，這批規則穩定版 v5.13.1 也有（見 [beta.4 改了什麼](#beta4)）；beta.5 把穩定版 v5.14.0 的 plugin 安裝就緒規則移植進 v6，這批規則穩定版 v5.14.0 也有，但 Beta 本身不提供 plugin（見 [beta.5 改了什麼](#beta5)）。</p>
 
 ## 下載與試用 {#download}
 
@@ -57,10 +57,12 @@ Beta 的發行檔都在預發行 Release <a :href="betaPage" target="_blank" rel
 - **只打包，不自動安裝。** Beta 和穩定版 v{{ stableVersion }} 並行：本站的首頁、[安裝](../install)與更版紀錄都還是穩定版，下載 Beta 不會影響已經裝好的穩定版。
 - **建議裝在隔離的設定目錄。** 設 `CLAUDE_CONFIG_DIR`（Codex 是 `CODEX_HOME`）指向另一個目錄，把 Beta 裝在那裡，主環境照舊用穩定版。beta.1 修好了全域路徑（見[全域路徑](#config-dir)），隔離試用才真正隔離。
 - **塔台與 Worker 用同一批。** 和穩定版一樣，同一個設定目錄裡的 8 個 skill 要一起換版。
-- **安裝方式和穩定版相同**（見[安裝](../install)）：解開全量 zip，把 8 個 skill 目錄放進隔離設定目錄的 `skills/`；已經在用 pstack 才另外放 `ct-adapter-pstack`。從穩定版的專案改用 Beta，先看 [BUG／PLAN／EXP 預設開啟](#bug-plan-exp)的升級影響。
+- **安裝方式和穩定版的 zip 手動安裝相同**（見[安裝](../install#first-install)）：解開全量 zip，把 8 個 skill 目錄放進隔離設定目錄的 `skills/`；已經在用 pstack 才另外放 `ct-adapter-pstack`。從穩定版的專案改用 Beta，先看 [BUG／PLAN／EXP 預設開啟](#bug-plan-exp)的升級影響。
 - **從 beta.1 升到 beta.2 沒有設定變更**：契約仍是 `ct-methodology-adapter/v1`，設定鍵與預設值都和 beta.1 相同，8 個 skill 照樣一起換即可。
 - **從 beta.2 升到 beta.3 不需要遷移**：三個新設定不設就用預設、行為和 beta.2 相同；舊的 `_bug-tracker.md`、`_backlog.md` 在下一次 `*sync` 照新格式重建。契約仍是 `ct-methodology-adapter/v1`，`ct-adapter-pstack` 不用換。
 - **從 beta.3 升到 beta.4 只換 skill 檔案**：沒有新命令、新設定，不需要改設定或工單；`control-tower`、`ct-exec`、`ct-done` 都有改，8 個 skill 照樣一起換。BAT 不必升級，`ct-adapter-pstack`（0.2.4）不用換。
+- **從 beta.4 升到 beta.5 只換 skill 檔案**：沒有新命令、新設定，不需要改設定或工單；`control-tower`、`ct-evolve`、`ct-help`、`ct-insights` 與 8 個 skill 的 `agents/openai.yaml` 都有改，8 個 skill 照樣一起換。BAT 不必升級，`ct-adapter-pstack`（0.2.4）不用換。
+- **Beta 沒有 plugin。** 穩定版 v5.14.0 起可以用 plugin marketplace 安裝，但 marketplace 只上架穩定版；在 Beta 的環境執行 plugin 安裝指令，裝到的是穩定版 v{{ stableVersion }}，會和手動裝的 Beta 並存（見 [beta.5 改了什麼](#beta5)）。
 
 ## 方法論不是一定要引入：各家定位 {#adopt-or-not}
 
@@ -94,6 +96,26 @@ v6 讓 CT 能接任何方法論，但接一家的成本是確定的：每個 ses
 - 派工摘要的常駐 token 寫「未量測」，不填估值。
 - 「設計核准前不准實作」的硬閘門：沒有指名 Superpowers 的工單，Worker 在無人值守（yolo）下不會被它擋住（試用 2/2）。
 - 想省掉常駐注入，只能在 CT 管理的機器上停用它（上游沒有只關注入的開關）。這是使用者的安裝選擇，塔台只提示、不代做。
+
+## beta.5 改了什麼 {#beta5}
+
+beta.5 把穩定版 v5.14.0 的 **plugin 安裝就緒**改動移植進 v6：plugin marketplace 怎麼裝、怎麼升級，plugin 的安裝路徑也算 CT 的 Layer 1（只能用 plugin 指令寫入、不備份），依安裝方式不同的 skill 呼叫寫法，以及 Codex 搭配 BAT 派工時繼續用 zip。**這批規則穩定版 v5.14.0 也有，不是 Beta 才有**，所以本頁不重講，內容看穩定版的說明：
+
+| 主題 | 穩定版的說明 |
+|---|---|
+| 兩種安裝方式：zip 手動安裝與 plugin marketplace，同一個 Agent 只留一種 | [兩種安裝方式](../install#methods) |
+| 用 plugin marketplace 安裝、更新、確認版號、移除；從 zip 改用 plugin 要先移除手動安裝 | [用 plugin marketplace 安裝](../install#plugin) |
+| 依安裝方式的呼叫寫法：Claude Code 照常 `/ct-exec`（完整寫法 `/ct:ct-exec`）；Codex 手動安裝 `$ct-exec`、plugin 安裝一律 `$ct:ct-exec` | [三軌前綴](../reference/commands#prefixes) |
+| Codex 搭配 BAT 派工繼續用 zip：BAT 送的是 `$ct-exec`，plugin 版的 Codex 叫不到 | [BAT 派工](../deep/features/dispatch#bat) |
+| plugin 的安裝路徑也是 Layer 1：只能用 plugin 指令安裝、更新、移除，不在旁邊做備份 | [三層資料與記憶](../deep/principles/data-layers)、[可逆與不可逆的界線](../deep/principles/boundaries) |
+
+只跟 Beta 有關的幾點：
+
+- **Beta 沒有 plugin，不要用 marketplace 裝 Beta。** marketplace 只上架穩定版，`6.0.0-beta.N` 照舊用 zip 手動安裝。在 Beta 的環境執行 `claude plugin install ct@control-tower`（或 Codex 的 `codex plugin add ct@control-tower`），裝到的是**穩定版 v{{ stableVersion }}**，會和手動裝的 Beta 並存；不帶前綴的 `/ct-exec`、`$ct-exec` 用的是手動那份，看起來沒事，其實同一個設定目錄裡有兩個版本。marketplace 裡的 `ct-guide` 也是穩定版的 CT Guide，Beta 的 CT Guide 只在[上面的 zip](#download)。v6 文件裡的 plugin 條文是**正式版上架後**的規格，上架後的呼叫寫法和穩定版相同。
+- **全域路徑的例外：plugin 目錄兩處都算（未驗證）。** v6 把 `~/.claude/…` 解讀為 `${CLAUDE_CONFIG_DIR:-~/.claude}/…`（見[全域路徑](#config-dir)），plugin 目錄是唯一的例外：`~/.claude/plugins/` 與設了 `CLAUDE_CONFIG_DIR` 時的 `${CLAUDE_CONFIG_DIR}/plugins/` 兩處都當成 Layer 1。`CLAUDE_CONFIG_DIR` 會不會搬移 Claude Code 的 plugin 目錄還沒驗證，猜錯會讓真正的 plugin 目錄落在保護範圍外，所以保守兩處都算。Beta 本身沒有 plugin，但同一台機器可能裝了穩定版的 plugin，這條照樣適用。
+- **BMad Guide 用 zip 裝。** v6 內建的 [bmad adapter](#adapter) 只在 `skills/` 目錄找 `bmad-guide`，用 plugin 裝的 `bmad-guide@control-tower` 偵測不到，塔台會靜默改用手動欄位；搭配 Beta 用 BMad 時照舊用 zip 手動安裝（見 [BMad Guide Skill › 用 plugin 安裝](../guide/bmad-guide#install-plugin)）。
+- **從 beta.4 升級只換 skill 檔案**（見[下載與試用](#download)）。沒有新命令、新設定；BAT 介面不變、BAT 不必升級（見[相容版本對照的 Beta 一節](../versions/compatibility#preview)），方法論契約與 `ct-adapter-pstack`（0.2.4）也沒改。
+- 本版新規則的已知未驗，是[還沒驗證的事](#unverified)第 16 項。
 
 ## beta.4 改了什麼 {#beta4}
 
@@ -388,10 +410,11 @@ BAT 端在 `0.7.1-pre.7`（預覽版）加上這個總覽：沒有摘要的專�
 - beta.1 升 beta.2 沒有設定變更，契約與設定鍵都相同。
 - beta.2 升 beta.3 不需要遷移：三個新設定不設就是舊行為；舊的 BUG／PLAN 索引在下一次 `*sync` 照新格式重建。
 - beta.3 升 beta.4 只換 skill 檔案：沒有新命令、新設定，不需要改設定或工單。
+- beta.4 升 beta.5 只換 skill 檔案：沒有新命令、新設定，不需要改設定或工單；Beta 照舊只用 zip 安裝。
 
 ## 還沒驗證的事 {#unverified}
 
-beta.4 把下列 15 項明確標成「已知未驗」，正式版前可能因實測結果調整（第 10～13 項是 beta.3 新增、第 14、15 項是 beta.4 新增；穩定版 v5.13.0、v5.13.1 的同一批規則也一樣還沒實機跑過）：
+beta.5 把下列 16 項明確標成「已知未驗」，正式版前可能因實測結果調整（第 10～13 項是 beta.3 新增、第 14、15 項是 beta.4 新增、第 16 項是 beta.5 新增；穩定版 v5.13.0、v5.13.1 的同一批規則也一樣還沒實機跑過）：
 
 1. Codex 互動分頁的「Hooks need review」畫面，以及 Codex 設定裡 hook 的啟用狀態（`hooks.state.<key>.enabled`）：目前是依程式內字串與既有文件推論。
 2. Codex 在 resume、compact 後是否重新注入。
@@ -408,6 +431,7 @@ beta.4 把下列 15 項明確標成「已知未驗」，正式版前可能因實
 13. 未結 BUG 清理提示、熱檔大小提示、`PARTIAL` 當下收尾、`closed_reason` 與延後 BUG 的重開：文件規則，還沒有實機跑過。
 14. 有前綴的專案實機回報：改了範本、加了送出前比對之後，Worker 是不是每次都送完整 ID（收尾通知、向塔台提問、手動備援訊息），BAT 是不是每次都能用來源 ID 對到 Worker 分頁並標成 Done，還沒在有前綴的專案實機觀察過。
 15. 塔台收到漏了前綴的回報時的容錯（熱區恰好一張「前綴＋同號」就當成那一張、同號多張或找不到才問你、無人值守下屬斷點 A）：文件規則，還沒有實際觸發過。
+16. `CLAUDE_CONFIG_DIR` 會不會搬移 Claude Code 的 plugin 目錄：還沒驗證，所以 v6 保守寫成 `~/.claude/plugins/` 與 `${CLAUDE_CONFIG_DIR}/plugins/` 兩處都算 Layer 1，驗證後只要改那一條。間接跡象：在隔離的 `CLAUDE_CONFIG_DIR` 試裝第三方 plugin 後，主環境的 plugin 安裝紀錄沒有變；這不是對 CT plugin 目錄的驗證。
 
 ## 出處與名稱 {#notices}
 
@@ -432,8 +456,9 @@ beta.4 把下列 15 項明確標成「已知未驗」，正式版前可能因實
 - `control-tower/references/memory-protocol.md` § 機器可讀摘要（YAML frontmatter）
 - beta.3 的狀態衛生與面板契約（穩定版 v5.13.0 也有）：`memory-protocol.md` § BAT 塔台面板讀取契約、`decision-log-system.md` § 收斂、`bug-plan-system.md` § 結案判準、§ 未結 BUG 清理提示、`work-order-system.md` § PARTIAL 當下收尾、`work-order-template.md` § 撰寫〈相關通過案例〉（都在 `control-tower/references/`）；beta.3 與 beta.2 的差異見 zip 內 `docs/CHANGELOG.md` `[6.0.0-beta.3]`
 - beta.4 的通知用完整工單 ID 與面板契約對齊（穩定版 v5.13.1 也有）：`work-order-system.md` § 回報與通知用的工單 ID、§ 回報處理流程 › 回報 ID 對不上時、`memory-protocol.md` § BAT 塔台面板讀取契約（都在 `control-tower/references/`）；beta.4 與 beta.3 的差異見 zip 內 `docs/CHANGELOG.md` `[6.0.0-beta.4]`
+- beta.5 的 plugin 安裝就緒（穩定版 v5.14.0 也有；Beta 不提供 plugin）：`version-governance.md` § 安裝／升級流程 › plugin 安裝／升級、`auto-session.md` § 依安裝方式的 skill 呼叫字串、`data-layer-architecture.md` § 寫入規則、§ 路徑解析（都在 `control-tower/references/`）；安裝指南 § 2.56；beta.5 與 beta.4 的差異見 zip 內 `docs/CHANGELOG.md` `[6.0.0-beta.5]`
 - `ct-exec/SKILL.md` § Methodology：Worker 端的帶入、注入自查與紀錄規則（含「方法論 skill」的範圍）
-- CT Guide `references/preview-methodology.md`「Beta：方法論轉接」：§ beta.4：通知用完整工單 ID 與 BAT 塔台面板讀取契約、§ beta.3：狀態衛生與 BAT 塔台面板讀取契約、§ 方法論不是一定要引入：各家定位、§ 在 CT 專案使用 mattpocock/skills、§ 實測（③ 部分參考與 HARD-GATE，beta.2）、§ 引入方式（附三種引入方式的圖）、§ 隔離試用、§ BUG／PLAN／EXP 預設開啟、§ 環境偵測只列名稱、§ 全域路徑、§ 已知未驗
+- CT Guide `references/preview-methodology.md`「Beta：方法論轉接」：§ beta.5：plugin 安裝就緒、§ beta.4：通知用完整工單 ID 與 BAT 塔台面板讀取契約、§ beta.3：狀態衛生與 BAT 塔台面板讀取契約、§ 方法論不是一定要引入：各家定位、§ 在 CT 專案使用 mattpocock/skills、§ 實測（③ 部分參考與 HARD-GATE，beta.2）、§ 引入方式（附三種引入方式的圖）、§ 隔離試用、§ BUG／PLAN／EXP 預設開啟、§ 環境偵測只列名稱、§ 全域路徑、§ 已知未驗
 
 ::: warning 摘要不具權威
 Portal 是摘要，不具權威，與 reference 有出入時以 reference 為準。本頁介紹的是 Beta，正式版的規則以正式發布的 CT 為準。

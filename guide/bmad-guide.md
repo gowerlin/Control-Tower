@@ -1,10 +1,14 @@
 ---
 title: BMad Guide Skill
-description: BMad-Method 的互動式學習指南 bmad-guide：它是什麼、和 CT 的關係、什麼時候問它、啟動版本檢查與 *update、怎麼安裝，以及版號為什麼跟 BMad-Method 走。
+description: BMad-Method 的互動式學習指南 bmad-guide：它是什麼、和 CT 的關係、什麼時候問它、啟動版本檢查與 *update、怎麼安裝（zip 或 plugin marketplace），以及版號為什麼跟 BMad-Method 走。
 ---
 
 <script setup>
+import { useData } from 'vitepress'
 import bmadGuide from '../data/bmad-guide.json'
+
+const { theme } = useData()
+const mkt = theme.value.marketplaceRepo
 
 const modeRows = [
   ['Learning（概念理解）', '「X 是什麼」「這怎麼運作」「解釋 X」', '先簡短講概念，再說它在生命週期的哪個位置，最後補常見陷阱與什麼時候不該用'],
@@ -142,6 +146,23 @@ bmad-guide-v<版號>/
 
 升級時照 CT 的做法：先備份到 `skills/` 之外、複驗後再替換，最後逐檔比對（見[安裝 › 升級](/install#upgrade)）。兩端是各自獨立的安裝，升級其中一端不會更新另一端。
 
+### 用 plugin 安裝 {#install-plugin}
+
+bmad-guide 也放在 CT 的 plugin marketplace `control-tower`（本站的公開 repo <code>{{ mkt }}</code>），plugin 名稱是 `bmad-guide`。plugin 裡的 skill 和發行 zip 的內容相同，另附 BMad-Method 的授權聲明（`THIRD-PARTY-NOTICES.md`）；版號一樣跟 BMad-Method 走。
+
+<div class="language-bash"><span class="lang">bash</span><pre><code># Claude Code
+claude plugin marketplace add {{ mkt }}
+claude plugin install bmad-guide@control-tower
+# Codex
+codex plugin marketplace add {{ mkt }}
+codex plugin add bmad-guide@control-tower</code></pre></div>
+
+- **zip 與 plugin 擇一**：兩種並存時，`skills/bmad-guide/` 裡手動安裝的那份會生效，plugin 版不生效，而且看不出差別。改用 plugin 前，先把手動安裝備份到 `skills/` 之外再移走，做法同[安裝 › 從 zip 手動安裝改用 plugin](/install#plugin)。
+- **呼叫寫法**：Claude Code 照常用 `/bmad-guide`（完整寫法 `/bmad-guide:bmad-guide`）；Codex 一律帶前綴 `$bmad-guide:bmad-guide`，從 shell 帶參數時用單引號包住。
+- **更新交給 plugin 指令**：`claude plugin marketplace update control-tower` 再 `claude plugin update bmad-guide@control-tower`；Codex 啟動時自動升級 marketplace。plugin 版**不要用 `*update`**：`*update` 會改寫已安裝 skill 的目錄，而 plugin 的安裝目錄由 Agent CLI 管理，改了會在下次 plugin 更新時被蓋掉，內容也會和 plugin 的版號對不上。等新版 bmad-guide 發布後，用 plugin 指令更新。
+- **CT 塔台的 Level 2**：CT 偵測 bmad-guide 的條文目前以 `skills/` 目錄裡的安裝為準（6.0.0 beta 的方法論 adapter 只查 `skills/bmad-guide/`），用 plugin 安裝時塔台可能找不到它，安靜地改成手動填寫工作流程欄位。要讓塔台用到 bmad-guide，目前建議用 zip 手動安裝，待 CT 後續版本支援 plugin 的偵測。
+- 其他指令（確認版號、移除）和 CT 的 plugin 相同，見[安裝 › 用 plugin marketplace 安裝](/install#plugin)。
+
 **在 claude.ai 使用**：claude.ai 一次只接受一個 skill 的 zip，而且 zip 的最上層必須是和 `SKILL.md` 的 `name` 同名的資料夾（見[安裝 › 打包](/install#claude-ai-zip)）。發行 zip 的最上層是 `bmad-guide-v<版號>/`，名稱不符，所以要先把資料夾改名為 `bmad-guide/` 再壓一次：
 
 ```
@@ -164,7 +185,7 @@ bmad-guide.zip
 
 - **版號跟 BMad-Method 走，不跟 CT。** bmad-guide 的版號就是它所教的 BMad-Method 版號；CT 發版時它不會跟著出新版，BMad-Method 發版後才用 `*update` 更新。這和 CT Guide 永遠與 CT 同號正好相反。
 - 版號寫在 `SKILL.md` 正文的 `current_version` 標記，skill 的說明與標題也帶著同一個版號；啟動版本檢查比對的就是這個標記。
-- bmad-guide 每發一版，本頁的版本資料同一輪更新。
+- bmad-guide 每發一版，本頁的版本資料同一輪更新。plugin `bmad-guide@control-tower` 的版號由同一份版本資料產生，公開站重推時跟著更新。
 - CT 需要哪一版 bmad-guide、版本太舊時塔台怎麼做，見[相容版本對照 › bmad-guide](/versions/compatibility#bmad-guide)。
 
 ## 延伸閱讀 {#further}
