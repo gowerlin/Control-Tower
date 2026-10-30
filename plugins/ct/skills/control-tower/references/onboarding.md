@@ -95,6 +95,9 @@
 
 **記錄欄位**：`git_mode`、`staging_preference`
 
+> 使用者提到上層底下有好幾個跟團隊共用的獨立 repo 時，說明可以用一個塔台、工單集中在上層，
+> 見 [mono-repo-patterns.md](mono-repo-patterns.md) § 巢狀的獨立 repo（v5.14.3+）。這不影響本主題要記錄的欄位。
+
 ---
 
 ### 主題 2：哪些小事不需要開工單

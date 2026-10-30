@@ -2,9 +2,9 @@
 name: control-tower
 description: "BMad Control Tower project orchestrator for Tower sessions. Use when the user invokes $control-tower or /control-tower, says control tower, 塔台, 指揮塔, 工單管理, or asks to create, dispatch, sync, recover, archive, report, or coordinate file-driven work orders, BUG/PLAN/EXP records, sprint state, BAT/YOLO dispatch, or multi-agent project work. For worker execution commands such as $ct-exec, $ct-done, $ct-status, $ct-evolve, or $ct-insights, route to those dedicated skills instead of loading tower mode."
 ---
-<!-- control-tower-version: 5.14.2 -->
+<!-- control-tower-version: 5.14.3 -->
 
-# BMad Control Tower v5.14.2
+# BMad Control Tower v5.14.3
 
 $ARGUMENTS
 
@@ -186,7 +186,7 @@ version. See the summary-authority rule under `## BAT And Auto-Session`.
 - Config and help: `tower-config.md`, `beginner-tutorial.md`
 - Debug and interruption: `debug-strategies.md`, `interrupt-protocol.md`
 - Knowledge and evolution: `self-learning-core.md`, `playbook-engine.md`, `skill-writing-conventions.md`, `workflow-engine.md` (v5.10.0+: Claude Code Workflow inside one work order — positioning, Skill / Playbook / Workflow split, rules R1–R5, knowledge cards, maturity and downgrade; v5.11.0+: `workflow_integration` behavior, Worker authorization governance, G2 status; named-workflow dispatch waits until a card reaches 🟡)
-- Multi-project and repo shape: `multi-tower-protocol.md`, `cross-project-coordination.md`, `mono-repo-patterns.md`
+- Multi-project and repo shape: `multi-tower-protocol.md`, `cross-project-coordination.md`, `mono-repo-patterns.md` (v5.14.3+: § 巢狀的獨立 repo — one Tower for several nested independent repos, work orders in the parent repo)
 - Commands and records: `bug-plan-system.md`, `decision-log-system.md`, `archive-system.md`, `fieldguide-commands.md`, `safe-import.md`, `onboarding.md`
 - Governance and design rationale: `version-governance.md`, `doctrine.md`, `enhancement-integration.md`, `migration-engine.md`
 

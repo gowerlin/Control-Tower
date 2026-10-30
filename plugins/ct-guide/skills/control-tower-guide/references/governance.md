@@ -178,7 +178,7 @@ CT 的寫法是把**機制**寫出來（掃描器註冊第一層子目錄），�
 
 **是什麼。** marketplace 是一個 git repo，裡面有一份目錄檔，列出可以安裝的 plugin。Claude Code 與 Codex 都能「訂閱」一個 marketplace
 （`plugin marketplace add`），之後用 `<plugin>@<marketplace>` 安裝其中的 plugin。CT 的 marketplace 叫 `control-tower`，放在發行 repo
-`gowerlin/Control-Tower` 的根目錄，裡面有兩個 plugin：
+`gowerlin/Control-Tower` 的根目錄，裡面有三個 plugin：
 
 | plugin | 內容 | 為什麼這樣分 |
 |---|---|---|

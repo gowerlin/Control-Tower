@@ -12,7 +12,7 @@ Skill YAML frontmatter 僅放 runtime 需要的欄位，至少包含 `name` 與 
 版本事實來源改用 body 內第一個註解：
 
 ```markdown
-<!-- control-tower-version: 5.14.2 -->
+<!-- control-tower-version: 5.14.3 -->
 ```
 
 同步點：
@@ -292,6 +292,7 @@ codex plugin list --json         # ct@control-tower 的 version
 | v5.14.0 | 2026-10-30 | MINOR（依 § SemVer：新增向下相容的安裝方式，沒有新命令、新設定或不相容變更）：新增 plugin marketplace 安裝方式（Claude Code、Codex；marketplace `control-tower` 在 `gowerlin/Control-Tower` 根目錄，CT plugin `ct` 收 8 個 skill、教學 plugin `ct-guide`；beta 不上架），zip 手動安裝照舊。三個新權威位置：`data-layer-architecture.md` § 寫入規則（Layer 1 加 plugin 安裝路徑；Q2 plugin 由 plugin manager 管理、Q3 plugin 安裝的授權、Q4 plugin 不備份）、本檔 § 安裝／升級流程 › plugin 安裝／升級（安裝、升級、從 zip 遷移時先備份並移除手動安裝、版號確認、回退）、`auto-session.md` § 依安裝方式的 skill 呼叫字串（Claude 手動／plugin 都 `/ct-exec`；Codex 手動 `$ct-exec`、plugin `$ct:ct-exec`）。**Codex 搭配 BAT 派工繼續用 zip 手動安裝**（BAT 對 Codex 送 `$ct-exec`）。另修 plugin 安裝下會壞的讀取路徑（`auto-session.md` 寫死的 `ct-exec/SKILL.md`、ct-insights 預篩腳本）、3 處連結層級；8 個 `agents/openai.yaml` 補 plugin 寫法。T0348～T0352／D432～D437。BAT 介面、CT 最低 BAT 版本、派工命令、斷點 A 正則不變 |
 | v5.14.1 | 2026-10-30 | PATCH（依 § SemVer：文件修正，沒有新命令、新設定或不相容變更）：塔台偵測得到 plugin 安裝的 bmad-guide——`enhancement-integration.md` § Level 2 › 偵測 改成明列搜尋順序（唯一權威）：手動安裝 `skills/bmad-guide/SKILL.md` → Claude plugin（`installed_plugins.json` 的 `bmad-guide@*`）→ Codex plugin（`config.toml` 啟用的 `bmad-guide@*`）；並存時手動優先；`references/` 相對於找到的 `SKILL.md`；plugin 路徑只讀；可用 skill 清單有 bmad-guide 但讀不到檔案時提示使用者一次（不再靜默改手動欄位）；Playbook → bmad-guide 回饋在 plugin 安裝下不改已安裝檔案。本檔 § plugin 安裝／升級 與安裝指南 § 4.1 補同一個 marketplace 的 `bmad-guide@control-tower`（可選，版號跟 BMad-Method 走、不跟 CT）。塔台端範本 `--workorder`、`--close-worker`、`--worktree-status` 由 `T####` 改成 `<工單 ID>`（含前綴、不截短，`auto-session.md` § 執行方式 加說明）。`mono-repo-patterns.md`、`multi-tower-protocol.md` 的 `project-context.md` 對齊 `AGENTS.md` 的專案上下文區塊（BMad v6.11+）。`data-layer-architecture.md` § 寫入規則補一句：設了 `CLAUDE_CODE_PLUGIN_CACHE_DIR` 時 `installed_plugins.json`、`known_marketplaces.json` 也在它指的目錄（Layer 1 範圍不變）。T0357／T0359／T0360／D446／D449／D450。BAT 介面、派工命令的參數與順序、斷點 A 正則不變 |
 | v5.14.2 | 2026-10-30 | PATCH（依 § SemVer：文件修正，沒有新命令、新設定或不相容變更）：Codex 搭配 BAT 派工也支援 plugin 安裝——`auto-session.md` § 依安裝方式的 skill 呼叫字串（唯一權威）改成依 BAT 版本：BAT `>= 0.7.2-pre.1` 依 Codex 端實際的安裝方式送 `$ct-exec`（手動）或 `$ct:ct-exec`（plugin），兩種都裝時用手動那份；更舊的 BAT 一律送 `$ct-exec`，Codex 端只支援手動安裝。同檔 § 依賴的 BAT 基礎設施 加最低 BAT `0.7.2-pre.1` 一列；本檔〈Codex 搭配 BAT 派工：依 BAT 版本〉、`ct-help`、安裝指南同步引用權威。Codex＋BAT＋plugin 端到端派工未實機驗證。D453／D454／T0362。BAT 介面、派工命令的參數與順序、斷點 A 正則不變 |
+| v5.14.3 | 2026-10-30 | PATCH（依 § SemVer：文件修正，沒有新命令、新設定或不相容變更）：「一個塔台、多個巢狀的獨立 repo」配置——`mono-repo-patterns.md` 新增 § 巢狀的獨立 repo（唯一權威）：上層 `git init`＋`.gitignore` 排除子 repo、工單集中在上層、`repo` 填上層目錄名、`project` 填子 repo、`affects_files` 從上層寫、Worker 在上層執行、產品用 `git -C <子 repo> commit --only <去掉前綴的路徑>`、回報區各記子 repo SHA；限制（不能 `isolation: worktree`、C-0 只驗上層、路徑前綴轉換、新目錄第一次派工的資料夾信任確認）、何時改用每個 repo 一個塔台、已寫在子 repo 的舊工單怎麼處理，附實機驗證結果（CT 5.14.2＋BAT 0.7.2-pre.1）；執行紀錄不預設推到團隊共用 remote（建議）、`parent_workorder` 不是 CT 欄位。`multi-tower-protocol.md` 判斷表加一列、`work-order-template.md`（目標子專案、`affects_files`、`repo`、`isolation` 不能用）、`onboarding.md`、`control-tower/SKILL.md` 路由指回新節。T0368／T0369／D466／D468。落點檢查、commit 規則、BAT 介面、派工命令的參數與順序、斷點 A 正則不變；面板一鍵派工未實機驗證 |
 
 > v4.x ~ v5.0.2 各列以 `docs/CHANGELOG.md` 對應版本段為準。
 >

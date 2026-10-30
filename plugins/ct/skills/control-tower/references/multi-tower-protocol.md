@@ -60,6 +60,7 @@ HOTFIX-01 修了 Redis pool 設定（config/redis.yml max_connections 10→50）
 |------|------|
 | 子專案共用 DB、共用 API、經常同步改動 | 🗼 一個塔台 |
 | 子專案獨立部署、獨立 DB、很少同時改動 | 🗼🗼 各開塔台 |
+| 子專案是跟團隊共用的獨立 repo、隊友不用 CT（v5.14.3+） | 🗼 一個塔台，工單集中在上層的個人塔台 repo（[mono-repo-patterns.md](mono-repo-patterns.md) § 巢狀的獨立 repo）；隊友也用 CT、或需要 worktree 隔離改子 repo → 🗼🗼 各開塔台（同節〈何時改用方案 2〉） |
 | 不確定 | 先用一個，太雜再拆 |
 | Feature + Hotfix 在不同分支 | 🗼🗼 各開塔台 + Worktree 隔離 |
 

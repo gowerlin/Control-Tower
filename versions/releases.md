@@ -1,19 +1,53 @@
 ---
 title: 更版紀錄
-description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.14.2），更早的版本見演進史。
+description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.14.3），更早的版本見演進史。
 ---
 
 <!-- 本頁由 scripts/sync-ct-release.mjs 從 CT CHANGELOG 產生，請勿手改；要改內容請改來源後重跑。 -->
 
 # 更版紀錄
 
-目前版本 **v5.14.2**（2026-10-30）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 58 版（v2.1.1 ～ v5.12.3）請看[演進史](./evolution)。
+目前版本 **v5.14.3**（2026-10-30）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 59 版（v2.1.1 ～ v5.12.4）請看[演進史](./evolution)。
 
 ::: tip 摘要不具權威
 本頁照錄 CT 的 CHANGELOG，只拿掉工單、決策、驗收回函等內部編號與出處註記。規則的權威定義在 CT 各 skill 與 references，兩者有出入時以 CT 本體為準。
 :::
 
 ::: v-pre
+
+## 5.14.3 <small>2026-10-30</small> {#v5-14-3}
+
+
+> **PATCH：補上「一個塔台、多個巢狀的獨立 repo」的配置文件，附實機驗證結果。**
+> 上層目錄底下有好幾個跟團隊共用的獨立 repo 時，工單常被寫進各子 repo，BAT 面板看不到。原因是 Worker 在子 repo 執行、工單只好跟著 cwd 走，不是落點檢查要求的。CT 之前沒有寫這種配置怎麼做，本版補上：工單集中在上層的個人塔台 repo，Worker 在上層執行，子 repo 用 `git -C` commit。
+> 沒有新命令、新設定、新欄位；落點檢查、commit 規則、CT 派工命令、BAT 介面、斷點 A 正則、exit code 不變。升級只換 skill 檔案（見安裝指南 § 2.59）。
+
+### Added
+
+- `mono-repo-patterns.md` 新增 § 巢狀的獨立 repo（一個塔台、多個共用 repo）（唯一權威）：為什麼工單會跑進子 repo、目錄與上層設定（`git init`、`.gitignore` 排除子 repo）、工單 frontmatter（`repo` 填上層目錄名、`project` 填子 repo、`affects_files` 從上層寫）、工單步驟寫法（先讀子 repo 的 `AGENTS.md`／`CLAUDE.md`、確認子 repo 身分、`git -C <子 repo> commit --only <去掉前綴的路徑>`、回報區各記子 repo SHA、工單在上層 commit）、派工與面板、限制、何時改用每個 repo 一個塔台、已寫在子 repo 的舊工單怎麼處理、實機驗證結果
+- 同一節寫明兩個看法：隊友不用 CT 時，執行紀錄不建議預設推到團隊共用的 remote（建議，不是規則）；`parent_workorder` 不是 CT 欄位，同一個塔台底下的關聯用 `depends_on`／`related`
+
+### Changed
+
+- `multi-tower-protocol.md` § 決策：一個塔台還是多個：加一列「子專案是跟團隊共用的獨立 repo、隊友不用 CT」，指向新節
+- `work-order-template.md`：「目標子專案」、`affects_files` 的路徑基準、`repo` 欄位各補一句巢狀獨立 repo 的說明；`isolation` 加「不能用」：工單在上層、產品檔在巢狀獨立 repo 的工單（worktree 裡沒有子 repo）
+- `onboarding.md` 主題 1、`control-tower/SKILL.md` 的 reference 路由：指回新節
+- 安裝指南：〈情境 8：Mono-repo〉補巢狀獨立 repo 的例子；新增 § 2.59
+- 版號：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表；安裝指南 § 1、§ 4.1 版號範例與發行物檔名同步（`OLD=5.14.2`、`VER=5.14.3`）
+
+### Notes
+
+- 這個配置用 CT 5.14.2＋BAT 0.7.2-pre.1 在拋棄式目錄實機驗證過：Worker 在上層執行，落點檢查 C-0、C-1、C-3 都通過，兩個子 repo 各自 `git -C` commit 成功，上層看不到子 repo 的檔案
+- 尚未實機驗證：BAT 面板一鍵派工（要另開一個指向上層的 BAT workspace；cwd = workspace 根是依 BAT 的行為推得）、子 repo 有 remote 時的 push
+- 新目錄第一次派工時，Claude Code 會先問要不要信任這個資料夾，`--wait-started` 可能回 exit `8`；使用者在分頁回答後就正常開始，不需要重派
+- 宣告子 repo 根目錄的 frontmatter 欄位與對應的落點檢查，本版沒有做，之後另議
+
+### Unchanged
+
+- 落點檢查（C-0～C-3）、ct-exec 的 commit 規則、工單欄位、狀態值、設定不變
+- CT 派工命令（`--skill` + `--workorder`）、BAT 介面、斷點 A 正則、exit code 不變
+- zip 手動安裝流程、發行物版面（全量 zip、8 個單一 skill zip、Guide zip）、plugin 名稱與內容組成不變
+- 歷史段落（本檔舊段落、版號表舊列、安裝指南舊章節）不改
 
 ## 5.14.2 <small>2026-10-30</small> {#v5-14-2}
 
@@ -274,45 +308,12 @@ description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.14.2），
   `version-governance.md` 版號表舊列；安裝指南 § 2.4x 等舊章節）不改。
 - 塔台 `*evolve`、`*sync`、補救收尾的流程不讀這三份說明，行為不變；`ct-status` 長版的狀態符號表是顯示慣例，不搬。
 
-## 5.12.4 <small>2026-10-23</small> {#v5-12-4}
-
-
-> **PATCH：退役 `control-tower/references/ct-exec.md`、YOLO 連續 FAILED 計數器位置統一、發行打包調整（文件與發行物，行為不變）。**
-> 塔台與 Worker 行為、計數規則、設定的值域與預設、工單 metadata、BAT 介面都不變。
-
-### Removed
-
-- **`control-tower/references/ct-exec.md`**（100 行的 Worker 命令長版說明）。原因：內容與 `ct-exec/SKILL.md` 不一致（例：落點檢查寫成 C-3 承重、
-  收尾寫成 Step 8 一次性修改；現行為 C-0 承重、§ Phase 4 反序收尾），而且沒有任何 SKILL 或 reference 連到它。Worker 執行規則的權威改為只有 `ct-exec/SKILL.md`。
-  `doctrine.md` § 延伸閱讀的泛稱「各 skill（`ct-exec.md` / `ct-done.md` / `ct-evolve.md` / 等）」改成實際檔名（`ct-exec/SKILL.md` / `ct-done/SKILL.md` / `ct-evolve/SKILL.md` / 等）。
-  升級後已安裝的 `control-tower/references/ct-exec.md` 不再存在（安裝指南 § 4.1 為整個 skill 目錄替換，舊檔隨舊目錄移走；見 § 2.49）。
-
-### Fixed
-
-- **YOLO 連續 FAILED 計數器的位置**：`yolo-mode.md` 原本兩種說法——§ 斷點 B-2、§ YOLO 計數器小節與驗收範例 T7 寫 `_tower-state.md` 的 `## YOLO 計數器` 段，
-  § `_tower-state.md` 新增 `## YOLO 歷程` 區段 寫 `## YOLO 歷程` › `### 計數器`。統一為 **`## YOLO 歷程` › `### 計數器`**（塔台實際寫入的位置）；
-  `##### YOLO 計數器` 小節保留（可引用），內文與格式範例改成新位置。計數規則（B-2 判準）、重設時機、斷點 B 語意不變；其他 reference 沒有寫計數器位置。
-- 安裝指南新增 § 2.49；§ 4.1 發行物版面補單一 skill zip 目錄與教學 skill zip 新版面。
-
-### Changed（打包）
-
-- 發行物另出 **`BMad-Control-Tower-v5.12.4-skills/`**：8 個單一 skill zip `<skill>-v5.12.4.zip`，每個 zip 根層是唯一資料夾 `<skill>/`（claude.ai 一個 zip 只收一個 skill）。
-  全量 `BMad-Control-Tower-v5.12.4.zip` 版面不變（根層 8 個 skill 目錄、不含 `docs/`）。
-- 教學 skill `control-tower-guide-v5.12.4.zip` 改成根層唯一資料夾 `control-tower-guide/`（官方規則：zip 頂層是 skill 資料夾、資料夾名稱等於 `name`；v5.12.3 以前根層是 `SKILL.md`）。
-- repo 工具 `tools/Publish-ClaudeAiSkills.ps1`（不在發行物內）：上傳步驟改「claude.ai → Customize → Skills」（實際位置以當下 UI 為準）；`$Catalog` 新增 `ZipRoot = 'Name'`
-  （資料夾名取 `SKILL.md` frontmatter `name`），Guide 列改用它；`$SettingsUrl` 與其他邏輯不改。
-
-### Unchanged
-
-- 歷史段落（本檔舊版段，含 [5.12.3] 提到 `ct-exec.md` Step 8 與「YOLO 計數器」補小節的兩條；`version-governance.md` 版號表舊列；安裝指南 § 2.48 等舊章節）不改。
-- `control-tower/references/` 其他三份 Worker 命令長版說明（`ct-done.md`、`ct-status.md`、`ct-evolve.md`）不在本版範圍，保留。
-
 :::
 
 ## 延伸閱讀 {#further-reading}
 
-- CT `CHANGELOG.md`（共 68 個版本；本頁列最近 10 版）
+- CT `CHANGELOG.md`（共 69 個版本；本頁列最近 10 版）
 - CT `version-governance.md` § 歷史版號表
-- [演進史](./evolution)：更早的 58 版與八個世代
+- [演進史](./evolution)：更早的 59 版與八個世代
 
 Portal 是摘要，不具權威；與 CT reference 有出入時，以 reference 為準。

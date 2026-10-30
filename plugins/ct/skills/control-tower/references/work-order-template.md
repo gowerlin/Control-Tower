@@ -12,7 +12,7 @@
 - **建立時間**：<當前時間> (UTC+8)
 - **開始時間**：（sub-session 開始時填入）
 - **完成時間**：（完成時填入）
-- **目標子專案**：（mono-repo 時填寫，單一專案可留空）
+- **目標子專案**：（mono-repo 時填寫，單一專案可留空；巢狀的獨立 repo 見 `mono-repo-patterns.md` § 巢狀的獨立 repo）
 - **intervention_type**：fire-and-forget / context-dependent / decision-requiring（未填時 Worker 視為 fire-and-forget；填寫指引見下方）
 - **affects_files**（v4.4.0+，可選；供塔台派發前 overlap check 使用，填寫指引見下方「填寫 `affects_files` 指引」）：
   - `<相對路徑 1>`
@@ -202,6 +202,7 @@
 - **只列寫入目標**：Worker 會對哪些檔案做 **寫入 / 修改 / 刪除**。單純讀取的檔案（前置條件載入）**不算**，不要列入。
 - **使用相對路徑**：以專案根目錄為基準（例：`control-tower/SKILL.md`、`_ct-workorders/_tower-state.md`）。
 - **不含專案前綴**：mono-repo 中的子專案路徑已由 `目標子專案` 欄位補足，`affects_files` 維持相對於工單所在專案根的路徑。
+- **巢狀的獨立 repo**（v5.14.3+；子專案各有自己的 `.git`，工單集中在上層）：一樣從上層（工單所在專案根）寫起，包含子 repo 的目錄（例 `src/app-frontend/src/login.ts`）；Worker 在子 repo commit 時要去掉子 repo 前綴，見 [mono-repo-patterns.md](mono-repo-patterns.md) § 巢狀的獨立 repo。
 
 **標註粒度**：
 
@@ -524,7 +525,7 @@ LOCAL 工單（預設）省略此區段。詳見 [cross-project-coordination.md]
 - **建立時間**：<當前時間> (UTC+8)
 - **開始時間**：（sub-session 開始時填入）
 - **完成時間**：（完成時填入）
-- **目標子專案**：（mono-repo 時填寫，單一專案可留空）
+- **目標子專案**：（mono-repo 時填寫，單一專案可留空；巢狀的獨立 repo 見 `mono-repo-patterns.md` § 巢狀的獨立 repo）
 
 ## 工作量預估
 - **預估規模**：大 / 中 / 小
@@ -871,7 +872,7 @@ frontmatter = SoT；body metadata table = 人類鏡像。
 - **建立時間**：<當前時間> (UTC+8)
 - **開始時間**：（sub-session 開始時填入）
 - **完成時間**：（完成時填入）
-- **目標子專案**：（mono-repo 時填寫，單一專案可留空）
+- **目標子專案**：（mono-repo 時填寫，單一專案可留空；巢狀的獨立 repo 見 `mono-repo-patterns.md` § 巢狀的獨立 repo）
 - **intervention_type**：fire-and-forget / context-dependent / decision-requiring
 - **affects_files**：
   - `<相對路徑 1>`
@@ -948,6 +949,8 @@ basename "$(git rev-parse --show-toplevel)"   # -> BMad-Guide
 
 塔台建立新工單時**應**填入。
 
+工單集中在上層、改的是巢狀的獨立 repo 時，`repo` 填**上層**的目錄名，不是子 repo 的（v5.14.3+，見 [mono-repo-patterns.md](mono-repo-patterns.md) § 巢狀的獨立 repo）。
+
 #### `landing_check`（v5.0.5+，落點檢查逃生閥）
 
 ```yaml
@@ -988,6 +991,7 @@ isolation: worktree
   - 同時派出多張會動產品檔的工單（並行），避免互相踩到工作樹；
   - 會大量改動產品檔、希望驗收過後再合併回 `main` 的工單。
 - **不適合**：只改 `_ct-workorders/` 或文件的小單、研究型工單、需要在主 checkout 操作執行環境的工單（例：安裝、部署）。
+- **不能用**（v5.14.3+）：工單在上層、產品檔在巢狀的獨立 repo 的工單。BAT 以上層建 worktree，worktree 裡沒有子 repo；見 [mono-repo-patterns.md](mono-repo-patterns.md) § 巢狀的獨立 repo › 限制。
 - 🔴 隔離工單的 `_ct-workorders/` 一律在主 checkout 修改；worktree 裡的 `_ct-workorders/` 是 base 當下的唯讀副本，
   不得修改、不得 stage（Worker 規則見 `ct-exec/SKILL.md` § Worktree Isolation）。
 - `affects_files` 照常填，而且更重要：BAT 以它計算 `outOfScopeFiles`，塔台直接合併判準要求它為空陣列

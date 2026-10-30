@@ -1,6 +1,6 @@
 {
   "_note": "相容版本對照（/versions/compatibility 的資料）。每列 feature、ct（CT 起始版本）、bat／codex（最低版本，不需要就省略）、note、source（權威出處：檔案 § 章節）。CT 發版時相容性有變才改（CT 每次發版都要同步更新 Portal）。",
-  "ctVersion": "5.14.2",
+  "ctVersion": "5.14.3",
   "rows": [
     {
       "feature": "帶前綴的工單 ID 走結構化派工（--workorder 帶前綴）",
@@ -146,6 +146,12 @@
       "bat": ">= 0.7.2-pre.1",
       "note": "這個 BAT 版本是預覽版。只有「Codex 用 plugin 安裝又要接 BAT 派工」需要它；Codex 用 zip 手動安裝、或只用 Claude Code 的，BAT 不必升級。兩種都裝時 BAT 送手動那份，所以從 zip 改用 plugin 照樣要先移除手動安裝。更舊的 BAT 一律送 $ct-exec，接它派工的 Codex 用 zip 手動安裝。CT 派工命令不變；端到端派工尚未實機驗證。",
       "source": "CHANGELOG.md [5.14.2]；auto-session.md § 依安裝方式的 skill 呼叫字串、§ 依賴的 BAT 基礎設施；version-governance.md § plugin 安裝／升級"
+    },
+    {
+      "feature": "一個塔台管多個巢狀的獨立 repo（工單集中在上層、Worker 在上層執行、子 repo 用 git -C commit）",
+      "ct": "v5.14.3",
+      "note": "文件配置，不是新規則：落點檢查、commit 規則、派工命令、BAT 介面與最低 BAT 版本都不變，CT 5.14.2 起就能這樣用。不能用 worktree 隔離；C-0 只驗上層。實機驗證用 CT 5.14.2 搭配 BAT 0.7.2-pre.1；面板一鍵派工與子 repo 有 remote 時的 push 尚未實機驗證。",
+      "source": "CHANGELOG.md [5.14.3]；mono-repo-patterns.md § 巢狀的獨立 repo（一個塔台、多個共用 repo）；multi-tower-protocol.md § 決策：一個塔台還是多個"
     },
     {
       "feature": "Level 2：外部 bmad-guide 的 BMad workflow 路由",

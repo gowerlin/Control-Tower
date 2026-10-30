@@ -1,6 +1,6 @@
 ---
 title: 常見問題
-description: CT 的常見問題：新版沒生效、Claude Code 與 Codex 的差異、卡在 IN_PROGRESS 的工單、yolo 會不會失控、一定要用 BAT 嗎、塔台為什麼不改程式碼，以及 BAT 相關問題去哪查。
+description: CT 的常見問題：新版沒生效、Claude Code 與 Codex 的差異、卡在 IN_PROGRESS 的工單、yolo 會不會失控、一定要用 BAT 嗎、塔台為什麼不改程式碼、好幾個共用 repo 的工單放哪裡，以及 BAT 相關問題去哪查。
 ---
 
 # 常見問題
@@ -187,7 +187,17 @@ CT 是在執行時去讀 `bmad-guide` 的 reference，不把它的內容寫死�
 ::: details 派工不是一個命令
 CT 沒有 `*dispatch`。派工是開單之後的一個步驟：塔台依 `auto-session` 設定自動派，或給你指令讓你自己開。舊版的 `*help roles`（職責速查卡）也已在 v5.0.3 刪除。完整的現行命令見[指令參考大全](/reference/commands)。
 
-出處：`control-tower/SKILL.md` § Built-In Commands；CT 安裝與使用指南 § 14. 命令速查表（v5.14.2）。
+出處：`control-tower/SKILL.md` § Built-In Commands；CT 安裝與使用指南 § 14. 命令速查表（v5.14.3）。
+:::
+
+### 好幾個跟團隊共用的 repo，工單要放哪裡？ {#nested-repos}
+
+::: details 放在上層，一個塔台管全部
+上層目錄底下有好幾個各自獨立的 git repo、隊友不用 CT 時，CT 建議（v5.14.3 起寫明）：上層自己 `git init` 當你的塔台 repo，`.gitignore` 排除各子 repo；工單全放上層的 `_ct-workorders/`，`repo` 填上層的目錄名；Worker 在上層執行，改子 repo 的檔案、用 `git -C <子 repo>` commit。這樣 BAT 面板看得到全部工單、編號連續，執行紀錄也不會推進團隊共用的 repo。
+
+工單跑進子 repo，通常是因為 Worker 在子 repo 執行，不是落點檢查要求的。這種配置不能用 worktree 隔離；隊友也用 CT、或要用 worktree 隔離改子 repo 時，改成每個 repo 各開一個塔台。細節見[一個塔台管多個共用 repo](/deep/features/multi-tower#nested-repos)。
+
+出處：`control-tower/references/mono-repo-patterns.md` § 巢狀的獨立 repo（一個塔台、多個共用 repo）；`control-tower/references/multi-tower-protocol.md` § 決策：一個塔台還是多個。
 :::
 
 ## BAT 相關問題 {#bat}

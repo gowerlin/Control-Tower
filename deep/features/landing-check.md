@@ -42,6 +42,8 @@ Worker 在任何寫入動作之前，包括改工單、碰產品檔、commit，�
 
 `repo` 是目錄名，不是路徑也不是顯示名稱，也不要拿它和 `project` 比。`project` 指的是 mono-repo 裡的子專案或 PLAN、BUG 紀錄，和 repo 是刻意分開的兩個欄位。在 BAT worktree 裡（有 `CT_HOME` 時），比對對象換成 `CT_HOME` 的目錄名，因為 worktree 的根目錄叫 `T####`；換的是比對對象，語意不變，仍是承重、仍然不符就停。
 
+工單集中在上層、改的是巢狀的獨立 repo 時（v5.14.3 起寫明的配置，見[一個塔台管多個共用 repo](/deep/features/multi-tower#nested-repos)），`repo` 填**上層**的目錄名，Worker 也在上層執行。C-0 因此只驗上層，不驗子 repo 是不是對的 clone，這一步要寫進工單步驟（例如 `git -C <子 repo> rev-parse --show-toplevel`）。上層一定要是 git repo，不是的話 C-0、C-1、C-3 都會跳過。
+
 ### C-1：工單位置 {#c1}
 
 確認找到的工單檔確實在 repo 根目錄底下。不在就停。它便宜，但很少觸發：Worker 是在自己的 cwd 底下找工單，cwd 錯了通常是根本找不到工單；只有 ID 撞號才會誤中，而那種情況 C-0 會直接抓到。所以 C-1 要保留，但不能依賴它。
@@ -115,6 +117,7 @@ landing_check:
 
 - `ct-exec/SKILL.md` § Landing Zone Check（C-0 — Repo identity (load-bearing)、C-1 — Work order belongs to this repo、C-3 — `affects_files` spot check (secondary / heuristic)、`landing_check.expect_missing` — the escape valve、C-2 — Branch comparison、Recording、C-4 (workspace consistency) is deliberately not implemented）
 - `control-tower-guide/references/governance.md` § Landing Zone Check：身分不能用路徑證明
+- `control-tower/references/mono-repo-patterns.md` § 巢狀的獨立 repo › 限制（v5.14.3+）
 - `control-tower/references/work-order-template.md` § `repo`（v5.0.5+，落點檢查 C-0 承重欄位）、§ `landing_check`（v5.0.5+，落點檢查逃生閥）
 - CT 安裝與使用指南 § 2.15、§ 2.16
 

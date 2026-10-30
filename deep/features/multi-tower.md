@@ -1,6 +1,6 @@
 ---
 title: 跨塔台與跨專案協作
-description: 一個塔台還是多個；同專案多塔台靠登記簿與留言板協調；跨專案有五種協調類型、工單前綴與統籌權；Claude Code 塔台之間怎麼選對收件人；跨專案契約變更怎麼做。
+description: 一個塔台還是多個（含一個塔台管多個巢狀的獨立 repo）；同專案多塔台靠登記簿與留言板協調；跨專案有五種協調類型、工單前綴與統籌權；Claude Code 塔台之間怎麼選對收件人；跨專案契約變更怎麼做。
 ---
 
 # 跨塔台與跨專案協作
@@ -15,10 +15,24 @@ description: 一個塔台還是多個；同專案多塔台靠登記簿與留言�
 |---|---|
 | 子專案共用資料庫、共用 API、經常同步改動 | 一個塔台 |
 | 子專案獨立部署、獨立資料庫、很少同時改動 | 各開一個塔台 |
+| 子專案是跟團隊共用的獨立 repo（各有自己的 `.git`），隊友不用 CT | 一個塔台，工單集中在上層（見下方[巢狀的獨立 repo](#nested-repos)）；隊友也用 CT、或要用 worktree 隔離改子 repo，就各開一個塔台 |
 | 不確定 | 先用一個，太雜再拆 |
 | Feature 和 Hotfix 在不同分支 | 各開一個塔台，加上 worktree 隔離 |
 
 原則是：協調成本低於 context 成本時才拆。一座塔台管太多子專案，它的 context 會被不相干的狀態塞滿；拆太細，就要花力氣在塔台之間傳話。
+
+### 巢狀的獨立 repo：一個塔台管多個共用 repo {#nested-repos}
+
+上層目錄底下有好幾個各自獨立的 git repo（各有自己的 `.git` 和 remote，通常跟團隊共用），你想用一個塔台管全部工單，又不想把執行紀錄寫進共用的 repo。v5.14.3 起 CT 寫明這種配置（下稱方案 1）。這是寫法，不是新規則：落點檢查、commit 規則和派工命令都沒變，CT 5.14.2 起就能這樣用。
+
+工單常被寫進各子 repo、BAT 面板看不到，原因不是落點檢查要求這樣放，而是 Worker 在子 repo 執行：Worker 在自己 cwd 底下找工單，`repo` 又是 cwd 所在 repo 的目錄名。反過來讓 **Worker 在上層執行**，落點檢查一樣會過。
+
+- **上層 `git init`**：上層不是 git repo 時，落點檢查 C-0、C-1、C-3 全部跳過，等於沒有保護。上層的 `.gitignore` 逐一排除子 repo，BAT workspace 指向上層。
+- **工單集中在上層** `_ct-workorders/`：`repo` 填上層的目錄名，`project` 填要改的子 repo，`affects_files` 從上層寫起。面板看得到全部工單，編號連續。
+- **子 repo 用 `git -C` commit**，路徑要去掉子 repo 前綴：`affects_files` 寫 `src/app-frontend/src/login.ts`，commit 時是 `git -C src/app-frontend commit --only src/login.ts`；工單本身在上層 commit。這些都要寫進工單步驟，包括先讀子 repo 的 `AGENTS.md`／`CLAUDE.md`、先確認子 repo 身分。
+- **限制**：不能用 worktree 隔離（worktree 裡沒有被上層排除的子 repo）；C-0 只證明 Worker 站在上層，不證明子 repo 是對的 clone。新目錄第一次派工時，Claude Code 會先問要不要信任這個資料夾，Worker 等你在分頁回答才開始，不必重派。
+
+隊友也用 CT、需要 worktree 隔離改子 repo，或各 repo 很少同時改時，改用方案 2：每個 repo 各開一個 workspace 和塔台，跨 repo 的需求走下面的[協調類型](#types)。方案 1 在拋棄式目錄用 CT 5.14.2 搭配 BAT 實機驗證過；面板一鍵派工、子 repo 有 remote 時的 push 還沒有實機驗證。
 
 ## 同一個專案的多個塔台 {#same-project}
 
@@ -97,8 +111,9 @@ BAT `>= 0.7.1-pre.1` 開的 claude 分頁會帶名稱：`<工作區> · Worker �
 ## 延伸閱讀 {#further-reading}
 
 - `control-tower/references/multi-tower-protocol.md` § 記憶分層、§ 塔台登記簿、§ 跨塔台留言板、§ 決策：一個塔台還是多個、§ 跨塔台 GP 編號協議
+- `control-tower/references/mono-repo-patterns.md` § 巢狀的獨立 repo（一個塔台、多個共用 repo）（v5.14.3+）
 - `control-tower/references/cross-project-coordination.md` § 五種協調類型、§ HANDOVER 與 ADVISORY（非工單跨塔台通道）、§ 跨 session 選收件人（v5.9.0+）、§ 工單前綴機制、§ 跨專案協調流程、§ 統籌權規則
-- `control-tower-guide/references/advanced-patterns.md` § 跨專案協調、§ 多塔台
+- `control-tower-guide/references/advanced-patterns.md` § 跨專案協調、§ 多塔台、§ 巢狀的獨立 repo：一個塔台管多個共用 repo（v5.14.3）
 - `docs/Control Tower 實戰補充/CT實戰補充（一-C）跨專案契約變更.md`
 
 ::: warning 摘要不具權威

@@ -1,6 +1,6 @@
 {
   "name": "ct-guide",
-  "version": "5.14.2",
+  "version": "5.14.3",
   "description": "Interactive learning guide for BMad Control Tower: concepts, design rationale and architecture (control-tower-guide).",
   "author": {
     "name": "BMad Control Tower"

@@ -68,7 +68,7 @@ status: IN_PROGRESS
 | `id` / `title` | `T####` 與不含狀態 emoji 的標題 | ID 不含檔名描述，比對才不會因描述改字而失準 |
 | `type` | `research`／`impl`／`fix`／`test`／`docs`／`refactor`／`audit`／`spike`／`chore` | `research` 會改變 Worker 的互動行為（見下方研究型工單） |
 | `status` | 狀態 enum（見下節） | 顯式狀態讓塔台只讀前幾十行就能分類，不必全文判讀 |
-| `repo` | repo 根目錄的**目錄名** | 落點檢查的身分依據；與 `project`（子專案／PLAN／BUG 名）語意不同、不得混用 |
+| `repo` | repo 根目錄的**目錄名** | 落點檢查的身分依據；與 `project`（子專案／PLAN／BUG 名）語意不同、不得混用。工單集中在上層、改的是巢狀的獨立 repo 時填**上層**的目錄名（v5.14.3，見 `advanced-patterns.md` § 巢狀的獨立 repo） |
 | `project` | mono-repo 子專案或記錄編號 | 由人命名，不參與落點檢查 |
 | `created_at` / `started_at` / `updated_at` / `completed_at` | 帶時區的 ISO 8601 時間 | 時間一律由系統指令取得，不由 AI 推估 |
 | `depends_on` / `followups` | 前置與後續工單 | 工單鏈的明文依賴 |

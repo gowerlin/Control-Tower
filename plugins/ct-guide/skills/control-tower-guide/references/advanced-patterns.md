@@ -178,6 +178,44 @@ D62 **不溯及既往**：舊的無前綴編號凍結、不改名、舊引用照
 規則不同              → 各自獨立派發，互不相依
 ```
 
+### 巢狀的獨立 repo：一個塔台管多個共用 repo（v5.14.3）
+
+上面講的是子專案都在**同一個** git repo 裡的情況。另一種常見的配置是：上層目錄底下有好幾個**各自獨立的 git repo**，
+各有自己的 remote，通常是跟團隊共用的，隊友不一定用 CT。
+
+**為什麼工單會跑進子 repo。** 沒有特別設定時，常見的結果是工單被寫進各子 repo 自己的 `_ct-workorders/`，BAT 面板只讀 workspace 那一層，看不到。
+很多人以為是落點檢查要求的，其實不是。C-0 檢查的是「Worker 是不是在工單寫的那個 repo」，不規定工單放哪裡（見 `governance.md` § Landing Zone Check）。
+真正的原因是三件事合在一起：Worker 在**自己 cwd 底下**找工單；`repo` 的值是 Worker cwd 的 git toplevel；塔台派工的 `--cwd` 是塔台自己的專案根。
+所以只要讓 Worker 在子 repo 執行，工單就只能跟著放進子 repo。
+
+**反過來想：讓 Worker 在上層執行。** 上層自己 `git init` 當個人的塔台 repo，`.gitignore` 排除子 repo，工單全放在上層；
+工單寫 `repo: <上層目錄名>`、`project: <子 repo>`，`affects_files` 從上層寫起；Worker 在上層執行，產品用 `git -C <子 repo> commit` 交到子 repo，
+工單在上層 commit。這樣 C-0、C-1 都自然通過，面板看得到全部工單，執行紀錄也不會推到團隊共用的 remote。
+這不是新規則，只是把現有規則用對：CT 5.14.2 就能這樣用，5.14.3 補上文件並附實機結果（落點檢查全過、兩個子 repo 各自 commit 成功）。
+
+為什麼不乾脆放寬落點檢查、讓 Worker 在子 repo 跑、工單留在上層？因為 C-0 防的正是「對的工單在錯的 repo 執行」。
+要放寬就得把「工單在哪個 repo」和「Worker 在哪個 repo」拆成兩個身分各自比對，還要改 worktree 規則與面板派工的 cwd；
+代價大，好處只有「子 repo 的 `AGENTS.md` 會自動載入」，而這一點在工單步驟寫「先讀子 repo 的 `AGENTS.md`」就補得上。
+
+**一個塔台（方案 1）還是每個 repo 一個塔台（方案 2）：**
+
+| 情況 | 選 |
+|---|---|
+| 隊友不用 CT、不想把執行紀錄放進共用 repo；經常一次改好幾個 repo | 方案 1：一個塔台，工單集中在上層 |
+| 隊友也用 CT；需要 worktree 隔離改子 repo；各 repo 很少同時改 | 方案 2：每個 repo 一個 workspace＋塔台，跨 repo 走 COORDINATED／DELEGATE |
+
+**方案 1 的限制**（細節在 CT 的權威段）：
+
+- **不能 `isolation: worktree`**：BAT 以上層建 worktree，而子 repo 被上層排除，worktree 裡沒有它
+- **C-0 只驗上層**：它證明 Worker 站在塔台 repo，不證明子 repo 是對的 clone；要確認，工單步驟寫 `git -C <子 repo> rev-parse --show-toplevel`
+- **路徑基準不同**：`affects_files` 從上層寫，`git -C` 時要去掉子 repo 前綴，檔案多時容易錯
+- **新目錄第一次派工**：Claude Code 會先問要不要信任這個資料夾，`--wait-started` 可能回 exit `8`；回答後就正常，不必重派
+
+已經寫在子 repo 的舊工單，可以搬到上層、也可以留著當歷史，CT 不替使用者決定。
+
+權威：CT `control-tower/references/mono-repo-patterns.md` § 巢狀的獨立 repo（一個塔台、多個共用 repo）；
+判斷表在 `multi-tower-protocol.md` § 決策：一個塔台還是多個。
+
 ---
 
 ## 三層除錯防線

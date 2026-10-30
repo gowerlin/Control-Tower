@@ -2,7 +2,7 @@
 name: ct-done
 description: "Control Tower Worker recovery-close skill for remedially closing a work order after interruption, missed closeout, manual status correction, or Tower recovery. Use when the user invokes $ct-done or /ct-done with a T#### work order and optionally a final status such as DONE, FIXED, PARTIAL, BLOCKED, or FAILED."
 ---
-<!-- ct-done-version: 5.14.2 -->
+<!-- ct-done-version: 5.14.3 -->
 
 # ct-done
 

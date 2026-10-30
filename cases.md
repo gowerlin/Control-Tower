@@ -1,6 +1,6 @@
 ---
 title: 實戰案例
-description: CT 開發過程中真實發生的八件事：斷電續作、衝突合併、用證據擋下升級、量測推翻直覺、收尾前被關、跨塔台交辦、版本同步規則、塔台不採信 Worker 的 PASS。
+description: CT 開發過程中真實發生的九件事：斷電續作、衝突合併、用證據擋下升級、量測推翻直覺、收尾前被關、跨塔台交辦、版本同步規則、塔台不採信 Worker 的 PASS、先實機再寫文件。
 ---
 
 # 實戰案例
@@ -27,7 +27,7 @@ description: CT 開發過程中真實發生的八件事：斷電續作、衝突�
 
 ## 用證據做決定 {#evidence}
 
-CT 不靠「看起來沒問題」做決定。下面三件事，都是一個量測或一次複驗改變了原本的判斷。 {.ct-lead}
+CT 不靠「看起來沒問題」做決定。下面四件事，都是一個量測、一次複驗或一次實機實驗改變或補足了原本的判斷。 {.ct-lead}
 
 <CaseCard id="measure-landing" title="量測推翻直覺：身分不能用路徑證明" tag="量測推翻直覺" facet="ct" before-label="情境" after-label="CT 怎麼處理" :roles="[['CT', '模擬量測、改設計、推翻自己先前的判斷']]">
 <template #before>2026-09-01，一個 Worker 在實作落點檢查時改了規則：C-3 原本檢查「檔案或它的直接父目錄存在」，Worker 改成「往上找到最近存在的祖先目錄」。理由是它這張工單本身要建立一整棵新版本目錄，照原規則會被誤判成「可能落錯 repo」。Worker 說這樣改「鑑別力沒有減少」。</template>
@@ -45,6 +45,12 @@ CT 不靠「看起來沒問題」做決定。下面三件事，都是一個量�
 <template #before>2026-10-22，一張課程工具的工單回報 DONE，所有驗收都 PASS，其中包括一支逐字稿工具的 23 項自動測試。Worker 是在自己的 shell 環境跑的，結果全綠。</template>
 <template #after>塔台收單前在自己的 Git Bash 重跑同一組測試，結果 1/23 FAIL：一個以 <code>/control-tower</code> 開頭的參數，被 Git Bash 的路徑轉換改寫成一個 Windows 路徑。設定 <code>MSYS_NO_PATHCONV=1</code> 之後 23 項全過。塔台接著推論影響範圍：<code>claude</code> 是原生程式，工具送出的 <code>/ct-exec</code> 這類提示也會被改壞，下一階段開始前一定要修。</template>
 <template #result>原工單照驗收收單，另開一張範圍很小的工單修這個缺陷，並要求用一次真實呼叫證明提示原樣送達。示範的機制：Worker 的 PASS 是證據之一，不是結論；塔台收單時在不同環境獨立複驗，問題就在交出去之前被抓到。→ <a href="./lifecycle">一張工單的一生</a></template>
+</CaseCard>
+
+<CaseCard id="nested-repos" title="先查前提、先實機，再寫文件" tag="前提更正" facet="both" before-label="情境" after-label="CT 怎麼處理" :roles="[['BAT 塔台', '轉來使用者的問題'], ['CT', '查證前提、拋棄式目錄實機驗證、補文件']]">
+<template #before>2026-10-30，BAT 塔台轉來一位使用者的問題：上層目錄底下有好幾個跟團隊共用的獨立 repo，工單被寫進各子 repo，BAT 指揮塔面板只讀 workspace 那一層、看不到，編號也各自從頭算。BAT 塔台的理解是落點檢查 C-0、C-1 要求工單放在子 repo，並提了幾個方向，其中一個是放寬落點檢查。</template>
+<template #after>CT 塔台先查前提：C-0、C-1 是 v5.0.4、v5.0.5 為了攔下「對的工單在錯的 repo 執行」加的，並沒有規定工單放哪裡；真正讓工單跑進子 repo 的，是 Worker 在子 repo 執行（Worker 在自己 cwd 底下找工單，<code>repo</code> 又是 cwd 所在 repo 的名字）。放寬落點檢查等於拆掉 C-0 要攔的那道防線，所以不採用；改推薦讓 Worker 在上層執行：上層 <code>git init</code> 當個人的塔台 repo、工單全放上層、子 repo 用 <code>git -C</code> commit，BAT 不需要改程式。這個方案當時只是照規則推得，塔台沒有直接寫進文件，而是先建一個拋棄式目錄（上層加兩個子 repo），派 Worker 實機跑一張同時改兩個子 repo 的工單。</template>
+<template #result>C-0、C-1、C-3 都通過，兩個子 repo 各自 commit 成功，上層看不到子 repo 的檔案。實驗另外找到三件推論時沒想到的事：<code>affects_files</code> 從上層寫、<code>git -C</code> 時要去掉子 repo 前綴；C-0 只驗上層、不驗子 repo；新目錄第一次派工會先跳出資料夾信任確認，<code>--wait-started</code> 回 exit <code>8</code>（塔台沒有重派，請使用者在分頁回答）。這三點都寫進 v5.14.3 的限制，沒驗到的面板一鍵派工也照實標成未驗。示範的機制：先更正前提再談方案、推論先實機再寫成文件、護欄不為方便而放寬。→ <a href="./deep/features/multi-tower#nested-repos">一個塔台管多個共用 repo</a></template>
 </CaseCard>
 
 ## 並行與合併 {#parallel}
@@ -82,6 +88,7 @@ BAT 站另有一頁案例，包括虛構專案 demo-shop 的三個情境，以�
 - CT 開發紀錄（決策日誌、專案本地規則）
 - CT `research-workorder.md` § Renew 機制；`ct-done/SKILL.md`
 - CT `ct-exec/SKILL.md` § Landing Zone Check
+- CT `mono-repo-patterns.md` § 巢狀的獨立 repo（一個塔台、多個共用 repo）
 - CT `workflow-engine.md` § 現況：G2 未通過（v5.11.0）
 - CT `merge-workorder.md` § 三種模式、§ 收單 SHA 比對五步、§ 斷點 E
 - CT `work-order-system.md` § 重派前回收舊 Worker 分頁（v5.12.0+）
