@@ -1,0 +1,5 @@
+# 匯出到公開 repo 根目錄（本機在 site/ 底下，這兩個目錄不存在，規則不生效）。
+# plugin marketplace 由 Claude／Codex 以 git clone 取得：使用者端 core.autocrlf=true 時會 checkout 成 CRLF，
+# 這裡固定 LF，讓裝到的 skill 與發行 zip 逐位元組相同。站點檔案在 CI（Linux）建置，不受影響，所以不擴及全 repo
+.claude-plugin/** text eol=lf
+plugins/** text eol=lf

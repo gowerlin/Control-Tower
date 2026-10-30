@@ -45,6 +45,8 @@ const COURSE_RELEASE_TAG = 'course-ct-bat-bmad-go-sms'
 // plugin marketplace 所在的公開 repo（owner/repo；就是本站的公開 repo）：同上，只能寫在設定裡；/install 的 marketplace add 指令用它組。
 // scripts/deid-scan.mjs 讀這一行，只在 CT 發行物裡放行這個名稱（改名時兩邊一起生效）
 const CT_MARKETPLACE_REPO = 'gowerlin/Control-Tower'
+// 導覽列最右側的 GitHub 圖示連到本站的公開 repo（比照 BAT 站的 socialLinks）；由上一行組出，不另寫網址
+const CT_REPO_URL = `https://github.com/${CT_MARKETPLACE_REPO}`
 // Artifact 預覽用的哨兵 base：build 完由 scripts/build-artifact.mjs 改寫成相對路徑
 const ARTIFACT_BASE = '/__ct__/'
 
@@ -348,6 +350,8 @@ export default () => {
 
       nav,
       sidebar,
+
+      socialLinks: [{ icon: 'github', link: CT_REPO_URL, ariaLabel: 'GitHub' }],
 
       // 頁尾只在沒有側欄的頁面（首頁）顯示，這是 VitePress 預設主題的行為
       footer: {

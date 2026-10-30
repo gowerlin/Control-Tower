@@ -45,6 +45,7 @@ PORTAL_BASE=/Control-Tower/ PORTAL_SITE_URL=https://<owner>.github.io/Control-To
 | `design/og-card.html` | 分享卡片圖 `public/og-card.png` 的原稿，不發布 |
 | `scripts/` | 建置與維護用的腳本，見下節 |
 | `lychee.toml` | 外部連結檢查（lychee）設定 |
+| `.gitattributes` | 固定 plugin marketplace（`.claude-plugin/`、`plugins/`）的換行為 LF：使用者端 `core.autocrlf=true` 時 clone 下來也與發行 zip 逐位元組相同 |
 | `.github/workflows/pages.yml` | GitHub Pages 建置與部署 |
 | `.claude-plugin/`、`plugins/`（只在公開 repo） | plugin marketplace `control-tower`：CT plugin `ct`（8 個 skill）、CT Guide plugin `ct-guide` 與 BMad Guide plugin `bmad-guide`。匯出時從 CT、CT Guide、BMad Guide 的版本目錄產生，內容等同發版 zip（`bmad-guide` 另附 BMad-Method 的授權聲明）；不要手改 |
 
