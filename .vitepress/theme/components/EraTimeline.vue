@@ -70,12 +70,12 @@ const ERAS: Era[] = [
     what: 'BAT 先定介面、再委派 CT 寫規則：範圍權杖、worktree 隔離與合併工單、yolo Worker 改問塔台、斷點 D、Worker 啟動確認、跨 session 認出對方的塔台。'
   },
   {
-    callsign: 'v5.10–5.13',
-    range: '5.10.0–5.13.1',
+    callsign: 'v5.10–5.14',
+    range: '5.10.0–5.14.0',
     dates: '10-20 → 10-30',
-    count: '13 版',
-    theme: 'Workflow 規則層 · 重派前回收 · 狀態衛生',
-    what: '替 Workflow 工具在工單裡定位置：它是單張工單內的執行方式，要明文授權才能用；閘門 G2 沒過，範圍縮小。5.12 在重派前先回收舊 Worker 分頁。5.13 讓 BAT 指揮塔面板穩定讀得到 CT 寫的檔，並讓未結清單只留真的還要做的事；5.13.1 讓 Worker 的回報一律帶完整工單 ID，BAT 才對得上分頁。'
+    count: '14 版',
+    theme: 'Workflow 規則層 · 重派前回收 · 狀態衛生 · plugin',
+    what: '替 Workflow 工具在工單裡定位置：它是單張工單內的執行方式，要明文授權才能用；閘門 G2 沒過，範圍縮小。5.12 在重派前先回收舊 Worker 分頁。5.13 讓 BAT 指揮塔面板穩定讀得到 CT 寫的檔，並讓未結清單只留真的還要做的事；5.13.1 讓 Worker 的回報一律帶完整工單 ID，BAT 才對得上分頁。5.14 另提供 plugin marketplace 安裝，Claude Code 與 Codex 可以訂閱更新。'
   }
 ]
 

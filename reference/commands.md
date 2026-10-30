@@ -58,9 +58,11 @@ const towerRows = [
 
 <CardTable caption="同一個 skill 在兩種 CLI 的寫法" :columns="['用途', 'Claude Code', 'Codex']" :rows="twoCliRows" />
 
+上表是 zip 手動安裝的寫法。v5.14.0 起用 plugin marketplace 安裝時：Claude Code 照常用上表的寫法，要確定叫到 plugin 版用完整寫法 `/ct:ct-exec T0001`；Codex 一律帶前綴，例如 `$ct:ct-exec T0001`、`$ct:control-tower`，不帶前綴的 `$ct-exec` 叫不到。BAT 對 Codex 派工送的是 `$ct-exec`，所以接 BAT 派工的 Codex 用 zip 手動安裝。安裝方式見[安裝 › 用 plugin marketplace 安裝](/install#plugin)。
+
 `*` 命令和同名的獨立 skill（例如 `*evolve` 與 `/ct-evolve`）的差別在**在哪個角色裡執行**，不在功能多寡。
 
-出處：CT Guide `references/ecosystem.md` § 三軌前綴：`*`、`/`、`$`；CT 安裝與使用指南 § 4.2 Agent CLI 選擇。
+出處：CT Guide `references/ecosystem.md` § 三軌前綴：`*`、`/`、`$`；CT 安裝與使用指南 § 4.2 Agent CLI 選擇；`control-tower/references/auto-session.md` § 依安裝方式的 skill 呼叫字串。
 
 ## skill 指令 {#skills}
 
@@ -78,7 +80,7 @@ const towerRows = [
 
 ### `/ct-exec T####` {#ct-exec}
 
-- **語法**：`/ct-exec T####`，或工單檔路徑（Codex：`$ct-exec T####`）
+- **語法**：`/ct-exec T####`，或工單檔路徑（Codex：`$ct-exec T####`；用 plugin 安裝時 Claude Code 也可寫完整的 `/ct:ct-exec T####`，Codex 一律 `$ct:ct-exec T####`）
 - **參數**：一個工單編號或路徑。同一個編號在 `_ct-workorders/` 下找到多張時，Worker 停下來請你指定。
 - **執行環境**：由塔台派工時傳入，Worker 不讀設定檔決定模式。`CT_MODE`：`yolo`／`ask`／`off`／`on`（沒有或不合法時當成 `ask`）；`CT_INTERACTIVE`：`1` 允許研究型互動、`0` 禁止；`CT_HOME`：在 BAT 的 worktree 隔離分頁裡才有，指向主 checkout。
 - **在哪用**：Worker session（一張工單一個新的 session）。
@@ -452,7 +454,7 @@ yolo 下塔台另外也接受 `T#### 失敗`。不是這些格式的訊息，會
 - `control-tower/SKILL.md` § Built-In Commands
 - `ct-help/SKILL.md` § Command Families
 - 各 skill 的 `SKILL.md`（`ct-exec`、`ct-done`、`ct-status`、`ct-evolve`、`ct-insights`、`ct-fieldguide`、`control-tower-guide`）
-- CT 安裝與使用指南 § 13. Config 速查表（v5.13.1）、§ 14. 命令速查表（v5.13.1）
+- CT 安裝與使用指南 § 13. Config 速查表（v5.14.0）、§ 14. 命令速查表（v5.14.0）
 - `control-tower/references/tower-config.md` § `*config` 命令、§ 可用選項（表下註明 `gp-prefix` 不是選項）
 - `control-tower/references/multi-tower-protocol.md` § `gp-prefix` 設定（唯一權威定義）
 - `control-tower/references/fieldguide-commands.md`

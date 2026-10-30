@@ -29,14 +29,14 @@ CT 採 Semantic Versioning，`MAJOR.MINOR.PATCH`：
   caption="CT 的 SemVer 慣例"
 />
 
-到目前為止，CHANGELOG 記錄的 65 個版本裡只有一次 MAJOR，就是 5.0.0。
+到目前為止，CHANGELOG 記錄的 66 個版本裡只有一次 MAJOR，就是 5.0.0。
 
 ## 版號寫在哪裡
 
 Skill 的 YAML frontmatter 只放執行時需要的欄位（至少 `name` 和 `description`），**不放 `version:`**。原因是 Codex 的 skill 驗證會把不認得的欄位當成錯誤。版號的事實來源改成內文的第一個註解：
 
 ```markdown
-<!-- control-tower-version: 5.13.1 -->
+<!-- control-tower-version: 5.14.0 -->
 ```
 
 8 個 CT skill 各自有一行，名稱換成 skill 自己的（例如 `ct-exec-version`），Guide 是 `control-tower-guide-version`。同一個版號還會出現在幾個地方，發版時要一起改：
@@ -64,11 +64,11 @@ Portal 的版本資料也要在同一輪更新：
 - **功能或規則有變時**（MINOR，或改了規則的 PATCH）：一併更新受影響的功能頁、進階頁與[指令參考大全](/reference/commands)，發版時列出受影響的 Portal 頁。
 - **進入新世代時**：由塔台判斷，更新[演進史](./evolution)。
 
-收一輪發版時要對三處版號：Portal 的版本資料、CT `SKILL.md` 的版號註解、Guide 的版號。三處一致才算收完。
+收一輪發版時要對四處版號：Portal 的版本資料、CT `SKILL.md` 的版號註解、Guide 的版號，以及 plugin marketplace 裡 plugin 的版號（v5.14.0 起，`ct` = CT 版號、`ct-guide` = Guide 版號）。四處一致才算收完。
 
 ## 怎麼查本機裝了哪一版
 
-在 Claude Code 的安裝目錄下，把每個 skill 的版號註解列出來：
+zip 手動安裝的，在 Claude Code 的安裝目錄下，把每個 skill 的版號註解列出來：
 
 ```bash
 grep -h -o "[a-z-]*-version: [0-9.]*" ~/.claude/skills/{control-tower,ct-*}/SKILL.md
@@ -76,12 +76,14 @@ grep -h -o "[a-z-]*-version: [0-9.]*" ~/.claude/skills/{control-tower,ct-*}/SKIL
 
 8 行都應該是同一個版號（塔台和 Worker 必須同批升級）。Codex 端把 `~/.claude/skills` 換成 `~/.codex/skills`。兩端是**各自獨立的安裝**，升級其中一端不會更新另一端，要分別查。v5.0.2 以前的版本請改看 frontmatter 的 `version:`。
 
-升級的步驟（備份、暫存複驗、替換、逐檔比對）見[安裝](/install)。新版從**下一個 session** 才生效，正在跑的 session 仍是舊規則。
+用 plugin 安裝的（v5.14.0 起），看 `claude plugin list --json`、`codex plugin list --json` 裡 `ct@control-tower` 的 `version`，見[安裝：確認 plugin 版號](/install#plugin-version)。
+
+升級的步驟（zip 手動安裝：備份、暫存複驗、替換、逐檔比對；plugin：交給 Agent CLI 更新）見[安裝](/install)。新版從**下一個 session** 才生效，正在跑的 session 仍是舊規則。
 
 ## 延伸閱讀
 
 - CT `version-governance.md` § 版號事實來源、§ SemVer 慣例、§ 歷史版號表、§ 相容性注意
 - CT 安裝與使用指南 § 4.1 安裝／升級（現行流程）：確認現行版號、Codex 端
-- CT `CHANGELOG.md`（65 個版本）
+- CT `CHANGELOG.md`（66 個版本）
 
 Portal 是摘要，不具權威；與 CT reference 有出入時，以 reference 為準。

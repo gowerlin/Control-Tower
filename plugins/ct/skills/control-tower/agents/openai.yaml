@@ -1,0 +1,4 @@
+interface:
+  display_name: "Control Tower"
+  short_description: "Orchestrate file-driven workorders"
+  default_prompt: "Use $control-tower (or $ct:control-tower when CT is installed as the ct plugin) to inspect the current workorder state and recommend the next tower action."

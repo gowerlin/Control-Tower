@@ -1,0 +1,4 @@
+interface:
+  display_name: "CT Done"
+  short_description: "Repair Control Tower workorder closeout"
+  default_prompt: "Use $ct-done T0001 (or $ct:ct-done T0001 when CT is installed as the ct plugin) to remedially close a workorder with evidence."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "CT Insights"
+  short_description: "Analyze Control Tower workflow health"
+  default_prompt: "Use $ct-insights (or $ct:ct-insights when CT is installed as the ct plugin) to analyze workorder history and improvement patterns."

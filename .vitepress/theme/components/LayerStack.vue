@@ -34,8 +34,8 @@ const LAYERS: Layer[] = [
     id: 'Layer 1',
     name: 'Core Skills',
     kind: '唯讀',
-    what: '8 個 skill 本體。升級時整份覆蓋；不是 skill 定義檔的東西一律不得寫進這個路徑，連備份也不行。',
-    path: '~/.claude/skills/<skill>/、~/.codex/skills/<skill>/',
+    what: '8 個 skill 本體。升級時整份覆蓋；不是 skill 定義檔的東西一律不得寫進這個路徑，連備份也不行。plugin 安裝的只能用 plugin 指令寫入。',
+    path: '~/.claude/skills/<skill>/、~/.codex/skills/<skill>/；plugin 安裝：~/.claude/plugins/、~/.codex/plugins/',
     rule: '預設值',
     tone: 'core'
   }

@@ -1,19 +1,51 @@
 ---
 title: 更版紀錄
-description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.13.1），更早的版本見演進史。
+description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.14.0），更早的版本見演進史。
 ---
 
 <!-- 本頁由 scripts/sync-ct-release.mjs 從 CT CHANGELOG 產生，請勿手改；要改內容請改來源後重跑。 -->
 
 # 更版紀錄
 
-目前版本 **v5.13.1**（2026-10-30）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 55 版（v2.1.1 ～ v5.12.0）請看[演進史](./evolution)。
+目前版本 **v5.14.0**（2026-10-30）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 56 版（v2.1.1 ～ v5.12.1）請看[演進史](./evolution)。
 
 ::: tip 摘要不具權威
 本頁照錄 CT 的 CHANGELOG，只拿掉工單、決策、驗收回函等內部編號與出處註記。規則的權威定義在 CT 各 skill 與 references，兩者有出入時以 CT 本體為準。
 :::
 
 ::: v-pre
+
+## 5.14.0 <small>2026-10-30</small> {#v5-14-0}
+
+
+> **MINOR：CT 另提供 plugin marketplace 安裝（Claude Code、Codex）；zip 手動安裝照舊。**
+> marketplace `control-tower` 放在本站的公開 repo 根目錄（指令見安裝頁）；CT plugin `ct`（8 個 skill）、教學 plugin `ct-guide`；beta 不上架。
+> BAT 介面不變、最低 BAT 版本不變。**Codex 搭配 BAT 派工請繼續用 zip 手動安裝**（BAT 對 Codex 送 `$ct-exec`，plugin 版在 Codex 只能用 `$ct:ct-exec` 呼叫）。升級只換 skill 檔案（見安裝指南 § 2.56）。
+
+### Added
+
+- `version-governance.md` § 安裝／升級流程 › plugin 安裝／升級（唯一權威）：安裝（`claude plugin marketplace add`（加本站的公開 repo，指令見安裝頁）→ `claude plugin install ct@control-tower`；`codex plugin marketplace add` → `codex plugin add ct@control-tower`）、升級、從 zip 手動安裝遷移（**先備份並移除**手動安裝，否則 `/ct-exec`、`$ct-exec` 會用手動那份，plugin 版靜默不生效）、版號確認（`plugin list --json`）、回退
+- `auto-session.md` § 依安裝方式的 skill 呼叫字串（唯一權威）：Claude 手動／plugin 都用 `/ct-exec T####`（完整寫法 `/ct:ct-exec`）；Codex 手動 `$ct-exec T####`、plugin `$ct:ct-exec T####`；BAT 派工對 Codex 只支援手動安裝；Codex 寫法一律單引號
+- 安裝指南 § 4.1〈用 plugin marketplace 安裝／升級〉、§ 2.56
+
+### Changed
+
+- `data-layer-architecture.md` § 寫入規則：Layer 1 路徑加上 plugin 安裝路徑（`~/.claude/plugins/`、`CLAUDE_CODE_PLUGIN_CACHE_DIR`、`$CODEX_HOME/plugins/`、`$CODEX_HOME/.tmp/marketplaces/`）；Q2 補 plugin 機制、Q3 補 plugin 安裝的授權（只能用 plugin 指令）、Q4 註明 plugin 不備份。`control-tower/SKILL.md`、`ct-evolve/SKILL.md` 改為只引用權威，不再列路徑
+- `ct-insights` 預篩腳本的路徑改用「已載入的 `ct-insights` skill 所在目錄」，不再寫死 `~/.claude/skills`／`~/.codex/skills`（plugin 安裝時 `*insights workflow` 才找得到腳本）
+- `ct-help`、8 個 `agents/openai.yaml` 的 `default_prompt`、安裝指南 § 4.2／§ 4.3／§ 14：呼叫寫法補 plugin 安裝（Codex 用 `$ct:<skill>`）；非 BAT 開分頁／剪貼簿的 `<agent-cli>` 為 `codex` 時改用 Codex 寫法
+- 版號：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表；安裝指南新增 § 2.56，§ 1〈目前版本一覽〉、§ 4.1 版號範例與發行物檔名同步（`OLD=5.13.1`、`VER=5.14.0`）
+
+### Fixed
+
+- `auto-session.md` § Worker 側讀取規則寫死 `~/.claude/skills/ct-exec/SKILL.md`（plugin 安裝與 Codex 下都錯），改相對連結；原文指向的兩個小節名稱已不存在，改指 `ct-exec/SKILL.md` § Mode And Environment
+- `tower-config.md` `worker_max_retries`、`worker_strikeout_action` 兩列的 `session-guardrails.md` 連結層級錯（`../` → `../../`）；`enhancement-integration.md` 指向 `data-layer-architecture.md` 的連結層級錯
+
+### Unchanged
+
+- zip 手動安裝流程、發行物版面（全量 zip、8 個單一 skill zip、Guide zip）不變；claude.ai 仍上傳單一 skill zip
+- BAT 介面、派工命令（`--skill`／`--workorder`）、斷點 A 正則、設定、工單欄位、狀態值不變
+- 8 個 skill 一律放在同一個 plugin（`../` 相對連結依賴它們是兄弟目錄）
+- 歷史段落（本檔舊段落、版號表舊列、安裝指南舊章節）不改
 
 ## 5.13.1 <small>2026-10-30</small> {#v5-13-1}
 
@@ -272,30 +304,12 @@ description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.13.1），
 - `tower-config.md`、`auto-session.md`、`yolo-mode.md` 與 `work-order-system.md` 的其他列與段落不改；歷史段落（本檔舊版段、`version-governance.md` 版號表舊列、
   安裝指南 § 2.21／§ 2.46）不改。其他檔案沒有把回收寫成確定時間或確定完成的說明。
 
-## 5.12.1 <small>2026-10-22</small> {#v5-12-1}
-
-
-> **PATCH：`worker_close_delay` 的取消條件對齊 BAT 現行行為（文件修正，行為不變）。** 舊說明寫「延遲期間 Worker 分頁有新輸出或使用者輸入，BAT 會取消回收」，
-> 與 BAT 現況不符：延遲期間的輸出**不**取消；只有排程後使用者在 Worker 分頁的輸入會取消（終端自動回應不算）；延遲到期後 BAT 等分頁連續安靜 5 s 才關、最多再等 60 s。
-> `worker_close_delay` 值域與預設、`--delay-ms` 換算、收單回收與重派前回收的條件／指令／exit code 不變；BAT 介面不變。
-
-### Fixed
-
-- `tower-config.md` § 可用選項 `worker_close_delay` 列（CT 內唯一權威）：取消條件改照 BAT 權威（BAT 文件）——延遲期間輸出不取消、只有排程後的使用者輸入取消、終端自動回應不算輸入、到期後等連續安靜 5 s、
-  最多再等 60 s，仍在輸出就放棄、分頁保留（helper 已 exit `0`，塔台不會得知）。
-- 安裝指南 § 13 Config 速查表 `worker_close_delay` 列同步；新增 § 2.46。
-
-### Unchanged
-
-- 歷史段落（本檔 [5.1.0]、`version-governance.md` 版號表舊列、安裝指南 § 2.21）不改；`work-order-system.md` § 重派前回收舊 Worker 分頁 與安裝指南 § 2.45
-  的「等安靜 5 s、最多 60 s、使用者輸入取消」原本就與 BAT 一致，不改。
-
 :::
 
 ## 延伸閱讀 {#further-reading}
 
-- CT `CHANGELOG.md`（共 65 個版本；本頁列最近 10 版）
+- CT `CHANGELOG.md`（共 66 個版本；本頁列最近 10 版）
 - CT `version-governance.md` § 歷史版號表
-- [演進史](./evolution)：更早的 55 版與八個世代
+- [演進史](./evolution)：更早的 56 版與八個世代
 
 Portal 是摘要，不具權威；與 CT reference 有出入時，以 reference 為準。

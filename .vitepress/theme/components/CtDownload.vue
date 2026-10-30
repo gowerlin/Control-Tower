@@ -52,7 +52,7 @@ const bmadGuideAsset = computed(() => `${releasesUrl.value}download/bmad-guide-v
     <p class="cd-steps-title">下載之後</p>
     <ol class="cd-steps">
       <li>zip 解壓縮後，根層直接是 8 個 skill 目錄（不含 <code>docs/</code>）；發行目錄版則是 <code>skills/</code> 底下 8 個 skill 目錄，另附 <code>docs/</code>。</li>
-      <li>Claude Code 放到 <code>~/.claude/skills/&lt;skill&gt;/</code>；Codex 放到 <code>~/.codex/skills/&lt;skill&gt;/</code>。塔台與 Worker 用同一批，一起升級。</li>
+      <li>Claude Code 放到 <code>~/.claude/skills/&lt;skill&gt;/</code>；Codex 放到 <code>~/.codex/skills/&lt;skill&gt;/</code>。塔台與 Worker 用同一批，一起升級。不想手動放檔的，v5.14.0 起可以改用 <a :href="withBase('/install#plugin')">plugin marketplace 安裝</a>。</li>
       <li>BMad Guide 是單一 skill，安裝目錄名是 <code>bmad-guide</code>；它的 zip 最上層是帶版號的資料夾，詳見<a :href="withBase('/install#bmad-guide')">安裝 BMad Guide Skill</a>。</li>
       <li>開一個新的 session，輸入 <code>/control-tower</code>（Codex 用 <code>$control-tower</code>）。新版從下一個 session 才生效。</li>
     </ol>

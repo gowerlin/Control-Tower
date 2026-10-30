@@ -1,11 +1,18 @@
 ---
 title: 安裝
-description: 在 Claude Code 或 Codex 安裝與升級 CT 的 8 個 skill（備份、暫存複驗、替換、逐檔比對）、回退方式，以及在 claude.ai 能用到什麼程度。
+description: 在 Claude Code 或 Codex 安裝與升級 CT 的 8 個 skill：zip 手動安裝（備份、暫存複驗、替換、逐檔比對）與 plugin marketplace 安裝、回退方式，以及在 claude.ai 能用到什麼程度。
 ---
+
+<script setup>
+import { useData } from 'vitepress'
+
+const { theme } = useData()
+const mkt = theme.value.marketplaceRepo
+</script>
 
 # 安裝
 
-CT 是 8 個 skill，裝在你電腦上 Agent CLI 的 skill 目錄裡。目前版本 <VersionBadge />。 {.ct-lead}
+CT 是 8 個 skill，裝在你電腦上 Agent CLI 的 skill 目錄裡：可以下載 zip 手動安裝，v5.14.0 起也可以用 plugin marketplace 安裝。目前版本 <VersionBadge />。 {.ct-lead}
 
 ## 你需要什麼 {#requirements}
 
@@ -14,6 +21,18 @@ CT 是 8 個 skill，裝在你電腦上 Agent CLI 的 skill 目錄裡。目前�
 - **可選：BAT**。有 <BatLink>Better Agent Terminal</BatLink> 時，塔台可以直接開 Worker 分頁、Worker 做完自動通知塔台；沒有也能用，塔台改給你剪貼簿或一行指令。
 - **可選：BMad Guide Skill**。`bmad-guide` 是 BMad-Method 的互動式學習指南，有兩種用法：當 CT 的外部依賴，塔台偵測到它就啟用 Level 2，依專案階段查出該走哪一套 BMad 流程；也可以單獨裝，當作學 BMad-Method 的指南。見 [BMad Guide Skill](/guide/bmad-guide)。
 - **可選：其他增強**。ECC、mem0，偵測到才啟用，見[功能總覽的能力等級](/features#levels)。
+
+## 兩種安裝方式 {#methods}
+
+| | zip 手動安裝 | plugin marketplace（v5.14.0 起） |
+|---|---|---|
+| 適用 | Claude Code、Codex；**Codex 搭配 BAT 派工只能用這種** | Claude Code；不用 BAT 派工的 Codex |
+| 怎麼裝 | 下載下面的 zip，照[第一次安裝](#first-install) | 一行 `marketplace add` 再裝 plugin，見[用 plugin marketplace 安裝](#plugin) |
+| 怎麼更新 | 每次照[升級：四步](#upgrade)手動替換 | 交給 Agent CLI（Claude Code 要先開 auto-update；Codex 啟動時自動升級） |
+| 呼叫寫法 | Claude Code `/ct-exec`；Codex `$ct-exec` | Claude Code `/ct-exec`（完整寫法 `/ct:ct-exec`）；Codex `$ct:ct-exec` |
+| beta | 可以 | 不上架 |
+
+同一個 Agent 上只留一種：兩種並存時手動安裝那份會蓋過 plugin 版，而且看不出差別。
 
 <CtDownload />
 
@@ -32,10 +51,12 @@ CT 是 8 個 skill，裝在你電腦上 Agent CLI 的 skill 目錄裡。目前�
 
 | Agent | 安裝路徑 | 備份放哪裡 | 指令前綴 |
 |---|---|---|---|
-| Claude Code | `~/.claude/skills/<skill>/` | `~/.claude/skill-backups/` | `/`（例：`/ct-exec T0001`） |
-| Codex | `~/.codex/skills/<skill>/` | `~/.codex/skill-backups/` | `$`（例：`$ct-exec T0001`） |
+| Claude Code（zip 手動安裝） | `~/.claude/skills/<skill>/` | `~/.claude/skill-backups/` | `/`（例：`/ct-exec T0001`） |
+| Codex（zip 手動安裝） | `~/.codex/skills/<skill>/` | `~/.codex/skill-backups/` | `$`（例：`$ct-exec T0001`） |
+| Claude Code（plugin） | `~/.claude/plugins/` 底下，由 Claude Code 管理 | 不備份 | `/`（例：`/ct-exec T0001`，完整寫法 `/ct:ct-exec T0001`） |
+| Codex（plugin） | `~/.codex/plugins/` 底下，由 Codex 管理 | 不備份 | `$ct:`（例：`$ct:ct-exec T0001`） |
 
-兩端是**各自獨立的安裝**：升級其中一端不會更新另一端，請分別確認版號。
+兩端是**各自獨立的安裝**：升級其中一端不會更新另一端，請分別確認版號。plugin 的安裝目錄只能用 plugin 指令安裝、更新或移除，不要手動複製或修改裡面的檔案。
 
 BMad Guide 裝在同一層：Claude Code 是 `~/.claude/skills/bmad-guide/`，Codex 是 `~/.codex/skills/bmad-guide/`，見[安裝 BMad Guide Skill](#bmad-guide)。
 
@@ -43,7 +64,9 @@ BMad Guide 裝在同一層：Claude Code 是 `~/.claude/skills/bmad-guide/`，Co
 `~/.claude/skills/` 第一層的每個子目錄都會被 skill 掃描器當成一個 skill 註冊。一份根層帶 `SKILL.md` 的備份會以舊版的說明進入路由候選，之後可能**靜默地**載入舊版、答出已經被新版推翻的內容。所以備份、暫存目錄、`.bak` 這類東西一律放在 `skills/` 之外。Codex 端的掃描器行為未經實測，規則比照辦理。
 :::
 
-## 第一次安裝 {#first-install}
+## 第一次安裝（zip 手動安裝） {#first-install}
+
+用 plugin 安裝的，見[用 plugin marketplace 安裝](#plugin)。
 
 1. 取得發行物並解壓縮。
 2. 把 8 個 skill 目錄複製到上表的安裝路徑，每個 skill 一個目錄（例如 `~/.claude/skills/control-tower/`）。不要帶 `.` 開頭的隱藏目錄。
@@ -54,7 +77,7 @@ BMad Guide 裝在同一層：Claude Code 是 `~/.claude/skills/bmad-guide/`，Co
 
 ## 確認現行版號 {#check-version}
 
-版號寫在每個 `SKILL.md` 正文的第一個註解（例如 `<!-- control-tower-version: 5.13.1 -->`），frontmatter 不放版號。
+版號寫在每個 `SKILL.md` 正文的第一個註解（例如 `<!-- control-tower-version: 5.14.0 -->`），frontmatter 不放版號。下面是 zip 手動安裝的查法；用 plugin 安裝的看 `plugin list --json`，見[確認 plugin 版號](#plugin-version)。
 
 ::: code-group
 
@@ -70,7 +93,7 @@ grep -h -o "[a-z-]*-version: [0-9.]*" ~/.codex/skills/{control-tower,ct-*}/SKILL
 
 8 行的版號應該一致。v5.0.2 以前的舊版把版號放在 frontmatter 的 `version:`。
 
-## 升級：四步 {#upgrade}
+## 升級：四步（zip 手動安裝） {#upgrade}
 
 升級的原則是**任何一步失敗都不會讓你少掉一個能用的 skill**：先備份並確認備份完整，再把新版複製到暫存區驗證，驗證過了才替換，替換後逐檔比對。
 
@@ -178,14 +201,70 @@ done
 [ $OK = 1 ] && rm -rf "$RB"
 ```
 
+## 用 plugin marketplace 安裝（v5.14.0 起） {#plugin}
+
+v5.14.0 起，CT 也可以用 Claude Code 與 Codex 的 plugin marketplace 安裝，之後的更新交給 Agent CLI。zip 手動安裝照舊支援，同一個 Agent 上兩種擇一。
+
+| 項目 | 內容 |
+|---|---|
+| marketplace | `control-tower`，放在本站的公開 repo <code>{{ mkt }}</code> |
+| plugin | `ct`：CT 的 8 個 skill，一定一起裝；`ct-guide`：CT Guide，可不裝 |
+| 版號 | `ct` 的版號 = CT 版號，`ct-guide` 的版號 = CT Guide 版號 |
+| beta | 不上架，beta 照舊用 zip 手動安裝 |
+
+::: warning 從 zip 手動安裝改用 plugin：先移除手動安裝
+同名的手動安裝還留在 `skills/` 裡時，`/ct-exec`、`$ct-exec` 都會用手動那份，plugin 版不生效，而且看不出差別。所以先照[升級：四步](#upgrade)的 Step 1 把 8 個 skill（有裝 CT Guide 的話加上 `control-tower-guide`）備份到 `skill-backups/`、逐檔確認備份完整，再把它們從 `~/.claude/skills/`（Codex：`~/.codex/skills/`）**移**到備份目錄，不要直接刪除。之後才裝 plugin。
+:::
+
+::: warning Codex 搭配 BAT 派工：繼續用 zip 手動安裝
+BAT 對 Codex 派工送的是 `$ct-exec T####`，而 plugin 版的 skill 在 Codex 一定帶前綴（`$ct:ct-exec`），叫不到。要讓 Codex 接 BAT 派工，Codex 那一端繼續用 zip 手動安裝。Claude Code 不受影響：plugin 版用不帶前綴的 `/ct-exec` 也叫得到。
+:::
+
+### Claude Code {#plugin-claude}
+
+<div class="language-bash"><span class="lang">bash</span><pre><code>claude plugin marketplace add {{ mkt }}
+claude plugin install ct@control-tower
+claude plugin install ct-guide@control-tower      # 可選：CT Guide</code></pre></div>
+
+- 開新 session 後照常用 `/control-tower`、`/ct-exec T0001`。要確定叫到的是 plugin 版，用完整寫法 `/ct:ct-exec T0001`。
+- **自動更新**：第三方 marketplace 預設關閉。在 session 裡輸入 `/plugin`，到 Marketplaces 對 `control-tower` 開啟 auto-update。
+- **手動更新**：`claude plugin marketplace update control-tower`，再 `claude plugin update ct@control-tower`（有裝 CT Guide 再 `claude plugin update ct-guide@control-tower`）。Claude Code 看 plugin 的版號判斷有沒有新版。
+- 新版從下一個 session 生效。
+
+### Codex {#plugin-codex}
+
+<div class="language-bash"><span class="lang">bash</span><pre><code>codex plugin marketplace add {{ mkt }}
+codex plugin add ct@control-tower
+codex plugin add ct-guide@control-tower           # 可選：CT Guide</code></pre></div>
+
+- 呼叫一律帶前綴：`$ct:control-tower`、`$ct:ct-exec T0001`、`$ct-guide:control-tower-guide`。不帶前綴的 `$ct-exec` 叫不到 plugin 版。
+- 從 shell 帶參數啟動 Codex 時，用單引號包住（例如 `codex '$ct:ct-exec T0001'`），否則 bash 和 PowerShell 會把 `$ct` 當成變數。
+- **自動更新**：Codex 每次啟動會自動升級 git 型的 marketplace。手動升級：`codex plugin marketplace upgrade control-tower`。
+- 新版從下一個 session 生效。
+
+### 確認 plugin 版號 {#plugin-version}
+
+```bash
+claude plugin list --json        # ct@control-tower 的 version
+codex plugin list --json         # ct@control-tower 的 version
+```
+
+`version` 應該等於 CT 版號（目前 <VersionBadge />）。
+
+### 移除與回退 {#plugin-rollback}
+
+plugin 安裝不另做備份，回退就是用 plugin 指令移除：`claude plugin uninstall ct@control-tower`、`codex plugin remove ct@control-tower`。要回到 zip 手動安裝，照[回退](#rollback)把遷移前的備份裝回 `skills/`。plugin 的安裝目錄由 Agent CLI 管理，不要手動複製、修改或刪除裡面的檔案。
+
 ## 讓 CT Worker 代為安裝 {#worker-install}
 
 塔台與 Worker 預設**不得**寫入 `~/.claude/skills/` 或 `~/.codex/skills/`。要讓 Worker 替你安裝，必須在**工單裡明文授權**，指名具體版本、具體 skill 與目標路徑；只指名 `~/.claude/skills/` 的工單不能拿來寫 `~/.codex/skills/`。Worker 不會自己認定已經取得授權，沒有授權就停下來回報。
 
+plugin 安裝也一樣要授權，工單要指名 Agent（Claude Code 或 Codex）、plugin 與 marketplace（例如 `ct@control-tower`）；有授權也只能用 plugin 指令安裝，不會直接動 plugin 的安裝目錄。
+
 ## 用 Codex 當 Worker 或塔台 {#codex}
 
-- skill 裝在 `~/.codex/skills/<skill>/`，指令前綴是 `$`：`$control-tower`、`$ct-exec T0001`。
-- 在 BAT 裡，塔台派工用 `--agent default`，由 BAT 依你在 BAT 設定的預設 Agent 決定開 Claude Code 還是 Codex，也由 BAT 決定送 `/ct-exec` 還是 `$ct-exec`。想讓 Worker 用 Codex，改 BAT 的預設 Agent，不要把 `codex` 寫死在工單裡。
+- zip 手動安裝時 skill 裝在 `~/.codex/skills/<skill>/`，指令前綴是 `$`：`$control-tower`、`$ct-exec T0001`。用 plugin 安裝時一律帶前綴：`$ct:control-tower`、`$ct:ct-exec T0001`（見 [plugin 安裝的 Codex 段](#plugin-codex)）。
+- 在 BAT 裡，塔台派工用 `--agent default`，由 BAT 依你在 BAT 設定的預設 Agent 決定開 Claude Code 還是 Codex，也由 BAT 決定送 `/ct-exec` 還是 `$ct-exec`。想讓 Worker 用 Codex，改 BAT 的預設 Agent，不要把 `codex` 寫死在工單裡。BAT 對 Codex 送的是不帶前綴的 `$ct-exec`，所以接 BAT 派工的 Codex 要用 zip 手動安裝。
 - 不在 BAT 裡時，用環境變數 `CT_AGENT_CMD=claude` 或 `CT_AGENT_CMD=codex` 指定；兩者都裝了又沒指定時，塔台不猜，改給你剪貼簿或文字提示。
 
 如果你想在 `~/.codex/AGENTS.md` 放一段給 Codex 看的 BAT 派工說明，可以參考下面這段。它**是範例，不是權威定義**：派工指令以 `control-tower/references/auto-session.md` 為準，兩者不一致時照 reference 改這段，不要反過來。
@@ -268,14 +347,14 @@ control-tower-guide.zip
 
 ### 同時使用 Claude Code 時：擇一安裝來源 {#claude-ai-sync}
 
-claude.ai 上開啟的 skill 會自動同步到以同一帳號登入的 Claude Code，名稱會帶 `anthropic-skills:` 前綴。如果你也照本頁的步驟把 CT 裝到 `~/.claude/skills/`，Claude Code 就會同時看到兩份，版號不同時可能載入舊的那份。**建議擇一**：
+claude.ai 上開啟的 skill 會自動同步到以同一帳號登入的 Claude Code，名稱會帶 `anthropic-skills:` 前綴。如果你也照本頁的步驟在本機裝了 CT，Claude Code 就會同時看到兩份；本機用 plugin 安裝、`~/.claude/skills/` 又留著手動安裝的話，會是三份。版號不同時可能載入舊的那份。**建議擇一**：
 
-- **以本機安裝為主**（建議）：claude.ai 只上傳 Guide；或在 Claude Code 設定裡把 `syncClaudeAiSkills` 設為 `false`。
+- **以本機安裝為主**（建議）：本機只留 zip 手動安裝或 plugin 其中一種；claude.ai 只上傳 Guide，或在 Claude Code 設定裡把 `syncClaudeAiSkills` 設為 `false`。用 plugin 安裝時，`/ct:ct-exec` 這種完整寫法一定叫到 plugin 版。
 - **以 claude.ai 為主**：不要在本機另裝同名 skill，並且每次 CT 更版都重新上傳全部 9 個 zip（CT 8 個加 Guide）。
 
 ## 安裝 CT Guide Skill {#guide}
 
-CT Guide 是 CT 的互動式教科書，用問的，它會解釋設計理由並畫可點擊的圖。它和 CT 同版號發行，安裝方式與 CT 相同，目錄名是 `control-tower-guide`。怎麼安裝、怎麼問，見 [CT Guide Skill](/guide/ct-guide)。
+CT Guide 是 CT 的互動式教科書，用問的，它會解釋設計理由並畫可點擊的圖。它和 CT 同版號發行，安裝方式與 CT 相同：zip 手動安裝的目錄名是 `control-tower-guide`；用 plugin 安裝時裝 `ct-guide@control-tower`（見[用 plugin marketplace 安裝](#plugin)）。怎麼安裝、怎麼問，見 [CT Guide Skill](/guide/ct-guide)。
 
 ## 安裝 BMad Guide Skill {#bmad-guide}
 
@@ -295,10 +374,10 @@ CT 不預先判斷你的 BAT 是哪一版：照常呼叫，失敗時依結束碼
 
 ## 延伸閱讀 {#further}
 
-- CT 安裝與使用指南 § 4. 安裝（4.1 安裝／升級（現行流程）、4.2 Agent CLI 選擇、4.3 Skill 架構（v5.13.1））
-- `control-tower/references/version-governance.md` § 安裝／升級流程、§ 版號事實來源
-- `control-tower/references/data-layer-architecture.md` § 寫入規則（Q1～Q4：Layer 1 路徑、備份落點、唯一例外）
-- `control-tower/references/auto-session.md` § BAT 內部終端路由（Better Agent Terminal），派工指令的權威
+- CT 安裝與使用指南 § 4. 安裝（4.1 安裝／升級（現行流程，含〈用 plugin marketplace 安裝／升級〉）、4.2 Agent CLI 選擇、4.3 Skill 架構（v5.14.0））、§ 2.56
+- `control-tower/references/version-governance.md` § 安裝／升級流程（含 plugin 安裝／升級）、§ 版號事實來源
+- `control-tower/references/data-layer-architecture.md` § 寫入規則（Q1～Q4：Layer 1 路徑（含 plugin 安裝路徑）、備份落點、唯一例外）
+- `control-tower/references/auto-session.md` § BAT 內部終端路由（Better Agent Terminal），派工指令的權威；§ 依安裝方式的 skill 呼叫字串
 - claude.ai 段：CT 開發紀錄中的 claude.ai 安裝調查（官方 Help Center〈Use skills in Claude〉、〈Create custom skills〉，2026-10-23 擷取）
 
 Portal 是摘要，不具權威；與 reference 有出入時，以 reference 為準。

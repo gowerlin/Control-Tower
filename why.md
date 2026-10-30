@@ -100,7 +100,7 @@ CT 的目標不是讓你什麼都不用管，而是讓你**只管該由人判斷
 - **不取代 BMad-Method**。CT 不內嵌任何 BMad 內容。你另外裝了 `bmad-guide` skill，塔台才會依專案階段查出該走哪一套 BMad 流程；沒有它，塔台照常運作，流程欄位改成你手動指定，也不會自己編造 BMad 的行為。
 - **不是全自動**。`auto-session` 預設是 `ask`：每次派工前先問你。全自動的 `yolo` 要你自己打開，打開了也有斷點。
 - **不是 BAT**。CT 只負責編排：工單、規則、記憶與學習。開分頁、派工通知、偵測 Worker 狀態這些執行環境的事，由 <BatLink>BAT</BatLink> 負責；沒有 BAT，CT 改給你剪貼簿或一行指令。
-- **不綁特定 Agent**。核心只靠讀寫 Markdown 檔；Worker 可以是 Claude Code（`/ct-exec`）或 Codex（`$ct-exec`），同一張工單兩邊都能執行。
+- **不綁特定 Agent**。核心只靠讀寫 Markdown 檔；Worker 可以是 Claude Code（`/ct-exec`）或 Codex（`$ct-exec`；用 plugin 安裝時 `$ct:ct-exec`），同一張工單兩邊都能執行。
 
 ## 還沒解決的事 {#open}
 

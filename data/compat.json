@@ -1,6 +1,6 @@
 {
   "_note": "相容版本對照（/versions/compatibility 的資料）。每列 feature、ct（CT 起始版本）、bat／codex（最低版本，不需要就省略）、note、source（權威出處：檔案 § 章節）。CT 發版時相容性有變才改（CT 每次發版都要同步更新 Portal）。",
-  "ctVersion": "5.13.1",
+  "ctVersion": "5.14.0",
   "rows": [
     {
       "feature": "帶前綴的工單 ID 走結構化派工（--workorder 帶前綴）",
@@ -127,6 +127,12 @@
       "bat": ">= 0.7.1-pre.9",
       "note": "這個 BAT 版本是預覽版。CT 寫檔不分 BAT 版本：400 KB 預算保留，索引照舊寫 🔴 High（critical）；更舊的 BAT 超過 512 KiB 仍靜默變空。沒有新的 CT 最低 BAT 版本。",
       "source": "CHANGELOG.md [5.13.1]；memory-protocol.md § BAT 塔台面板讀取契約"
+    },
+    {
+      "feature": "plugin marketplace 安裝（Claude Code、Codex）；Codex 搭配 BAT 派工用 zip 手動安裝",
+      "ct": "v5.14.0",
+      "note": "BAT 介面與最低 BAT 版本不變。BAT 對 Codex 送不帶前綴的 $ct-exec，plugin 版在 Codex 只能用 $ct:ct-exec 呼叫，所以接 BAT 派工的 Codex 用 zip 手動安裝；Claude Code 用 plugin 不受影響。beta 不上架。",
+      "source": "CHANGELOG.md [5.14.0]；version-governance.md § plugin 安裝／升級；auto-session.md § 依安裝方式的 skill 呼叫字串"
     },
     {
       "feature": "Level 2：外部 bmad-guide 的 BMad workflow 路由",

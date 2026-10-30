@@ -76,7 +76,7 @@ BAT 站也有一段從執行環境角度看的同一個流程，附短片：<Bat
 
 ## 4. Worker 執行 {#worker}
 
-Worker 是一個全新的 session，輸入 `/ct-exec T0042`（Codex：`$ct-exec T0042`）開工。它只帶這一張工單的脈絡，依序做這幾件事：
+Worker 是一個全新的 session，輸入 `/ct-exec T0042`（Codex：`$ct-exec T0042`；用 plugin 安裝的 Codex 是 `$ct:ct-exec T0042`）開工。它只帶這一張工單的脈絡，依序做這幾件事：
 
 1. **讀工單與專案規則**：先讀 `AGENTS.md`、本地規則與 `CLAUDE.md` 這類專案指引，再讀完整張工單，並記下系統時間。
 2. **落點檢查**：在**任何寫入之前**確認自己在對的 repo。工單的 `repo` 欄位和目前 repo 根目錄的名稱不同就**停下來**，不猜、不改欄位讓檢查通過。這一步存在，是因為「路徑存在」證明不了「這是對的 repo」（見[落點檢查](/deep/features/landing-check)）。

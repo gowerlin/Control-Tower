@@ -46,6 +46,7 @@ PORTAL_BASE=/Control-Tower/ PORTAL_SITE_URL=https://<owner>.github.io/Control-To
 | `scripts/` | 建置與維護用的腳本，見下節 |
 | `lychee.toml` | 外部連結檢查（lychee）設定 |
 | `.github/workflows/pages.yml` | GitHub Pages 建置與部署 |
+| `.claude-plugin/`、`plugins/`（只在公開 repo） | plugin marketplace `control-tower`：CT plugin `ct`（8 個 skill）與 CT Guide plugin `ct-guide`。匯出時從 CT、CT Guide 的版本目錄產生，內容等同發版 zip；不要手改 |
 
 ## 內容基準版本與版本頁
 
@@ -58,7 +59,8 @@ PORTAL_BASE=/Control-Tower/ PORTAL_SITE_URL=https://<owner>.github.io/Control-To
 | 腳本 | 用途 |
 |---|---|
 | `scripts/sync-ct-release.mjs` | 維護者本機用：CT 發版後同步版本資料與更版紀錄頁，產出後自動掃描；要先設定下面兩個變數 |
-| `scripts/deid-scan.mjs` | 去識別掃描：找出不該公開的路徑、權杖、識別碼等，掃描 `.md`、`.yml`、`.gitignore` 等文字檔（二進位檔跳過）。`npm run deid` 掃原始檔與 `.vitepress/dist/`，並加掃內部編號（`--internal-ids`：工單、決策等編號對全站生效，頁面上的範例編號另列允許清單；commit SHA、BAT 契約條目等只對更版紀錄生效） |
+| `scripts/deid-scan.mjs` | 去識別掃描：找出不該公開的路徑、權杖、識別碼等，掃描 `.md`、`.yml`、`.gitignore` 等文字檔（二進位檔跳過）。`npm run deid` 掃原始檔與 `.vitepress/dist/`，並加掃內部編號（`--internal-ids`：工單、決策等編號對全站生效，頁面上的範例編號另列允許清單；commit SHA、BAT 契約條目等只對更版紀錄生效）。plugin marketplace 的 repo 名稱只在 CT 發行物（CT 與 Guide 的 skill 檔、CT 的 `CHANGELOG.md`）裡放行，名稱讀 `.vitepress/config.mts` 的設定常數；頁面要寫就用設定常數組出 |
+| `scripts/build-plugin-marketplace.mjs` | 維護者本機用：從 CT 與 CT Guide 的版本目錄產生 plugin marketplace（`.claude-plugin/marketplace.json`、`plugins/ct`、`plugins/ct-guide`）。檢查 8 個 CT skill 與 Guide 的版號註解等於指定版號，`plugin.json` 的 `version` 由版號產生；beta 不上架。需要 CT 的原始碼目錄，不在公開 repo；匯出公開 repo 時會用它產生 marketplace |
 | `scripts/build-artifact.mjs` | `npm run build:artifact`：建置不需要伺服器路由的靜態預覽包（`dist-artifact/`），自我檢查後對預覽包跑去識別掃描（含 `--internal-ids`），命中就失敗；要先設定下面兩個變數 |
 
 去識別掃描要用的私有詞表與允許清單不在本 repo。以環境變數指定兩個檔案的路徑（也可以改用 `--terms`／`--allow` 參數，參數優先）：
@@ -95,6 +97,8 @@ npm run deid
 **Pages 尚未啟用時**，workflow 只建置與檢查連結，部署步驟會跳過。到 Settings → Pages → Source 選 **GitHub Actions** 啟用後，回 Actions 頁重新執行 **Pages** workflow 即可部署。
 
 本 repo 的內容由維護者從另一個 repo 匯出後推送；匯出時會對匯出的全部檔案跑去識別掃描（含 `--internal-ids`），沒有通過就不推送。請不要直接在這裡改頁面，改動會在下次匯出時被覆蓋。
+
+匯出時也會產生 plugin marketplace（`.claude-plugin/`、`plugins/`），放在 repo 根目錄，讓 Claude Code 與 Codex 可以直接把這個 repo 加成 marketplace。plugin 內容等同發版 zip，去識別比照發版 zip 的規則另外掃。只改這兩個目錄的 push 不會觸發 Pages 建置（`pages.yml` 的 `paths-ignore`）。
 
 ## 授權
 

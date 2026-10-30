@@ -1,0 +1,4 @@
+interface:
+  display_name: "CT Evolve"
+  short_description: "Distill Control Tower learnings"
+  default_prompt: "Use $ct-evolve (or $ct:ct-evolve when CT is installed as the ct plugin) to distill reusable patterns from completed workorders."

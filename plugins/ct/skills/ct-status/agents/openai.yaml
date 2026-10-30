@@ -1,0 +1,4 @@
+interface:
+  display_name: "CT Status"
+  short_description: "Inspect Control Tower workorder state"
+  default_prompt: "Use $ct-status (or $ct:ct-status when CT is installed as the ct plugin) to summarize active workorders and status drift."

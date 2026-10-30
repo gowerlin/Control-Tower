@@ -1,0 +1,4 @@
+interface:
+  display_name: "CT Help"
+  short_description: "Explain Control Tower commands"
+  default_prompt: "Use $ct-help (or $ct:ct-help when CT is installed as the ct plugin) to explain the next Control Tower command to run."

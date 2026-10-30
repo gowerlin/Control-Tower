@@ -246,10 +246,58 @@ function isReleaseAllowedFile(file) {
   return path.basename(abs) === 'LICENSE' && path.basename(path.dirname(abs)).startsWith('ct-adapter-')
 }
 
+// 例外：plugin marketplace 的 repo 名稱。CT 從 v5.14.0 起在權威段寫 marketplace add 指令，指令一定要帶 repo 名稱，
+// 所以 CT 發行物裡出現這個名稱不算「允許清單網址寫在設定以外」。範圍（isCtReleaseFile）：
+//   - CT 與 Guide 的 skill 檔（原始檔、解開的 zip、plugin 目錄）：往上找最近一個有 SKILL.md 的目錄，它的 name 是 CT_SKILL_NAMES 之一；
+//     遇到站點根目錄（有 .vitepress/config.mts）就停：Portal 頁面不靠這個例外，安裝頁的指令由設定常數組出
+//   - CT 的 CHANGELOG：<版本目錄>/docs/CHANGELOG.md，而且同一個版本目錄有 skills/control-tower/SKILL.md
+// 只放行允許清單上剛好等於這個名稱、或等於 https://github.com/<名稱> 的項目；含它的較長項目（例如 Releases 網址）照舊報。
+// 同一行的私有詞表、路徑、信箱等類別照舊比對。名稱不寫在這裡（這支腳本也會被掃描），從 .vitepress/config.mts 的
+// CT_MARKETPLACE_REPO 讀；讀不到就不放行
+const CT_SKILL_NAMES = new Set(['control-tower', 'ct-done', 'ct-evolve', 'ct-exec', 'ct-fieldguide', 'ct-help', 'ct-insights', 'ct-status', 'control-tower-guide'])
+const SITE_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+
+function marketplaceAllowEntries() {
+  const config = path.join(SITE_DIR, '.vitepress', 'config.mts')
+  const m = fs.existsSync(config) ? fs.readFileSync(config, 'utf8').match(/^const CT_MARKETPLACE_REPO = '([^'\r\n]+)'/m) : null
+  return new Set(m ? [m[1], `https://github.com/${m[1]}`] : [])
+}
+
+// 目錄裡 SKILL.md 的 frontmatter name；沒有 SKILL.md 是 null，沒有 name 是空字串
+const skillNames = new Map()
+function skillName(dir) {
+  if (!skillNames.has(dir)) {
+    const file = path.join(dir, 'SKILL.md')
+    let name = null
+    if (fs.existsSync(file)) {
+      const front = fs.readFileSync(file, 'utf8').match(/^---\r?\n([\s\S]*?)\r?\n---/)
+      name = front?.[1].match(/^name:[ \t]*(\S+)/m)?.[1] ?? ''
+    }
+    skillNames.set(dir, name)
+  }
+  return skillNames.get(dir)
+}
+
+function isCtReleaseFile(file) {
+  const abs = path.resolve(file)
+  if (path.basename(abs) === 'CHANGELOG.md' && path.basename(path.dirname(abs)) === 'docs') {
+    return skillName(path.join(path.dirname(path.dirname(abs)), 'skills', 'control-tower')) === 'control-tower'
+  }
+  for (let dir = path.dirname(abs); ; dir = path.dirname(dir)) {
+    if (fs.existsSync(path.join(dir, '.vitepress', 'config.mts'))) return false
+    const name = skillName(dir)
+    if (name !== null) return CT_SKILL_NAMES.has(name)
+    if (path.dirname(dir) === dir) return false
+  }
+}
+
 function main() {
   const args = parseArgs(process.argv.slice(2))
   const terms = loadTerms(args.terms)
-  const allow = readList(args.allow)
+  // 長的項目先比對：較短的項目先從這一行拿掉的話，含它的較長項目就比對不到（marketplace repo 名稱的例外會漏報 Releases 網址）
+  const allow = readList(args.allow).sort((a, b) => b.length - a.length)
+  const marketplaceEntries = marketplaceAllowEntries()
+  let marketplaceAllowed = 0
   const files = []
   for (const p of args.paths) {
     if (!fs.existsSync(p)) usage(`找不到 ${p}`)
@@ -276,7 +324,10 @@ function main() {
       let line = raw
       for (const entry of allow) {
         if (!line.includes(entry)) continue
-        if (!isBuildOutput(file) && !isConfig(file) && !isSiteRootFile(file) && !isReleaseAllowedFile(file)) add(file, i + 1, '允許清單網址寫在設定以外')
+        if (!isBuildOutput(file) && !isConfig(file) && !isSiteRootFile(file) && !isReleaseAllowedFile(file)) {
+          if (marketplaceEntries.has(entry) && isCtReleaseFile(file)) marketplaceAllowed++
+          else add(file, i + 1, '允許清單網址寫在設定以外')
+        }
         line = line.split(entry).join(' ')
       }
       for (const [category, re] of PATTERNS) {
@@ -303,6 +354,7 @@ function main() {
   const internalNote = args.internalIds ? `（內部 id：編號類套用全部 ${files.length} 個檔案，其他類別套用 ${releaseFiles} 個更版紀錄檔）` : ''
   console.log(`deid-scan：掃描 ${files.length} 個檔案，命中 ${hits.length}${internalNote}`)
   for (const [category, n] of [...counts].sort()) console.log(`  ${category}: ${n}`)
+  if (marketplaceAllowed) console.log(`  （CT 發行物裡的 marketplace repo 名稱放行 ${marketplaceAllowed} 處，不算命中）`)
   process.exit(hits.length ? 1 : 0)
 }
 

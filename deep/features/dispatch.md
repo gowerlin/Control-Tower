@@ -59,7 +59,7 @@ Worker 是無狀態的：它**不讀**塔台的設定檔來決定自己用什麼
 
 - `--notify-id` 傳塔台自己的 `BAT_TERMINAL_ID`。BAT 會把它注入 Worker 環境成 `BAT_TOWER_TERMINAL_ID`，Worker 收尾時才知道要通知哪個塔台。
 - `--workspace` 和 `--cwd` 修的是**兩件不同的事**：`--cwd` 決定 Worker 在哪個目錄執行，`--workspace` 決定分頁落在哪個 workspace。實際發生過「目錄對了、分頁落錯 workspace」的情況，所以兩個都要傳，不能互相取代。
-- `--agent default` 交給 BAT 依 workspace 預設、全域預設解析要開 Claude Code 還是 Codex；`--skill` 加 `--workorder` 是不帶前綴的中立寫法，由 BAT 依 agent 組出 `/ct-exec T####` 或 `$ct-exec T####`。CT 刻意不自己偏好任何一個 agent，避免同一個專案的工單今天由一個工具跑、明天換另一個，造成行為漂移。
+- `--agent default` 交給 BAT 依 workspace 預設、全域預設解析要開 Claude Code 還是 Codex；`--skill` 加 `--workorder` 是不帶前綴的中立寫法，由 BAT 依 agent 組出 `/ct-exec T####` 或 `$ct-exec T####`。Codex 用 plugin 安裝時 skill 名稱一定帶前綴（`$ct:ct-exec`），叫不到 BAT 送的 `$ct-exec`，所以接 BAT 派工的 Codex 用 zip 手動安裝（v5.14.0 起，見[安裝](/install#plugin)）；Claude Code 用 plugin 安裝不受影響。CT 刻意不自己偏好任何一個 agent，避免同一個專案的工單今天由一個工具跑、明天換另一個，造成行為漂移。
 
 環境變數分成兩組，各自只服務一個方向。塔台派工要 `BAT_SESSION`、`BAT_REMOTE_PORT`、`BAT_REMOTE_TOKEN`、`BAT_TERMINAL_ID`、`BAT_WORKSPACE_ID`；Worker 通知要 `BAT_TOWER_TERMINAL_ID`、`BAT_REMOTE_PORT`、`BAT_REMOTE_TOKEN`。拆開的原因很實際：混成一份清單的話，塔台會因為自己沒有 `BAT_TOWER_TERMINAL_ID` 而誤判「不在 BAT 裡」，退回剪貼簿派工。另外，Git Bash、MSYS 這類 helper shell 可能看不到 BAT 注入的變數，所以在 Windows 上要用原生 PowerShell 再查一次；PowerShell 看得到就照常走 BAT，記為 `shell env visibility mismatch`，不得因此降級。
 

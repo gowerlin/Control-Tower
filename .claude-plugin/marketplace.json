@@ -1,0 +1,21 @@
+{
+  "name": "control-tower",
+  "owner": {
+    "name": "BMad Control Tower"
+  },
+  "metadata": {
+    "description": "BMad Control Tower skills for Claude Code and Codex: file-driven work order orchestration (Tower / Worker) and its learning guide."
+  },
+  "plugins": [
+    {
+      "name": "ct",
+      "source": "./plugins/ct",
+      "description": "BMad Control Tower: file-driven work order orchestration for Tower and Worker sessions (control-tower, ct-exec, ct-done, ct-status, ct-evolve, ct-fieldguide, ct-help, ct-insights)."
+    },
+    {
+      "name": "ct-guide",
+      "source": "./plugins/ct-guide",
+      "description": "Interactive learning guide for BMad Control Tower: concepts, design rationale and architecture (control-tower-guide)."
+    }
+  ]
+}

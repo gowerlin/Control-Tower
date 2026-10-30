@@ -25,6 +25,8 @@ export interface ThemeConfig extends DefaultTheme.Config {
   courseCodeRepoUrl: string
   /** 課程投影片 PDF 的 Release tag；下載網址＝releasesUrl＋download/<tag>/<檔名> */
   courseReleaseTag: string
+  /** plugin marketplace 所在的 GitHub repo（owner/repo）；/install 的 marketplace add 指令一律用它組，內文不手寫 repo 名稱 */
+  marketplaceRepo: string
   /** Artifact 預覽建置：沒有 client JS，元件只剩 SSR 的樣子 */
   artifact: boolean
 }
@@ -40,6 +42,9 @@ const CT_RELEASES_URL = 'https://github.com/gowerlin/Control-Tower/releases/'
 // 課程示範專案的公開程式碼 repo：同上，只能寫在設定裡；投影片 PDF 放在上面 Releases 的這個 tag（前綴已在允許清單）
 const COURSE_CODE_REPO_URL = 'https://github.com/gowerlin/ct-bat-bmad-go-sms'
 const COURSE_RELEASE_TAG = 'course-ct-bat-bmad-go-sms'
+// plugin marketplace 所在的公開 repo（owner/repo；就是本站的公開 repo）：同上，只能寫在設定裡；/install 的 marketplace add 指令用它組。
+// scripts/deid-scan.mjs 讀這一行，只在 CT 發行物裡放行這個名稱（改名時兩邊一起生效）
+const CT_MARKETPLACE_REPO = 'gowerlin/Control-Tower'
 // Artifact 預覽用的哨兵 base：build 完由 scripts/build-artifact.mjs 改寫成相對路徑
 const ARTIFACT_BASE = '/__ct__/'
 
@@ -331,6 +336,7 @@ export default () => {
       releasesUrl: CT_RELEASES_URL,
       courseCodeRepoUrl: COURSE_CODE_REPO_URL,
       courseReleaseTag: COURSE_RELEASE_TAG,
+      marketplaceRepo: CT_MARKETPLACE_REPO,
       artifact: IS_ARTIFACT,
 
       // logo.svg 的線條是 currentColor；放進 <img> 時跟不到頁面文字色，所以深色模式另給固定淺色線條的版本

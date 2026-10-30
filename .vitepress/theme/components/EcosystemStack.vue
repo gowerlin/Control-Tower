@@ -310,7 +310,7 @@ function brickAttrs(key: Key, label: string) {
           <li>你在塔台下達需求</li>
           <li>塔台建立工單</li>
           <li>塔台用 bat-terminal.mjs 請 BAT 開 Worker 分頁</li>
-          <li>Worker 執行 ct-exec（Claude Code 是 <code>/ct-exec</code>，Codex 是 <code>$ct-exec</code>）</li>
+          <li>Worker 執行 ct-exec（Claude Code 是 <code>/ct-exec</code>，Codex 是 <code>$ct-exec</code>，用 plugin 安裝的 Codex 是 <code>$ct:ct-exec</code>）</li>
           <li>Worker 用 bat-notify 回報塔台</li>
         </ol>
       </div>

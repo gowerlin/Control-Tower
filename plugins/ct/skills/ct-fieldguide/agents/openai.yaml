@@ -1,0 +1,4 @@
+interface:
+  display_name: "CT Fieldguide"
+  short_description: "Maintain FIELDGUIDE and DESIGN guidance"
+  default_prompt: "Use $ct-fieldguide audit (or $ct:ct-fieldguide audit when CT is installed as the ct plugin) to inspect FIELDGUIDE and DESIGN.md consistency."

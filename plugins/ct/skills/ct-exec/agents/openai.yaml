@@ -1,0 +1,4 @@
+interface:
+  display_name: "CT Exec"
+  short_description: "Execute one Control Tower workorder"
+  default_prompt: "Use $ct-exec T0001 (or $ct:ct-exec T0001 when CT is installed as the ct plugin) to execute the scoped workorder and complete the worker closeout."

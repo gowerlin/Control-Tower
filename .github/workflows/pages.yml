@@ -6,6 +6,11 @@ name: Pages
 on:
   push:
     branches: [main]
+    # plugin marketplace（.claude-plugin/、plugins/）不是站點內容：一次 push 只改到這兩處時不重新建站；
+    # 同時改到其他檔案時照常建站
+    paths-ignore:
+      - '.claude-plugin/**'
+      - 'plugins/**'
   workflow_dispatch:
 
 permissions:

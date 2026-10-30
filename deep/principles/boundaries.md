@@ -47,11 +47,13 @@ Worker 端的規則一樣：除非工單明文寫出使用者授權 push，否�
 4. **逐檔複驗**安裝結果，要求全部 IDENTICAL，任何一檔不一致就視為失敗並回退。
 5. **回報**備份路徑、逐 skill 的複驗結果、具體的回退指令，以及「下一個 session 才生效」。
 
+v5.14.0 起用 plugin marketplace 安裝也算寫入 Layer 1，一樣要工單授權，指名 Agent、plugin 與 marketplace（例如 `ct@control-tower`）。差別在做法：只能用 `claude plugin …`、`codex plugin …` 指令安裝、更新或移除，不在 plugin 的安裝目錄裡複製或改檔，也不在旁邊做備份；回退是用 plugin 指令移除，或改回 zip 手動安裝。
+
 「禁止先刪除」是踩過坑才加的：曾經有一次安裝先刪掉了已安裝的 skill 目錄，接著複製因為路徑格式問題全部失敗，結果兩端的 8 個 skill 都不見了。先複製、驗證、再替換，任何一步失敗，已安裝的版本都還在。權威定義：`version-governance.md` § 安裝／升級流程。
 
 ## Layer 1 整個路徑都不能寫，連備份也不行
 
-Layer 1 的保護範圍是**整個** `~/.claude/skills/` 與 `~/.codex/skills/` 路徑，不只是 skill 定義檔。備份、暫存檔、封存的舊版、`.bak` 檔，或任何「順手放在旁邊」的目錄，都不得放在這底下。
+Layer 1 的保護範圍是**整個** `~/.claude/skills/` 與 `~/.codex/skills/` 路徑，不只是 skill 定義檔；v5.14.0 起也包括 plugin 的安裝路徑（`~/.claude/plugins/`、`~/.codex/plugins/` 等），而且更嚴，連 skill 定義檔都只能由 plugin 指令寫入。備份、暫存檔、封存的舊版、`.bak` 檔，或任何「順手放在旁邊」的目錄，都不得放在這底下。
 
 為什麼連備份都不行？因為 skill 掃描器會把這個路徑**第一層的每個子目錄**當成一個 skill 註冊。一份根層帶 `SKILL.md` 的備份，會以舊版的 description 進入路由候選；它和現役版本高度重疊，路由時可能命中舊版，答出已經被新版推翻的內容，而且沒有任何錯誤訊息。這件事在 Claude Code 端實際發生過；Codex 端未實測，保守起見比照辦理。
 

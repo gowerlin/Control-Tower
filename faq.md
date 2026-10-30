@@ -16,7 +16,7 @@ description: CT 的常見問題：新版沒生效、Claude Code 與 Codex 的差
 
 如果開了新 session 還是舊的：
 
-1. 確認 8 個 skill 的版號一致：`grep -h -o "[a-z-]*-version: [0-9.]*" ~/.claude/skills/{control-tower,ct-*}/SKILL.md`（Codex 把路徑換成 `~/.codex/skills`）。
+1. 確認 8 個 skill 的版號一致：`grep -h -o "[a-z-]*-version: [0-9.]*" ~/.claude/skills/{control-tower,ct-*}/SKILL.md`（Codex 把路徑換成 `~/.codex/skills`）。用 plugin 安裝的看 `claude plugin list --json`（Codex：`codex plugin list --json`）的 `version`；這時 `skills/` 底下如果還留著手動安裝的同名 skill，會用到手動那份，見[安裝 › 用 plugin marketplace 安裝](/install#plugin)。
 2. 確認 `skills/` 底下沒有備份或暫存目錄（`_backup-*`、`_staging-*`）。根層帶 `SKILL.md` 的備份會被當成另一個 skill 註冊，路由時可能載入舊版。
 3. 同時在 claude.ai 上傳過 CT 時，Claude Code 會多看到一份 `anthropic-skills:` 開頭的同名 skill。兩份版號不同時可能載入舊的那份，建議擇一，見[安裝 › 同時使用 Claude Code 時](/install#claude-ai-sync)。
 
@@ -63,10 +63,11 @@ CT 是在執行時去讀 `bmad-guide` 的 reference，不把它的內容寫死�
 | | Claude Code | Codex |
 |---|---|---|
 | 指令前綴 | `/control-tower`、`/ct-exec T0001` | `$control-tower`、`$ct-exec T0001` |
-| 安裝位置 | `~/.claude/skills/<skill>/` | `~/.codex/skills/<skill>/` |
+| 安裝位置（zip 手動安裝） | `~/.claude/skills/<skill>/` | `~/.codex/skills/<skill>/` |
+| plugin 安裝（v5.14.0 起） | 照常 `/ct-exec T0001`，完整寫法 `/ct:ct-exec T0001` | 一律帶前綴 `$ct:ct-exec T0001`；接 BAT 派工的 Codex 用 zip 手動安裝 |
 | 升級 | 各自獨立，升級一端不會更新另一端 | 同左 |
 
-工單格式、回報字串、研究型工單的互動規則與 yolo 協定，兩邊一致。同一張工單 `/ct-exec` 或 `$ct-exec` 都能執行。
+工單格式、回報字串、研究型工單的互動規則與 yolo 協定，兩邊一致。同一張工單 `/ct-exec` 或 `$ct-exec`（Codex 用 plugin 安裝時是 `$ct:ct-exec`）都能執行。
 
 **誰決定 Worker 用哪一個**：在 BAT 裡，塔台派工用 `--agent default`，由 BAT 依你設定的預設 Agent 決定，也由 BAT 決定送 `/` 還是 `$`。不在 BAT 裡時，用 `CT_AGENT_CMD=claude` 或 `CT_AGENT_CMD=codex` 指定；兩個都裝了又沒指定，塔台不猜，改給你剪貼簿或文字提示。
 
@@ -186,7 +187,7 @@ CT 是在執行時去讀 `bmad-guide` 的 reference，不把它的內容寫死�
 ::: details 派工不是一個命令
 CT 沒有 `*dispatch`。派工是開單之後的一個步驟：塔台依 `auto-session` 設定自動派，或給你指令讓你自己開。舊版的 `*help roles`（職責速查卡）也已在 v5.0.3 刪除。完整的現行命令見[指令參考大全](/reference/commands)。
 
-出處：`control-tower/SKILL.md` § Built-In Commands；CT 安裝與使用指南 § 14. 命令速查表（v5.13.1）。
+出處：`control-tower/SKILL.md` § Built-In Commands；CT 安裝與使用指南 § 14. 命令速查表（v5.14.0）。
 :::
 
 ## BAT 相關問題 {#bat}
