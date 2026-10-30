@@ -55,6 +55,6 @@ CT v6.0.0-beta.1 起，Release 另附 `ct-adapter-pstack`（讓 CT 塔台能把�
 | pstack（原作） | https://github.com/cursor/plugins/tree/main/pstack | 見原作 repo | 見原作 repo |
 | cursor-team-kit、thermos（pstack-claude 內含的第三方元件） | 見上游 `NOTICE.md` | MIT | Cursor |
 
-各元件與上游檔案的對照表在上游 `NOTICE.md`：https://github.com/michael-denyer/pstack-claude/blob/main/NOTICE.md 。以上依 pstack-claude v0.9.102（commit `356c6e0f`）整理；上游更版時，授權與著作權人以上游當時的檔案為準。完整的出處與授權說明見 `ct-adapter-pstack` zip 內的 `NOTICE.md`。
+各元件與上游檔案的對照表在上游 `NOTICE.md`：https://github.com/michael-denyer/pstack-claude/blob/main/NOTICE.md 。以上依 pstack-claude v0.9.103（commit `36885ea6`）整理；上游更版時，授權與著作權人以上游當時的檔案為準。完整的出處與授權說明見 `ct-adapter-pstack` zip 內的 `NOTICE.md`。
 
 「pstack」「poteto-mode」等是上游專案使用的名稱；本 adapter 使用這些名稱只為了指出對應的上游功能，不代表上游作者認可或參與本 adapter。

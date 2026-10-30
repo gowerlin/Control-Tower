@@ -22,9 +22,9 @@
 
 ```
 parent-dir/
+├── AGENTS.md                ← 專案上下文（BMad v6.11+：bmad-project-context 寫的區塊）
 ├── _ct-workorders/          ← 工單統一管理
 ├── docs/                    ← BMad 共用文件
-│   ├── project-context.md
 │   ├── prd.md
 │   └── sprint-status.yaml
 ├── app-a/
@@ -35,10 +35,13 @@ parent-dir/
     └── docs/                ← app-b 專屬文件
 ```
 
+> BMad v6.11+ 不再產出 `project-context.md`，專案上下文改寫在 repo 根目錄 `AGENTS.md` 的區塊；子專案（含巢狀 repo）可以有自己的
+> `AGENTS.md`（條件見下述 reference），由上層列指標。舊專案留下的 `project-context.md` 不會自動載入。以已安裝 `bmad-guide` 的 `references/brownfield.md` 為準（v5.14.1+）。
+
 ## 文件同步衛生
 
 塔台在以下時機提醒檢查文件與程式碼一致性：
-- 每個 Story 完成後：「本次改動是否影響 project-context.md 或 architecture.md？」
+- 每個 Story 完成後：「本次改動是否影響 `AGENTS.md` 的專案上下文區塊（舊專案：`project-context.md`）或 architecture.md？」
 - Sprint 結束時：派發「文件同步檢查」工單
 - 發現回報的程式碼結構與文件描述不符時：主動標記 ⚠
 

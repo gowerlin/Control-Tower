@@ -12,7 +12,7 @@ Skill YAML frontmatter 僅放 runtime 需要的欄位，至少包含 `name` 與 
 版本事實來源改用 body 內第一個註解：
 
 ```markdown
-<!-- control-tower-version: 5.14.0 -->
+<!-- control-tower-version: 5.14.1 -->
 ```
 
 同步點：
@@ -144,8 +144,9 @@ plugin 安裝也是**寫入 Layer 1**：路徑清單見權威定義 § 寫入規
 | marketplace | `control-tower`（放在 `gowerlin/Control-Tower` 的根目錄） |
 | CT plugin | `ct`：8 個 CT skill 放在同一個 plugin（`../` 相對連結依賴它們是兄弟目錄，不得拆成多個 plugin） |
 | Guide plugin | `ct-guide`（`control-tower-guide`，可不裝） |
+| BMad Guide plugin | `bmad-guide`（skill `bmad-guide`，可不裝；Level 2 用，塔台怎麼找到它見 [enhancement-integration.md](enhancement-integration.md) § Level 2 › 偵測，v5.14.1+） |
 | beta | 不上架；`-beta.N` 照舊用 zip 手動安裝 |
-| 版號 | `plugin.json` 的 `version` = CT 版號（Guide plugin = Guide 版號） |
+| 版號 | `plugin.json` 的 `version` = CT 版號（Guide plugin = Guide 版號；BMad Guide plugin = bmad-guide 版號，跟 BMad-Method 走、不跟 CT，例 `6.12.4`） |
 
 #### 前置：授權
 
@@ -160,6 +161,7 @@ Claude Code：
 claude plugin marketplace add gowerlin/Control-Tower
 claude plugin install ct@control-tower
 claude plugin install ct-guide@control-tower      # 可選
+claude plugin install bmad-guide@control-tower    # 可選（Level 2）
 ```
 
 Codex：
@@ -168,12 +170,13 @@ Codex：
 codex plugin marketplace add gowerlin/Control-Tower
 codex plugin add ct@control-tower
 codex plugin add ct-guide@control-tower           # 可選
+codex plugin add bmad-guide@control-tower         # 可選（Level 2）
 ```
 
 #### 升級
 
 - **Claude Code**：`claude plugin marketplace update control-tower`（session 內 `/plugin marketplace update control-tower`），
-  再 `claude plugin update ct@control-tower`；下一個 session 生效。Claude 依 `plugin.json` 的 `version` 判斷有沒有新版
+  再 `claude plugin update ct@control-tower`（其他 plugin 同理，例 `bmad-guide@control-tower`）；下一個 session 生效。Claude 依 `plugin.json` 的 `version` 判斷有沒有新版
   （`version` 沒變就不會更新）。自動更新在 `/plugin` → Marketplaces 對 `control-tower` 開啟；第三方 marketplace **預設關閉**。
 - **Codex**：`codex plugin marketplace upgrade control-tower`。Codex 每次啟動也會自動升級所有 git marketplace（依 commit 判斷）。
 
@@ -181,7 +184,8 @@ codex plugin add ct-guide@control-tower           # 可選
 
 同一個 agent 上，手動安裝和 plugin 安裝**只留一種**。
 
-1. 依上面 Step 1 把手動安裝的 8 個 CT skill 備份到 `skill-backups/`，逐檔複驗（Guide 的 `control-tower-guide` 同理）。
+1. 依上面 Step 1 把手動安裝的 8 個 CT skill 備份到 `skill-backups/`，逐檔複驗（Guide 的 `control-tower-guide`、BMad Guide 的 `bmad-guide` 同理：
+   要改用 plugin 的那個就要先移除它的手動安裝）。
 2. 複驗全部 IDENTICAL 後，把這些 skill 從 `~/.claude/skills/`（Codex：`~/.codex/skills/`）移走（移到備份落點，不直接刪除）。
    🔴 **不移除時 plugin 版靜默不生效**：同名的一般 skill 存在時，Claude 的 `/ct-exec`、Codex 的 `$ct-exec` 都會用手動安裝那份
    （T0349 實測），而且看不出差別。
@@ -190,6 +194,7 @@ codex plugin add ct-guide@control-tower           # 可選
    - 版號（見下方〈版號確認〉）
    - Claude：`/ct:ct-exec` 一定叫到 plugin 版；不帶前綴的 `/ct-exec` 載入的 skill 目錄應在 plugin 安裝路徑下，不在 `~/.claude/skills/`
    - Codex：用 `$ct:ct-exec`（plugin 安裝下 `$ct-exec` 叫不到 CT，T0349）
+   - `bmad-guide`：Claude `/bmad-guide`（完整寫法 `/bmad-guide:bmad-guide`），Codex `$bmad-guide:bmad-guide`（T0357 實測）
 5. claude.ai 同步下來的 `anthropic-skills:*` 副本（例 `anthropic-skills:ct-exec`）不在本機 `skills/` 目錄，不會被上面的步驟移除，會繼續並存。
    版本不同時兩份 description 都參與自動路由，可能選到舊版；手動呼叫時用完整名稱 `/ct:ct-exec` 確認。
 
@@ -208,6 +213,7 @@ codex plugin list --json         # ct@control-tower 的 version
 ```
 
 `version` 應等於 CT 版號，也和已載入的 `SKILL.md` 版號註解（本檔 § 版號事實來源）一致。
+`bmad-guide@control-tower` 的 `version` 應等於 bmad-guide `SKILL.md` 的 `current_version`（去掉 `v`）。
 
 #### 回退
 
@@ -278,6 +284,7 @@ codex plugin list --json         # ct@control-tower 的 version
 | v5.13.0 | 2026-10-29 | MINOR（依 § SemVer：新增 3 個設定 `bug_review_open_threshold`、`bug_review_stale_days`、`customer_acceptance_gate`，其餘向下相容）：BUG／工單狀態衛生——BUG 結案判準與選填欄位 `closed_reason`（不新增狀態值）、未結 BUG 清理提示、改狀態同一批重建索引、`PARTIAL` 當下收尾、客戶驗收不回歸閘（可選，預設 `off`）；BAT 塔台面板讀取契約（`memory-protocol.md` 新節：熱檔預算 400 KB／BAT 讀檔上限 512 KiB、各頁超限表現、各檔 BAT 依賴的格式、嚴重度／優先級值域對照），Startup 與 `*sync` 量熱檔大小；`_bug-tracker.md`／`_backlog.md` § 索引格式（原指向不存在的段落）；決策日誌格式規則（表頭 `ID`）與 § 收斂；`_tower-state.md` 機器可讀摘要契約 v1（與 v6 同一份，`summary_version: 1`）。原規劃為 PATCH，因新增設定改為 MINOR（中間沒有另發 PATCH）。T0333／T0335／D404～D411。BAT 介面不變，對照 BAT `0.7.1-pre.8` |
 | v5.13.1 | 2026-10-30 | PATCH（依 § SemVer：文件修正，沒有新命令、新設定或不相容變更）：Worker 通知用工單完整 ID——ct-exec、ct-done、`auto-session.md`、`yolo-mode.md`、安裝指南的通知範本由 `T####` 改成 `<工單 ID>`，`--source`、訊息字串、`--ask --source`、手動備援訊息一律用收到的完整 ID（等於 frontmatter `id`，含前綴，不得截短；唯一權威 `work-order-system.md` § 回報與通知用的工單 ID）；Worker 送出前與 frontmatter `id` 比對；塔台端缺前綴容錯（熱區恰好一張「前綴 + 同號」才對上並記錄，多張或找不到問使用者；只保住塔台收單，權威 `work-order-system.md` § 回報處理流程 › 回報 ID 對不上時）；`memory-protocol.md` § BAT 塔台面板讀取契約 對齊 BAT `0.7.1-pre.9`（讀不到時顯示「無法讀取」、`critical` 任何讀取路徑算 High；400 KB 預算與 512 KiB 上限不變）；BMad 舊說法 4 項（以 bmad-guide v6.12.4 為準）。T0341／T0343／D420～D422／D424。BAT 介面、派工命令、斷點 A 正則不變 |
 | v5.14.0 | 2026-10-30 | MINOR（依 § SemVer：新增向下相容的安裝方式，沒有新命令、新設定或不相容變更）：新增 plugin marketplace 安裝方式（Claude Code、Codex；marketplace `control-tower` 在 `gowerlin/Control-Tower` 根目錄，CT plugin `ct` 收 8 個 skill、教學 plugin `ct-guide`；beta 不上架），zip 手動安裝照舊。三個新權威位置：`data-layer-architecture.md` § 寫入規則（Layer 1 加 plugin 安裝路徑；Q2 plugin 由 plugin manager 管理、Q3 plugin 安裝的授權、Q4 plugin 不備份）、本檔 § 安裝／升級流程 › plugin 安裝／升級（安裝、升級、從 zip 遷移時先備份並移除手動安裝、版號確認、回退）、`auto-session.md` § 依安裝方式的 skill 呼叫字串（Claude 手動／plugin 都 `/ct-exec`；Codex 手動 `$ct-exec`、plugin `$ct:ct-exec`）。**Codex 搭配 BAT 派工繼續用 zip 手動安裝**（BAT 對 Codex 送 `$ct-exec`）。另修 plugin 安裝下會壞的讀取路徑（`auto-session.md` 寫死的 `ct-exec/SKILL.md`、ct-insights 預篩腳本）、3 處連結層級；8 個 `agents/openai.yaml` 補 plugin 寫法。T0348～T0352／D432～D437。BAT 介面、CT 最低 BAT 版本、派工命令、斷點 A 正則不變 |
+| v5.14.1 | 2026-10-30 | PATCH（依 § SemVer：文件修正，沒有新命令、新設定或不相容變更）：塔台偵測得到 plugin 安裝的 bmad-guide——`enhancement-integration.md` § Level 2 › 偵測 改成明列搜尋順序（唯一權威）：手動安裝 `skills/bmad-guide/SKILL.md` → Claude plugin（`installed_plugins.json` 的 `bmad-guide@*`）→ Codex plugin（`config.toml` 啟用的 `bmad-guide@*`）；並存時手動優先；`references/` 相對於找到的 `SKILL.md`；plugin 路徑只讀；可用 skill 清單有 bmad-guide 但讀不到檔案時提示使用者一次（不再靜默改手動欄位）；Playbook → bmad-guide 回饋在 plugin 安裝下不改已安裝檔案。本檔 § plugin 安裝／升級 與安裝指南 § 4.1 補同一個 marketplace 的 `bmad-guide@control-tower`（可選，版號跟 BMad-Method 走、不跟 CT）。塔台端範本 `--workorder`、`--close-worker`、`--worktree-status` 由 `T####` 改成 `<工單 ID>`（含前綴、不截短，`auto-session.md` § 執行方式 加說明）。`mono-repo-patterns.md`、`multi-tower-protocol.md` 的 `project-context.md` 對齊 `AGENTS.md` 的專案上下文區塊（BMad v6.11+）。`data-layer-architecture.md` § 寫入規則補一句：設了 `CLAUDE_CODE_PLUGIN_CACHE_DIR` 時 `installed_plugins.json`、`known_marketplaces.json` 也在它指的目錄（Layer 1 範圍不變）。T0357／T0359／T0360／D446／D449／D450。BAT 介面、派工命令的參數與順序、斷點 A 正則不變 |
 
 > v4.x ~ v5.0.2 各列以 `docs/CHANGELOG.md` 對應版本段為準。
 >

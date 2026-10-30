@@ -1,6 +1,6 @@
 {
   "_note": "相容版本對照（/versions/compatibility 的資料）。每列 feature、ct（CT 起始版本）、bat／codex（最低版本，不需要就省略）、note、source（權威出處：檔案 § 章節）。CT 發版時相容性有變才改（CT 每次發版都要同步更新 Portal）。",
-  "ctVersion": "5.14.0",
+  "ctVersion": "5.14.1",
   "rows": [
     {
       "feature": "帶前綴的工單 ID 走結構化派工（--workorder 帶前綴）",
@@ -135,10 +135,16 @@
       "source": "CHANGELOG.md [5.14.0]；version-governance.md § plugin 安裝／升級；auto-session.md § 依安裝方式的 skill 呼叫字串"
     },
     {
+      "feature": "Level 2 偵測得到 plugin 安裝的 bmad-guide；塔台端派工與回收範本用完整工單 ID",
+      "ct": "v5.14.1",
+      "note": "BAT 介面、派工命令的參數與順序、最低 BAT 版本都不變。塔台依序找手動安裝、Claude Code plugin、Codex plugin，並存時用手動那份；已安裝卻讀不到時提示一次。CT 5.14.0 與 6.0.0 beta 只查 skills/ 目錄，搭配它們時 bmad-guide 仍建議用 zip 手動安裝。",
+      "source": "CHANGELOG.md [5.14.1]；enhancement-integration.md § Level 2：外部 bmad-guide › 偵測；auto-session.md § 執行方式"
+    },
+    {
       "feature": "Level 2：外部 bmad-guide 的 BMad workflow 路由",
       "ct": "v5.0.3",
-      "note": "CT 不內嵌 BMad 內容，只偵測外部安裝的 bmad-guide；沒裝或查不到就靜默改用手動填的 workflow 欄位。bmad-guide 顯示 BMad-Method v6.10.0 或更新時，塔台路由改用 v6.10 的替代名稱（例如 bmad-investigate 已退役）。Portal 內容以 bmad-guide v6.12.4 為準。",
-      "source": "enhancement-integration.md § Level 2：外部 bmad-guide（偵測、BMad v6.10 Routing Overrides）；version-governance.md § 歷史版號表（v5.0.3）"
+      "note": "CT 不內嵌 BMad 內容，只偵測外部安裝的 bmad-guide（5.14.1 起手動安裝與 plugin 安裝都偵測得到，並存時用手動那份）；沒裝就靜默改用手動填的 workflow 欄位，已安裝卻讀不到時先提示一次。bmad-guide 顯示 BMad-Method v6.10.0 或更新時，塔台路由改用 v6.10 的替代名稱（例如 bmad-investigate 已退役）。Portal 內容以 bmad-guide v6.12.4 為準。",
+      "source": "enhancement-integration.md § Level 2：外部 bmad-guide（偵測、BMad v6.10 Routing Overrides）；version-governance.md § 歷史版號表（v5.0.3、v5.14.1）"
     }
   ]
 }

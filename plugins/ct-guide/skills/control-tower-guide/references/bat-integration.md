@@ -103,7 +103,7 @@ CT-T021 方向反過來：需求由 CT 塔台先提給 BAT（D067，CT 不向 Cl
 ① 塔台分頁宣告角色      塔台啟動時 --set-role tower --mode <m>（模式改了再宣告）
         ↓
 ② 派工建立 Worker 分頁   --workspace／--cwd／--mode／--[no-]interactive（yolo 一律 --no-interactive）／--agent default
-                         --skill ct-exec --workorder T####［--isolation worktree］［--wait-started 30000］
+                         --skill ct-exec --workorder <工單 ID>［--isolation worktree］［--wait-started 30000］
                          BAT 注入 BAT_TOWER_TERMINAL_ID、CT_MODE、CT_INTERACTIVE（隔離時另加 CT_HOME 等）
                          helper 等 Worker 的 claude 啟動（v5.6.0）：started 已啟動／unknown 無法判定／exit 8 不重派
         ↓
@@ -256,10 +256,10 @@ BAT `>= 0.7.0-pre.6` 讓 claude 的 `SessionStart` hook 回報「已啟動」，
 "${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" \
   --notify-id "$BAT_TERMINAL_ID" --workspace "$BAT_WORKSPACE_ID" \
   --cwd "<專案根目錄>" --mode <yolo|ask|off|on> [--interactive|--no-interactive] \
-  --agent default --skill ct-exec --workorder T#### [--isolation worktree] --wait-started 30000
+  --agent default --skill ct-exec --workorder <工單 ID> [--isolation worktree] --wait-started 30000
 ```
 
-（示意；完整參數表與條件以 CT `auto-session.md` 為準，不得照抄派工。）
+（示意；完整參數表與條件以 CT `auto-session.md` 為準，不得照抄派工。`<工單 ID>` 是含前綴的完整 ID，v5.14.1 起塔台端範本也這樣寫，理由見 `work-order-lifecycle.md` § 回報與通知用完整工單 ID。）
 
 - **值固定、不開設定**：`30000` 是 BAT 的建議值，只影響派工那一次 helper 等多久，所以 CT 不為它新增 config。
 - **一定帶 `--notify-id`**：BAT 只讓塔台查自己派出的 Worker，`--wait-started` 少了它就是用法錯誤——這和〈範圍權杖與分頁角色〉是同一套最小權限。
@@ -423,7 +423,7 @@ v5.3.0 之前，塔台想知道 Worker 的狀況只有一條路：讀工單回�
 
 | 通道 | 是什麼 | CT 用在哪 |
 |------|-------|----------|
-| `bat-terminal.mjs --worktree-status T####` | helper 指令；回傳隔離 Worker 的 worktree 狀態（一行 JSON：分支、ahead／behind、變更檔、範圍外檔案、預測衝突、髒檔…） | 合併前判斷「塔台能不能直接合併」的資料來源 |
+| `bat-terminal.mjs --worktree-status <工單 ID>` | helper 指令；回傳隔離 Worker 的 worktree 狀態（一行 JSON：分支、ahead／behind、變更檔、範圍外檔案、預測衝突、髒檔…） | 合併前判斷「塔台能不能直接合併」的資料來源 |
 | BAT MCP（`mcp__bat__*`） | BAT 啟動的 claude／codex 分頁裡的一組 MCP tool：自己是誰、列分頁、分頁狀態、讀輸出、等狀態改變、worktree 狀態；BAT `>= 0.7.0-pre.7` 另有 `bat_wait_question`（Worker 等答覆）與 `bat_list_questions`（塔台讀題）（CT v5.7.0） | 選用；目前沒有規則必須用 |
 
 **唯讀是刻意的。** BAT 不 checkout、不 merge、不 commit——它只提供信號，合併由塔台決定、由合併工單執行
@@ -622,6 +622,7 @@ CT 從不預先判斷 BAT 版本：一律先照常呼叫，失敗才依 exit cod
 | v5.13.0 | BAT 塔台面板讀取契約（熱檔預算 400 KB、BAT 讀檔上限 512 KiB、各檔 BAT 依賴的格式）、`_tower-state.md` 機器可讀摘要 v1；另有 BUG／工單狀態衛生與 3 個新設定（不涉 BAT 介面） | 無新門檻（格式對照 BAT `0.7.1-pre.8` 的解析器） | — |
 | v5.13.1 | Worker 通知與提問用完整工單 ID（`--source` 含前綴，BAT 才對得到 Worker 分頁、標得了 Done）；面板讀取契約改寫成 BAT `0.7.1-pre.9` 的表現（讀不到時顯示「無法讀取」、`critical` 在任何讀取路徑都算 High；400 KB 預算保留） | 無新門檻（BAT 介面不變；「無法讀取」提示與 `critical` 讀法是 BAT `>= 0.7.1-pre.9` 的行為） | 更舊的 BAT：面板讀不到時照舊靜默變空、只寫 `critical` 的索引格子是 Unknown；CT 的寫法與預算不分版本照做 |
 | v5.14.0 | plugin marketplace 安裝方式（plugin `ct`、`ct-guide`）；BAT 對 Codex 送 `$ct-exec`，plugin 版在 Codex 只能用 `$ct:ct-exec` 叫，所以 Codex 搭配 BAT 派工用 zip 手動安裝（不涉 BAT 介面） | 無新門檻 | 與 BAT 版本無關：只裝 plugin 的 Codex Worker 叫不到 CT skill；Claude Code 不受影響 |
+| v5.14.1 | 塔台端派工與回收範本（`--workorder`、`--close-worker`、`--worktree-status`）改寫 `<工單 ID>`，與 v5.13.1 的 Worker 端相同；另有 Level 2 偵測 plugin 版 bmad-guide（不涉 BAT 介面） | 無新門檻（BAT 介面、參數與順序不變） | — |
 
 `BAT_HELPER_NODE`（v5.2.1）沒有版本門檻：本機沒有這個變數就用 `node`，只有遠端分頁會由 BAT 注入。
 版號以 CT 的 `version-governance.md` § 歷史版號表 與 `auto-session.md` § 依賴的 BAT 基礎設施 為準；v5.1.0 的 BAT 版本出自 CT `CHANGELOG.md` [5.12.3]：[5.1.0] 原寫 `0.6.1-pre.3`，v5.12.3 依 BAT 塔台回覆更正為 `>= 0.6.1-pre.4`（歷史段落不改）。

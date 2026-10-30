@@ -26,11 +26,11 @@ description: 每個 CT 功能從哪一版開始、需要哪一版 BAT 與 codex�
 
 ## bmad-guide
 
-CT 不內嵌 BMad-Method 的內容。需要 BMad 的 workflow 路由時，塔台去讀**另外安裝**的 `bmad-guide` skill；沒裝或讀不到，就靜默改用工單裡手動填的 workflow 欄位，不擋住塔台。
+CT 不內嵌 BMad-Method 的內容。需要 BMad 的 workflow 路由時，塔台去讀**另外安裝**的 `bmad-guide` skill；沒裝就靜默改用工單裡手動填的 workflow 欄位，不擋住塔台；CT 5.14.1 起，可用 skill 清單裡有 bmad-guide 卻讀不到檔案時，先提示你一次再改用手動欄位。
 
 - bmad-guide 顯示 BMad-Method v6.10.0 或更新時，塔台改用 v6.10 起的替代名稱，例如 `bmad-investigate` 已退役、改開 CT 研究型工單或一般調查，`bmad-automator` 改建議 `bmad-loop`。
 - 版本低於任務需要時，塔台只顯示升級提示，不阻塞。
-- bmad-guide 用 plugin marketplace 安裝（`bmad-guide@control-tower`）時，塔台目前可能偵測不到：偵測條文以 `skills/` 目錄裡的安裝為準，讀不到就照上面的規則靜默改用手動欄位。要讓塔台用到它，目前建議用 zip 手動安裝，見 [BMad Guide Skill › 用 plugin 安裝](/guide/bmad-guide#install-plugin)。
+- bmad-guide 用 plugin marketplace 安裝（`bmad-guide@control-tower`）時，CT 5.14.1 起塔台偵測得到：依序找手動安裝、Claude Code plugin、Codex plugin，兩種並存時用手動那份。CT 5.14.0 與 6.0.0 beta 只查 `skills/` 目錄，搭配它們時仍建議用 zip 手動安裝，見 [BMad Guide Skill › 用 plugin 安裝](/guide/bmad-guide#install-plugin)。
 - Portal 的內容以 **bmad-guide v6.12.4** 為準。
 
 ## BAT 太舊時會怎樣

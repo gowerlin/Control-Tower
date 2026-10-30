@@ -32,7 +32,7 @@ Tower session 不需要預先具備 `BAT_TOWER_TERMINAL_ID`。Tower 派發時必
 BAT helper 路徑優先使用 `BAT_HELPER_DIR`：
 
 ```bash
-"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --notify-id "$BAT_TERMINAL_ID" --workspace "$BAT_WORKSPACE_ID" --cwd "<專案根目錄>" --mode yolo --agent default --skill ct-exec --workorder T####
+"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --notify-id "$BAT_TERMINAL_ID" --workspace "$BAT_WORKSPACE_ID" --cwd "<專案根目錄>" --mode yolo --agent default --skill ct-exec --workorder <工單 ID>
 "${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-notify.mjs" --source "<工單 ID>" --target "$BAT_TOWER_TERMINAL_ID" --submit "<工單 ID> 完成"
 ```
 

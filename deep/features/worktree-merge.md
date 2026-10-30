@@ -82,7 +82,7 @@ BAT 只提供**唯讀信號**：`--worktree-status` 回報分支的 ahead／behi
 
 合併完成後：
 
-- 被合併工單的 worktree 以 `--close-worker T#### … --worktree remove` 回收；分頁早已關閉時由塔台手動 `git worktree remove`（不加 `--force`）。worktree 有未提交或未追蹤的變更就不刪，告訴你。
+- 被合併工單的 worktree 以 `--close-worker <工單 ID> … --worktree remove` 回收；分頁早已關閉時由塔台手動 `git worktree remove`（不加 `--force`）。worktree 有未提交或未追蹤的變更就不刪，告訴你。
 - **合併前絕對不用 `--worktree archive`**，它會把分支改名為 `ct-archive/T####`。
 - 分支 `ct/T####` 與 `ct-merge/T####` 保留到你同意刪除，刪除用 `git branch -d`（不用 `-D`）。
 - 整合 worktree 本身保留，但 ff 成功後要 `switch --detach` 離開合併分支，否則之後你同意刪分支時會因為分支仍被 checkout 而刪不掉。

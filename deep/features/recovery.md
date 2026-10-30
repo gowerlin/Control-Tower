@@ -92,7 +92,7 @@ description: 進度存在檔案裡，所以塔台可以被打斷：*pause／*res
 
 ## 重派前回收舊分頁 {#recycle}
 
-在 BAT 裡，塔台要對同一張工單派一個**新的** Worker 之前（`BLOCKED`／`FAILED` 後重派、yolo 提問備援、你停掉首派的 Worker 後要求重派、啟動確認逾時後你決定重派），會先請 BAT 以 `--close-worker T#### … --delay-ms 0` 回收舊分頁。不回收的話，同一張工單會同時有兩個 Worker 分頁，新 Worker 完成後的收單回收也會因為找到兩個候選而失敗。
+在 BAT 裡，塔台要對同一張工單派一個**新的** Worker 之前（`BLOCKED`／`FAILED` 後重派、yolo 提問備援、你停掉首派的 Worker 後要求重派、啟動確認逾時後你決定重派），會先請 BAT 以 `--close-worker <工單 ID> … --delay-ms 0` 回收舊分頁。不回收的話，同一張工單會同時有兩個 Worker 分頁，新 Worker 完成後的收單回收也會因為找到兩個候選而失敗。
 
 有三種情況**不回收**：
 

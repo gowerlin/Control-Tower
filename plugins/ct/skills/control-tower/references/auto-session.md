@@ -293,7 +293,7 @@ interface PreflightCheck {
 
 `<agent-cli>` 是 B 面非 BAT 路由的 placeholder，支援 Claude 與 Codex，但不得寫死任一工具：
 
-1. BAT 內部路由已在 A.2 Step 0 短路：使用 `bat-terminal.mjs --agent default --skill ct-exec --workorder T####`，由 BAT Default Agent 設定解析，B 面不參與。
+1. BAT 內部路由已在 A.2 Step 0 短路：使用 `bat-terminal.mjs --agent default --skill ct-exec --workorder <工單 ID>`，由 BAT Default Agent 設定解析，B 面不參與。
 2. 非 BAT 路由解析順序：`CT_AGENT_CMD`（只允許 `claude` / `codex`）→ 安全自動偵測（只在兩者唯一可用時採用）→ C 面剪貼簿/文字提示。
 3. 若 `claude` 與 `codex` 同時存在且 `CT_AGENT_CMD` 未指定，不得自行偏好其中一個，避免跨工具行為漂移。
 4. 實際 spawn 前必須將 `<agent-cli>` 替換為解析後的 allowlist literal；失敗則回傳 `null` 交 C 面。
@@ -843,7 +843,7 @@ BAT 重開且 Terminal Server 存活時，畫面會出現 Recovery 提示。使�
   --notify-id "$BAT_TERMINAL_ID" --workspace "$BAT_WORKSPACE_ID" \
   --cwd "<專案根目錄>" \
   --mode <yolo|ask|off|on> [--interactive|--no-interactive] \
-  --agent default --skill ct-exec --workorder T####
+  --agent default --skill ct-exec --workorder <工單 ID>
 ```
 
 Fallback：
@@ -853,7 +853,7 @@ Fallback：
   --notify-id "$BAT_TERMINAL_ID" --workspace "$BAT_WORKSPACE_ID" \
   --cwd "<專案根目錄>" \
   --mode <yolo|ask|off|on> [--interactive|--no-interactive] \
-  --agent default --skill ct-exec --workorder T####
+  --agent default --skill ct-exec --workorder <工單 ID>
 ```
 
 路徑必須使用 Windows 形式。不要把 `C:\...` 改成 `/c/...`，Node 會把 POSIX 形式誤判成相對路徑。
@@ -881,6 +881,10 @@ Fallback：
 - `--agent default` 由 BAT 解析為 workspace defaultAgent → global defaultAgent → fallback CLI；Skill 不硬編碼 `codex` / `claude`
 - `--skill` + `--workorder` 是 agent-neutral payload；Tower skill 不寫 `/` 或 `$` prefix（也不寫 `ct:`），由 BAT app `terminal:create-agent-command` 依 resolved agent 組出 `/ct-exec T####`（Claude）或 `$ct-exec T####`（Codex）；Codex 只裝 CT plugin 時叫不到，各 agent／安裝方式的寫法見下方 § 依安裝方式的 skill 呼叫字串（v5.14.0+）
 - `--workorder` 的合法值依 [work-order-system.md](work-order-system.md) § 工單 ID 格式（權威定義），**含帶前綴的 ID**
+- **範本裡的 `<工單 ID>`**（v5.14.1+）：本檔與其他文件的塔台端指令範本（派工 `--workorder`、`--close-worker`、`--worktree-status`）
+  一律寫 `<工單 ID>`，代入工單 frontmatter `id` 原樣，含前綴、不截短成 `T` 加數字（例 `--workorder LB-T0184`，不是 `--workorder T0184`）；
+  寫法與 Worker 端相同，見 [work-order-system.md](work-order-system.md) § 回報與通知用的工單 ID。B 面、C 面、派發後行為與 § 安全邊界
+  的 `/ct-exec T####` 樣板裡的 `T####` 同樣代表完整 ID。
   > ⚠️ **BAT 最低版本**：帶前綴的 `--workorder`（如 `CP-T0113`）需 BAT
   > **`v0.5.9-pre.1`+（BAT 的 fork 版）**。
   > upstream 原始 repo 截至 2026-09-02 **尚未含此修復**。
@@ -942,7 +946,7 @@ Fallback：
   --notify-id "$BAT_TERMINAL_ID" --workspace "$BAT_WORKSPACE_ID" \
   --cwd "<專案根目錄>" \
   --mode <yolo|ask|off|on> [--interactive|--no-interactive] \
-  --agent default --skill ct-exec --workorder T#### --isolation worktree
+  --agent default --skill ct-exec --workorder <工單 ID> --isolation worktree
 ```
 
 BAT 以 `--cwd` 的 git toplevel 為主 checkout，建立 `<主 checkout 上層>/.bat-worktrees/<repo 目錄名>/<T####>`、分支 `ct/<T####>`，
@@ -1444,13 +1448,13 @@ BAT 內部終端（BAT_SESSION=1）
 | 寫入剪貼簿 | `echo /ct-exec T#### \| clip` | Windows（降級，僅英文） |
 | 寫入剪貼簿 | `echo "/ct-exec T####" \| pbcopy` | macOS |
 | 寫入剪貼簿 | `echo "/ct-exec T####" \| xclip -selection clipboard` | Linux |
-| BAT 內部終端 | `"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --notify-id "$BAT_TERMINAL_ID" --workspace "$BAT_WORKSPACE_ID" --cwd "<專案根目錄>" --mode <yolo\|ask\|off\|on> [--interactive\|--no-interactive] --agent default --skill ct-exec --workorder T####` | BAT（Tower dispatch；使用 BAT 預設 Agent；未設 `BAT_HELPER_DIR` 時 fallback 到 `C:\\Program Files\\BetterAgentTerminal\\resources\\scripts\\bat-terminal.mjs`） |
-| BAT 內部終端 | `"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --notify-id "$BAT_TERMINAL_ID" --workspace "$BAT_WORKSPACE_ID" --cwd "<專案根目錄>" --mode <yolo\|ask\|off\|on> [--interactive\|--no-interactive] --agent default --skill ct-done --workorder T####` | BAT（Tower dispatch；使用 BAT 預設 Agent；未設 `BAT_HELPER_DIR` 時 fallback 到 `C:\\Program Files\\BetterAgentTerminal\\resources\\scripts\\bat-terminal.mjs`） |
+| BAT 內部終端 | `"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --notify-id "$BAT_TERMINAL_ID" --workspace "$BAT_WORKSPACE_ID" --cwd "<專案根目錄>" --mode <yolo\|ask\|off\|on> [--interactive\|--no-interactive] --agent default --skill ct-exec --workorder <工單 ID>` | BAT（Tower dispatch；使用 BAT 預設 Agent；未設 `BAT_HELPER_DIR` 時 fallback 到 `C:\\Program Files\\BetterAgentTerminal\\resources\\scripts\\bat-terminal.mjs`） |
+| BAT 內部終端 | `"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --notify-id "$BAT_TERMINAL_ID" --workspace "$BAT_WORKSPACE_ID" --cwd "<專案根目錄>" --mode <yolo\|ask\|off\|on> [--interactive\|--no-interactive] --agent default --skill ct-done --workorder <工單 ID>` | BAT（Tower dispatch；使用 BAT 預設 Agent；未設 `BAT_HELPER_DIR` 時 fallback 到 `C:\\Program Files\\BetterAgentTerminal\\resources\\scripts\\bat-terminal.mjs`） |
 | BAT 隔離派工 | 上兩列的指令尾端加 `--isolation worktree` | BAT（v5.3.0+，僅工單有 `isolation: worktree` 時；見 § BAT 內部終端路由 › worktree 隔離派工） |
 | BAT 派工啟動確認 | 上三列的指令最尾端加 `--wait-started 30000` | BAT（v5.6.0+，BAT `>= 0.7.0-pre.6`；本塔台 session 未判定「不支援 `--wait-started`」時一律加，已判定就不加、指令與上三列相同；見 § Worker 啟動確認） |
-| 回收 Worker 分頁 | `"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --close-worker T#### --notify-id "$BAT_TERMINAL_ID" --delay-ms <worker_close_delay × 1000>` | BAT（v5.1.0+，收單後；僅 `worker_auto_close: done` 時，條件與 exit code 處理見 [work-order-system.md](work-order-system.md) § 回報處理流程；helper 路徑 fallback 同上）。v5.12.0+ 也用於重派前（`--delay-ms 0`，不受 `worker_auto_close` 影響；見 [work-order-system.md](work-order-system.md) § 重派前回收舊 Worker 分頁） |
+| 回收 Worker 分頁 | `"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --close-worker <工單 ID> --notify-id "$BAT_TERMINAL_ID" --delay-ms <worker_close_delay × 1000>` | BAT（v5.1.0+，收單後；僅 `worker_auto_close: done` 時，條件與 exit code 處理見 [work-order-system.md](work-order-system.md) § 回報處理流程；helper 路徑 fallback 同上）。v5.12.0+ 也用於重派前（`--delay-ms 0`，不受 `worker_auto_close` 影響；見 [work-order-system.md](work-order-system.md) § 重派前回收舊 Worker 分頁） |
 | 回收隔離 Worker 分頁 | 上一列的指令尾端加 `--worktree keep`（收單時）或 `--worktree remove`（合併完成後） | BAT（v5.3.0+，僅隔離工單；見 [work-order-system.md](work-order-system.md) § 收單後回收 Worker 分頁 與 [merge-workorder.md](merge-workorder.md) § 合併完成後清理） |
-| 查詢隔離 Worker 狀態 | `"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --worktree-status T#### --notify-id "$BAT_TERMINAL_ID"` | BAT（v5.3.0+，唯讀；見 [merge-workorder.md](merge-workorder.md) § 合併判準資料來源） |
+| 查詢隔離 Worker 狀態 | `"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --worktree-status <工單 ID> --notify-id "$BAT_TERMINAL_ID"` | BAT（v5.3.0+，唯讀；見 [merge-workorder.md](merge-workorder.md) § 合併判準資料來源） |
 | 塔台直接合併（模式 ①） | [merge-workorder.md](merge-workorder.md) § 直接合併的做法 列出的 git 指令（整合 worktree `--no-ff`、`main` 只 `--ff-only`） | git（v5.3.0+，僅直接合併五條判準全部成立時；其他 git 寫入操作不在此列） |
 | 答覆 Worker 的 BAT 題目 | `"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --answer <questionId> --notify-id "$BAT_TERMINAL_ID" [--choice <n>]`，答覆文字只從 stdin 傳入 | BAT（v5.7.0+，BAT `>= 0.7.0-pre.7`，僅 yolo 塔台收到 `T#### 提問` 時；用法與 exit code 見 [yolo-mode.md](yolo-mode.md) § Worker 向塔台提問 › 塔台端 第 3 點；helper 路徑 fallback 同上） |
 | 宣告塔台分頁角色 | `"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --set-role tower --mode <yolo\|ask\|off\|on> --agent <claude\|codex>` | BAT（v5.2.0+，僅 Tower session；啟動時與 auto-session 生效值改變時；條件、PowerShell 寫法與 exit code 處理見 § 塔台分頁角色宣告；helper 路徑 fallback 同上） |
@@ -1460,7 +1464,7 @@ BAT 內部終端（BAT_SESSION=1）
 - **僅限白名單指令**：不得執行任何其他 Bash 操作
 - **`BAT_REMOTE_TOKEN` 的值**（v5.2.4+）：不得輸出、記錄或作為參數傳遞（helper 自行從環境變數讀取）；需要記錄時只寫「已設定」。見 § BAT 內部終端路由 › 範圍權杖與分頁角色 第 2 點
 - **helper 執行檔**（v5.2.1+）：BAT helper 列的開頭只允許 `"${BAT_HELPER_NODE:-node}"`（或 PowerShell 等價的 `$n`），即 `BAT_HELPER_NODE` 的值或字面 `node`，規則見 § 執行方式 的「Node 解析」；不得以其他執行檔或使用者輸入取代
-- **僅限工單指令內容**：指令參數僅包含 `/ct-exec T####` 或 `/ct-done T####`，或依 § BAT 內部終端路由 › 依安裝方式的 skill 呼叫字串（v5.14.0+）替換後的 Codex 寫法（`$ct-exec T####`、`$ct:ct-exec T####`，`ct-done` 同理，一律單引號）；BAT 內部終端僅傳 `--skill ct-exec|ct-done --workorder T####`（另可依下方規則加 `--isolation worktree`、`--wait-started 30000`）；回收 Worker 分頁僅傳 `--close-worker T####`（v5.1.0+）
+- **僅限工單指令內容**：指令參數僅包含 `/ct-exec T####` 或 `/ct-done T####`，或依 § BAT 內部終端路由 › 依安裝方式的 skill 呼叫字串（v5.14.0+）替換後的 Codex 寫法（`$ct-exec T####`、`$ct:ct-exec T####`，`ct-done` 同理，一律單引號）；BAT 內部終端僅傳 `--skill ct-exec|ct-done --workorder <工單 ID>`（另可依下方規則加 `--isolation worktree`、`--wait-started 30000`）；回收 Worker 分頁僅傳 `--close-worker <工單 ID>`（v5.1.0+）
 - **防注入**：不得傳入任意使用者輸入作為參數。工單編號**僅允許符合 [work-order-system.md](work-order-system.md) § 工單 ID 格式（權威定義）之權威正則的值，其餘一律拒絕**——不正規化、不截斷、不修補，直接拒絕派工並回報。本處不複述該正則，以免與權威定義漂移（v5.0.6 收斂前正是複述導致全庫立場牴觸）。⚠️ 合法值**包含帶前綴的 ID**（如 `CP-T0113`），拒絕帶前綴 ID 是錯誤實作
 - `--mode` 參數值僅允許 `yolo` / `ask` / `off` / `on`（正則 `^(yolo|ask|off|on)$`），防注入
 - `--interactive` / `--no-interactive` 為 flag（無參數），僅用於研究型工單互動旗標；v5.5.0+ yolo 派工固定 `--no-interactive`、不帶 `--interactive`（見 [yolo-mode.md](yolo-mode.md) § 啟動詢問（G3 互動旗標））

@@ -1,19 +1,46 @@
 ---
 title: 更版紀錄
-description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.14.0），更早的版本見演進史。
+description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.14.1），更早的版本見演進史。
 ---
 
 <!-- 本頁由 scripts/sync-ct-release.mjs 從 CT CHANGELOG 產生，請勿手改；要改內容請改來源後重跑。 -->
 
 # 更版紀錄
 
-目前版本 **v5.14.0**（2026-10-30）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 56 版（v2.1.1 ～ v5.12.1）請看[演進史](./evolution)。
+目前版本 **v5.14.1**（2026-10-30）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 57 版（v2.1.1 ～ v5.12.2）請看[演進史](./evolution)。
 
 ::: tip 摘要不具權威
 本頁照錄 CT 的 CHANGELOG，只拿掉工單、決策、驗收回函等內部編號與出處註記。規則的權威定義在 CT 各 skill 與 references，兩者有出入時以 CT 本體為準。
 :::
 
 ::: v-pre
+
+## 5.14.1 <small>2026-10-30</small> {#v5-14-1}
+
+
+> **PATCH：塔台偵測得到 plugin 安裝的 bmad-guide（Level 2）、安裝說明補同一個 marketplace 的 `bmad-guide`、塔台端派工範本改用完整工單 ID。**
+> 5.14.0 只寫「讀取已安裝 skill」，塔台找慣用的 `skills/` 目錄；用 plugin 裝的 bmad-guide 找不到，也不說一聲就改用手動 workflow 欄位。
+> 沒有新命令、新設定；BAT 介面、派工命令的參數與順序、斷點 A 正則、exit code 不變。升級只換 skill 檔案（見安裝指南 § 2.57）。
+
+### Fixed
+
+- **塔台偵測得到 plugin 安裝的 bmad-guide（Level 2）**：`enhancement-integration.md` § Level 2 › 偵測 改成明列搜尋順序（唯一權威）——手動安裝 `skills/bmad-guide/SKILL.md`（`~/.claude`、`~/.codex`、`~/.agents`）→ Claude plugin（`${CLAUDE_CODE_PLUGIN_CACHE_DIR:-~/.claude/plugins}/installed_plugins.json` 的 `bmad-guide@*` → `installPath`）→ Codex plugin（`config.toml` 啟用的 `bmad-guide@*` → `plugins/cache/<marketplace>/bmad-guide/<version>/`）；並存時手動優先；`references/` 相對於找到的 `SKILL.md`；plugin 路徑只讀
+- **不再靜默降級**：可用 skill 清單有 `bmad-guide`／`bmad-guide:bmad-guide` 但讀不到檔案時，提示使用者一次，再改手動欄位；清單裡也沒有才照舊靜默
+
+### Changed
+
+- `version-governance.md` § plugin 安裝／升級 與安裝指南 § 4.1：同一個 marketplace 另有 `bmad-guide`（`bmad-guide@control-tower`，可選，版號跟 BMad-Method 走、不跟 CT）——名稱表、安裝、升級、遷移（要改用 plugin 先移除手動安裝）、呼叫寫法、版號確認
+- 塔台端指令範本 `--workorder`、`--close-worker`、`--worktree-status` 由 `T####` 改成 `<工單 ID>`（含前綴、不截短；與 5.13.1 的 Worker 端相同），`auto-session.md` § 執行方式 加一點說明；`/ct-exec T####` 等呼叫字串樣板的 `T####` 同樣代表完整 ID
+- `mono-repo-patterns.md`、`multi-tower-protocol.md`：`project-context.md` → `AGENTS.md` 的專案上下文區塊（BMad v6.11+，以 bmad-guide v6.12.4 為準）
+- `enhancement-integration.md` § Playbook → bmad-guide 回饋：bmad-guide 為 plugin 安裝時不改已安裝檔案，改提議修改原始碼、隨下一版發布
+- `data-layer-architecture.md` § 寫入規則：補記設了 `CLAUDE_CODE_PLUGIN_CACHE_DIR` 時，`installed_plugins.json`、`known_marketplaces.json` 也一起改到它指的目錄（Layer 1 範圍不變）
+- 版號：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表；安裝指南新增 § 2.57，§ 1〈目前版本一覽〉、§ 4.1 版號範例與發行物檔名同步（`OLD=5.14.0`、`VER=5.14.1`）
+
+### Unchanged
+
+- BAT 介面、派工命令的參數與順序、斷點 A 正則、exit code、設定、工單欄位、狀態值不變
+- zip 手動安裝流程、發行物版面（全量 zip、8 個單一 skill zip、Guide zip）、plugin 名稱與內容組成不變
+- 歷史段落（本檔舊段落、版號表舊列、安裝指南舊章節）不改
 
 ## 5.14.0 <small>2026-10-30</small> {#v5-14-0}
 
@@ -285,31 +312,12 @@ description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.14.0），
 - `work-order-system.md`、`auto-session.md` 不改：兩處 `--close-worker` 的說明與 § 依賴的 BAT 基礎設施 都沒有列 BAT 版本，不新增。
 - 歷史段落（本檔舊版段、`version-governance.md` 版號表舊列、安裝指南 § 2.21 等舊章節）不改。發行物版面不變。
 
-## 5.12.2 <small>2026-10-22</small> {#v5-12-2}
-
-
-> **PATCH：收單回收 exit `0` 的提示改成「約 N 秒後」（文件修正，行為不變）。** `work-order-system.md` § 收單後回收 Worker 分頁 exit `0` 列原本建議在確認區塊加一行
-> 「Worker 分頁將於 N 秒後回收」；照 BAT 現行的回收行為，實際關閉可能比 N 秒晚（延遲到期時仍在輸出就等安靜），也可能被放棄，且塔台不會得知。
-> exit `0` 的處理仍是「靜默」；其他 exit code 列、收單回收與重派前回收的條件／指令、`worker_close_delay` 的值域與預設不變；BAT 介面不變。
-
-### Fixed
-
-- `work-order-system.md` § 收單後回收 Worker 分頁 exit `0` 列：提示改成「Worker 分頁約 N 秒後回收」，並補一句——延遲到期時分頁仍在輸出，BAT 會等連續安靜 5 s、
-  最多再等 60 s，屆時仍在輸出就放棄、保留分頁；helper 已 exit `0`，塔台不會得知，所以提示不得寫成確定的時間或「已關閉」。條件細節引用
-  `tower-config.md` § 可用選項 `worker_close_delay`，不重複定義（權威見 BAT 文件）。
-- 安裝指南新增 § 2.47。
-
-### Unchanged
-
-- `tower-config.md`、`auto-session.md`、`yolo-mode.md` 與 `work-order-system.md` 的其他列與段落不改；歷史段落（本檔舊版段、`version-governance.md` 版號表舊列、
-  安裝指南 § 2.21／§ 2.46）不改。其他檔案沒有把回收寫成確定時間或確定完成的說明。
-
 :::
 
 ## 延伸閱讀 {#further-reading}
 
-- CT `CHANGELOG.md`（共 66 個版本；本頁列最近 10 版）
+- CT `CHANGELOG.md`（共 67 個版本；本頁列最近 10 版）
 - CT `version-governance.md` § 歷史版號表
-- [演進史](./evolution)：更早的 56 版與八個世代
+- [演進史](./evolution)：更早的 57 版與八個世代
 
 Portal 是摘要，不具權威；與 CT reference 有出入時，以 reference 為準。

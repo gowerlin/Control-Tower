@@ -57,7 +57,8 @@ Project (Layer 3) > Global (Layer 2) > Core (Layer 1)
 > Layer 1 skill 安裝路徑（下稱「Layer 1 路徑」）=
 > - **手動安裝**（zip）：**`~/.claude/skills/` 與 `~/.codex/skills/`** 兩處
 > - **plugin 安裝**（v5.14.0+）：**`~/.claude/plugins/`**（整個目錄，含 `cache/`、`marketplaces/`；有設定 `CLAUDE_CODE_PLUGIN_CACHE_DIR`
->   時，cache 在它指的目錄，該目錄同樣算 Layer 1 路徑）、**`$CODEX_HOME/plugins/`**、**`$CODEX_HOME/.tmp/marketplaces/`**
+>   時，cache 在它指的目錄，`installed_plugins.json`、`known_marketplaces.json` 也一起改到該目錄（v5.14.1 補記，T0357 實測），
+>   該目錄同樣算 Layer 1 路徑）、**`$CODEX_HOME/plugins/`**、**`$CODEX_HOME/.tmp/marketplaces/`**
 >   （`CODEX_HOME` 未設定時是 `~/.codex`）
 >
 > Q1 ~ Q4 對上列每一處**同樣適用**，差異只在各題明列之處（Q2 機制實證與 plugin 機制、Q3 plugin 的安裝方式、Q4 備份落點與 plugin 不備份）。

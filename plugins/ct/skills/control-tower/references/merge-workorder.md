@@ -121,7 +121,7 @@
 ### `--worktree-status`（BAT T0585）
 
 ```bash
-"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --worktree-status T#### --notify-id "$BAT_TERMINAL_ID"
+"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --worktree-status <工單 ID> --notify-id "$BAT_TERMINAL_ID"
 ```
 
 或 MCP `bat_worktree_status`（參數 `workorder: "T####"`，見 [auto-session.md](auto-session.md) § BAT MCP 唯讀 tool；
@@ -134,7 +134,7 @@ MCP 失敗就改用上面的 helper，再失敗就改用 git）。helper 路徑�
 
 - **舊 BAT（`< 0.7.0-pre.4`）**：只查**執行中**的 Worker 分頁，所以要在 `--close-worker` 之前查；BAT 重開後由已存分頁仍可找到。
   分頁關閉後回 exit `3`，改用 git。
-- **BAT `>= 0.7.0-pre.4`**：Worker 分頁回收後也可查（`--close-worker --worktree keep|remove` 之後照樣 `--worktree-status T####`），
+- **BAT `>= 0.7.0-pre.4`**：Worker 分頁回收後也可查（`--close-worker --worktree keep|remove` 之後照樣 `--worktree-status <工單 ID>`），
   不必搶在回收前查，也不必自己用 git 重算。
 - **判定是哪一種**：成功回傳（exit `0`）**有** `source` 欄位 = BAT `>= 0.7.0-pre.4`；沒有 = 舊 BAT。
   本 session 還沒有任何一次帶 `source` 的成功回傳時，照舊 BAT 處理（回收前查）。
@@ -222,7 +222,7 @@ BAT `>= 0.7.0-pre.4` 依序找、第一個找到的就用，以 `source` 標明�
 ## 合併完成後清理
 
 - 回收被合併工單的 worktree：
-  `"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --close-worker T#### --notify-id "$BAT_TERMINAL_ID" --worktree remove`
+  `"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --close-worker <工單 ID> --notify-id "$BAT_TERMINAL_ID" --worktree remove`
   （分頁已在收單時以 `keep` 關閉而回 exit `3` 時）改由塔台手動 `git -C "<主 checkout>" worktree remove "<worktree 路徑>"`（不加 `--force`）。
   worktree 有未提交或未追蹤變更 → 不刪，告知使用者。
 - 🔴 不用 `--worktree archive`：它把分支改名為 `ct-archive/T####`，只在使用者明確要求封存時才用，**合併前絕對不用**。

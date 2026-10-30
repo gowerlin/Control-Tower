@@ -52,8 +52,32 @@ BMad 的知識就只有一個事實來源——外部 `bmad-guide`。這與 `gov
 塔台依序檢查：外部 `bmad-guide` 的 SKILL.md 是否可讀、它的版本是否滿足任務需要（太舊只提示升級、不阻斷）、
 它的 workflow 對照表是否讀得到。讀得到就是 Level 2 可用。
 
+**去哪裡找 SKILL.md（v5.14.1）。** bmad-guide 有兩種裝法：zip 手動安裝放在 `skills/bmad-guide/`，plugin 安裝
+（同一個 marketplace 的 `bmad-guide@control-tower`，見 `governance.md` § plugin marketplace：另一種安裝方式）則放在 plugin 管理的目錄。
+5.14.0 只寫「讀取已安裝 skill」，塔台習慣去 `skills/` 找；用 plugin 裝的 bmad-guide 找不到，又不說一聲，就默默改成手動欄位——
+使用者明明裝了，卻以為 Level 2 沒作用。5.14.1 把搜尋順序寫成一張表：
+
+| 順序 | 安裝方式 | 塔台去哪裡讀 |
+|---|---|---|
+| 1 | 手動安裝（zip） | 各 agent 的 `skills/bmad-guide/SKILL.md` |
+| 2 | Claude Code plugin | plugin 安裝清單裡 `bmad-guide@<任一 marketplace>` 指的安裝目錄 |
+| 3 | Codex plugin | Codex 設定裡啟用的 `bmad-guide@<任一 marketplace>`，到 plugin cache 取該版本 |
+
+幾個設計上的選擇：
+
+- **第一個讀得到的就用，手動優先。** 兩種都裝時，agent 實際載入的是手動那份（`governance.md` 的並存表），塔台讀同一份，才不會路由和 agent 用的版本對不上
+- **marketplace 名稱不寫死。** 只比對 `bmad-guide@*`，從別的 marketplace 裝也找得到
+- **`references/` 相對於找到的 SKILL.md。** plugin 版的 reference 不在 `skills/` 底下，所以不另外假設路徑
+- **只讀。** plugin 目錄也是 Layer 1（`three-layer-arch.md` § plugin 安裝路徑也是 Layer 1），偵測只讀不寫
+
+**已安裝卻讀不到：提示一次（v5.14.1）。** 可用 skill 清單裡有 `bmad-guide`（或 plugin 寫法 `bmad-guide:bmad-guide`），三處卻都讀不到檔案時，
+表示裝了但塔台找不到——這和「沒裝」不一樣，靜默降級會讓使用者誤會。所以塔台在本 session 提示一次（建議告訴塔台 SKILL.md 的位置或改用 zip），
+再照常改手動欄位、不阻斷。清單裡也沒有，才是真的沒裝，照舊靜默。
+
 **不可用時**：塔台照常運作，工單的 BMad 工作流程欄位改為**手動指定**的自由文字，
 且**不自行編造** BMad 行為；已退役或改名的 workflow，也只在外部 guide 或專案明確確認替代者時才改路由。
+
+> 搜尋順序、路徑與提示條件以 CT `enhancement-integration.md` § Level 2 › 偵測為唯一權威；本節只講為什麼。
 
 ### 有 bmad-guide 時增加什麼
 
@@ -156,6 +180,7 @@ Playbook 在 **3 個以上專案**使用並達最高置信度後，`*evolve --sk
 已安裝的 skill 屬於 Layer 1，塔台與 `ct-evolve` 都不寫入（見 `three-layer-arch.md` § Layer 1 寫入規則）；playbook 寫入路徑若落在 Layer 1 路徑（`~/.claude/skills/`、`~/.codex/skills/`，v5.14.0 起含 plugin 安裝路徑）之下一律拒絕。
 
 另有一條回饋路徑：某個 playbook 被 2 個以上專案驗證後，塔台會提議更新外部 `bmad-guide` 的對應 reference——是否更新由使用者決定。
+bmad-guide 是 plugin 安裝時（v5.14.1），這條路徑不改已安裝的檔案：plugin 目錄是 Layer 1，下次更新也會蓋掉，所以改成提議修改 bmad-guide 的原始碼、隨下一版發布。
 
 ---
 
@@ -236,7 +261,7 @@ Playbook 在 **3 個以上專案**使用並達最高置信度後，`*evolve --sk
 | 元件 | 判定可用的依據 |
 |------|--------------|
 | ECC（Level 1） | `~/.claude/homunculus/` 存在 |
-| 外部 bmad-guide（Level 2） | skill 可讀且 workflow 對照表讀得到 |
+| 外部 bmad-guide（Level 2） | skill 可讀且 workflow 對照表讀得到（手動安裝或 plugin 安裝皆可，v5.14.1） |
 | mem0 REST（Level 3） | memsync 存在且健康檢查在 timeout 內通過 |
 
 偵測結果只決定**增強功能**的啟用範圍；缺少任何元件都不影響核心功能，面板只提示、不阻斷。

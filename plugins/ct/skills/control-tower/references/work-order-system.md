@@ -169,7 +169,7 @@ Story 產生後、Dev 實作前，塔台根據以下條件決定是否插入獨�
 每次派發任務時，塔台：
 
 1. **學習查詢**（靜默）：讀取 `_learnings.md`，比對決策模式的觸發條件
-2. **工作流程選擇**：若有外部 `bmad-guide` skill → 自動查 `workflow-map.md` / `supplementary-workflows.md` / `ecosystem-modules.md`；無 → 使用者手動指定
+2. **工作流程選擇**：若有外部 `bmad-guide` skill（去哪裡找見 [enhancement-integration.md](enhancement-integration.md) § Level 2 › 偵測）→ 自動查 `workflow-map.md` / `supplementary-workflows.md` / `ecosystem-modules.md`；無 → 使用者手動指定
 2.5. **派發前 overlap check**（v4.4.0+）：比對本次工單的 `affects_files` 與目前 IN_PROGRESS 工單的 `affects_files`，依交集嚴重度決定 BLOCK / WARN / 放行（見下方「派發前 overlap check」）
 3. **產生工單檔案**：寫入 `_ct-workorders/T<編號>-<描述>.md`（見 work-order-template.md）
 4. **畫面顯示摘要**：
@@ -365,7 +365,7 @@ T0106（即將派發）affects_files：
 **指令**（逐字依 BAT PLAN-041「介面契約」；參數名、值域、exit code 語意皆不得自行更改）：
 
 ```bash
-"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --close-worker T#### --notify-id "$BAT_TERMINAL_ID" --delay-ms <worker_close_delay × 1000>
+"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --close-worker <工單 ID> --notify-id "$BAT_TERMINAL_ID" --delay-ms <worker_close_delay × 1000>
 ```
 
 - `BAT_HELPER_DIR` 未設定時，helper 路徑沿用 [auto-session.md](auto-session.md) § BAT 內部終端路由 › 執行方式的安裝目錄 fallback（路徑形式規則同該處）；`"${BAT_HELPER_NODE:-node}"` 的解析規則見同處「Node 解析」。
@@ -376,7 +376,7 @@ T0106（即將派發）affects_files：
 上方指令尾端加 `--worktree keep`：
 
 ```bash
-"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --close-worker T#### --notify-id "$BAT_TERMINAL_ID" --delay-ms <worker_close_delay × 1000> --worktree keep
+"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --close-worker <工單 ID> --notify-id "$BAT_TERMINAL_ID" --delay-ms <worker_close_delay × 1000> --worktree keep
 ```
 
 - `keep` 只關分頁，worktree 與分支 `ct/T####` 留給合併。合併流程見 [merge-workorder.md](merge-workorder.md)。
@@ -432,7 +432,7 @@ T0106（即將派發）affects_files：
 § BAT 內部終端路由 › 執行方式「Node 解析」；參數合法值與防注入規則見同檔 § 安全邊界）：
 
 ```bash
-"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --close-worker T#### --notify-id "$BAT_TERMINAL_ID" --delay-ms 0
+"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --close-worker <工單 ID> --notify-id "$BAT_TERMINAL_ID" --delay-ms 0
 ```
 
 - 隔離工單（frontmatter `isolation: worktree`，或派工紀錄顯示以 `--isolation worktree` 派出）尾端加 `--worktree keep`：

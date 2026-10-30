@@ -184,8 +184,10 @@ CT 的寫法是把**機制**寫出來（掃描器註冊第一層子目錄），�
 |---|---|---|
 | `ct` | CT 的 8 個 skill | 8 個 skill 之間用 `../` 相對連結互相引用，必須是兄弟目錄，所以放同一個 plugin，不拆開 |
 | `ct-guide` | 本教材 | 和獨立 zip 一樣可裝可不裝 |
+| `bmad-guide` | BMad Guide（Level 2 的導航 skill，見 `integration.md` § Level 2） | 不是 CT 的一部分，所以版號跟 BMad-Method 走（例 `6.12.4`），不跟 CT；可裝可不裝（v5.14.1 起寫進 CT 的安裝說明） |
 
-beta 版不上架，照舊用 zip。安裝寫法是 `ct@control-tower`。
+beta 版不上架，照舊用 zip。安裝寫法是 `ct@control-tower`（BMad Guide 是 `bmad-guide@control-tower`）。
+`bmad-guide` 要改用 plugin，同樣先把它的手動安裝移出 `skills/`；用 plugin 裝了以後，5.14.1 起塔台偵測得到（`integration.md` § 偵測與降級）。
 
 **和 zip 的關係。** 內容相同，來源是同一個版本目錄；差別在誰用、怎麼更新。
 

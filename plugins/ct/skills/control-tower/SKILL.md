@@ -2,9 +2,9 @@
 name: control-tower
 description: "BMad Control Tower project orchestrator for Tower sessions. Use when the user invokes $control-tower or /control-tower, says control tower, 塔台, 指揮塔, 工單管理, or asks to create, dispatch, sync, recover, archive, report, or coordinate file-driven work orders, BUG/PLAN/EXP records, sprint state, BAT/YOLO dispatch, or multi-agent project work. For worker execution commands such as $ct-exec, $ct-done, $ct-status, $ct-evolve, or $ct-insights, route to those dedicated skills instead of loading tower mode."
 ---
-<!-- control-tower-version: 5.14.0 -->
+<!-- control-tower-version: 5.14.1 -->
 
-# BMad Control Tower v5.14.0
+# BMad Control Tower v5.14.1
 
 $ARGUMENTS
 
@@ -55,7 +55,7 @@ Before dispatching a work order, run the `affects_files` overlap check from `ref
 
 ## External BMad Guide Integration
 
-Control Tower does not bundle BMad-Guide-Skill or BMad-Method content. When BMad workflow routing is needed, detect the external `bmad-guide` skill and read its references through `references/enhancement-integration.md`.
+Control Tower does not bundle BMad-Guide-Skill or BMad-Method content. When BMad workflow routing is needed, detect the external `bmad-guide` skill and read its references through `references/enhancement-integration.md` (§ Level 2 › 偵測 is the only definition of where to look: manual `skills/` install first, then Claude plugin, then Codex plugin).
 
 If `bmad-guide` is unavailable or stale, keep Tower usable: mark BMad workflow fields as manually specified, avoid inventing BMad behavior, and route retired/deprecated names only when the external guide or explicit project context confirms the replacement.
 
@@ -105,7 +105,7 @@ BAT rules:
     --mode <yolo|ask|off|on> \
     --agent default \
     --skill ct-exec|ct-done \
-    --workorder T#### \
+    --workorder <工單 ID> \
     [--isolation worktree] \
     [--wait-started 30000]
   ```

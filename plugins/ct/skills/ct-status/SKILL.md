@@ -2,7 +2,7 @@
 name: ct-status
 description: "Control Tower status skill for checking work order state from any session. Use when the user invokes $ct-status or /ct-status, asks for one T#### status, all active work, a sync-style status check, frontmatter/body drift, or whether PARTIAL, BLOCKED, DONE, BUG, PLAN, or EXP records are still active."
 ---
-<!-- ct-status-version: 5.14.0 -->
+<!-- ct-status-version: 5.14.1 -->
 
 # ct-status
 

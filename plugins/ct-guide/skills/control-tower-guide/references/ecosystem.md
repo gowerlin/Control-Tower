@@ -189,6 +189,7 @@ CT 的功能隨可選元件遞增，每項偵測獨立，可任意組合（例�
 
 **Level 2 的邊界**：CT 不內嵌任何 BMad-Method 內容，只偵測使用者另外安裝的 `bmad-guide` 並讀它的 reference。
 `bmad-guide` 不可用時，塔台照常運作，BMad 工作流程欄位改為手動指定，且不自行編造 BMad 行為。
+v5.14.1 起 zip 手動安裝與 plugin 安裝的 bmad-guide 都偵測得到（手動優先）；可用 skill 清單有它卻讀不到檔案時，塔台提示一次而不是靜默降級，見 `integration.md` § 偵測與降級。
 
 ## 設定系統
 

@@ -10,7 +10,7 @@
 
 | 層級 | 內容 | 機制 |
 |------|------|------|
-| 共享層 | 工單檔案、sprint-status.yaml、_decision-log.md、project-context.md | 磁碟檔案，天然共享 |
+| 共享層 | 工單檔案、sprint-status.yaml、_decision-log.md、`AGENTS.md` 的專案上下文區塊（BMad v6.11+；舊專案為 project-context.md） | 磁碟檔案，天然共享 |
 | 協調層 | 塔台登記簿、跨塔台留言板 | 約定檔案 + 啟動掃描 |
 | 隔離層 | Context window 對話、當前推理、個人進度快照 | Context window 天然隔離 |
 
