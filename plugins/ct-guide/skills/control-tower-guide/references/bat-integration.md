@@ -208,7 +208,13 @@ BAT `>= 0.7.1-pre.1` 啟動 claude 分頁時用 `--name` 給的名稱（例 `BMa
 Worker 該收到 `/ct-exec T0001`（Claude Code）還是 `$ct-exec T0001`（Codex），由 BAT 依實際啟動的 agent 組出來。
 這讓塔台 skill 不必知道對面是哪個 AI 工具。agent 的選擇見 `runtime-dispatch.md` § Agent 中立。
 
-**用 plugin 安裝的 Codex 接不到 BAT 派工（v5.14.0）。** BAT 組出來的只有 `/ct-exec`、`$ct-exec` 兩種，不帶 plugin 前綴。Claude Code 的 plugin skill 不帶前綴也叫得到，所以 Claude 端不論手動或 plugin 安裝都能接派工；Codex 的 plugin skill 只能用 `$ct:ct-exec` 叫，`$ct-exec` 不會載入它——只裝 plugin 的 Codex Worker 收到指令，卻沒有 CT skill 可用。CT 沒有請 BAT 為此改介面，而是寫明 **Codex 搭配 BAT 派工繼續用 zip 手動安裝**：BAT 不必知道 Worker 怎麼裝 CT，塔台也照舊只送 `--skill`。各情況的寫法以 CT `auto-session.md` § 依安裝方式的 skill 呼叫字串為準；plugin 是什麼、並存時誰生效見 `governance.md` § plugin marketplace：另一種安裝方式。
+**用 plugin 安裝的 Codex 與 BAT 派工（v5.14.0 → v5.14.2）。** 5.14.0 時 BAT 組出來的只有 `/ct-exec`、`$ct-exec` 兩種，不帶 plugin 前綴。Claude Code 的 plugin skill 不帶前綴也叫得到，所以 Claude 端不論手動或 plugin 安裝都能接派工；Codex 的 plugin skill 只能用 `$ct:ct-exec` 叫，`$ct-exec` 不會載入它——只裝 plugin 的 Codex Worker 收到指令，卻沒有 CT skill 可用，而且不會報錯。CT 當時寫明 Codex 搭配 BAT 派工用 zip 手動安裝，並把實測結果交給 BAT。
+
+BAT `0.7.2-pre.1` 起由 BAT 這一端解決：派工給 Codex 時，BAT 先看 Codex 那邊 CT 是怎麼裝的——有手動安裝就送 `$ct-exec`，沒有手動安裝而有啟用中的 `ct` plugin 才送 `$ct:ct-exec`，看不出來就照舊送 `$ct-exec`。兩種都裝時送手動那份，和 Codex 自己會載入的一致。CT 5.14.2 把限制改成依 BAT 版本：**BAT `>= 0.7.2-pre.1` 兩種安裝都支援，更舊的 BAT 仍用 zip**。
+
+為什麼由 BAT 判斷，而不是塔台：安裝方式是 Worker 那個 Codex 環境的事實，只有開分頁的 BAT 看得到（遠端分頁要在遠端那台判斷）；塔台照舊只送 `--skill` + `--workorder`，派工命令一個字都不用改——這正是「BAT 定義、CT 呼叫」的分工。還沒實機跑過的是端到端：真的派一張工單給只裝 plugin 的 Codex Worker；BAT 驗證的是四種安裝狀態下的判斷結果與 Codex 一致。
+
+各情況的寫法以 CT `auto-session.md` § 依安裝方式的 skill 呼叫字串為準，最低 BAT 版本列在同檔 § 依賴的 BAT 基礎設施；plugin 是什麼、並存時誰生效見 `governance.md` § plugin marketplace：另一種安裝方式。
 
 > 派工指令的完整參數表以 `auto-session.md` § BAT 內部終端路由為準；SKILL.md 裡的範例是摘要，不能拿來直接派工（見 `governance.md` § 摘要授權規則）。
 
@@ -623,6 +629,7 @@ CT 從不預先判斷 BAT 版本：一律先照常呼叫，失敗才依 exit cod
 | v5.13.1 | Worker 通知與提問用完整工單 ID（`--source` 含前綴，BAT 才對得到 Worker 分頁、標得了 Done）；面板讀取契約改寫成 BAT `0.7.1-pre.9` 的表現（讀不到時顯示「無法讀取」、`critical` 在任何讀取路徑都算 High；400 KB 預算保留） | 無新門檻（BAT 介面不變；「無法讀取」提示與 `critical` 讀法是 BAT `>= 0.7.1-pre.9` 的行為） | 更舊的 BAT：面板讀不到時照舊靜默變空、只寫 `critical` 的索引格子是 Unknown；CT 的寫法與預算不分版本照做 |
 | v5.14.0 | plugin marketplace 安裝方式（plugin `ct`、`ct-guide`）；BAT 對 Codex 送 `$ct-exec`，plugin 版在 Codex 只能用 `$ct:ct-exec` 叫，所以 Codex 搭配 BAT 派工用 zip 手動安裝（不涉 BAT 介面） | 無新門檻 | 與 BAT 版本無關：只裝 plugin 的 Codex Worker 叫不到 CT skill；Claude Code 不受影響 |
 | v5.14.1 | 塔台端派工與回收範本（`--workorder`、`--close-worker`、`--worktree-status`）改寫 `<工單 ID>`，與 v5.13.1 的 Worker 端相同；另有 Level 2 偵測 plugin 版 bmad-guide（不涉 BAT 介面） | 無新門檻（BAT 介面、參數與順序不變） | — |
+| v5.14.2 | Codex 用 plugin 安裝也能接 BAT 派工：BAT 依 Codex 端的安裝方式送 `$ct-exec` 或 `$ct:ct-exec`（CT 派工命令不變；端到端派工未實機驗證） | `>= 0.7.2-pre.1` | 對 Codex 一律送 `$ct-exec`：只裝 plugin 的 Codex Worker 叫不到 CT skill，照 v5.14.0 用 zip 手動安裝；Claude Code 不受影響 |
 
 `BAT_HELPER_NODE`（v5.2.1）沒有版本門檻：本機沒有這個變數就用 `node`，只有遠端分頁會由 BAT 注入。
 版號以 CT 的 `version-governance.md` § 歷史版號表 與 `auto-session.md` § 依賴的 BAT 基礎設施 為準；v5.1.0 的 BAT 版本出自 CT `CHANGELOG.md` [5.12.3]：[5.1.0] 原寫 `0.6.1-pre.3`，v5.12.3 依 BAT 塔台回覆更正為 `>= 0.6.1-pre.4`（歷史段落不改）。

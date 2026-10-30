@@ -12,7 +12,7 @@ Skill YAML frontmatter 僅放 runtime 需要的欄位，至少包含 `name` 與 
 版本事實來源改用 body 內第一個註解：
 
 ```markdown
-<!-- control-tower-version: 5.14.1 -->
+<!-- control-tower-version: 5.14.2 -->
 ```
 
 同步點：
@@ -198,12 +198,18 @@ codex plugin add bmad-guide@control-tower         # 可選（Level 2）
 5. claude.ai 同步下來的 `anthropic-skills:*` 副本（例 `anthropic-skills:ct-exec`）不在本機 `skills/` 目錄，不會被上面的步驟移除，會繼續並存。
    版本不同時兩份 description 都參與自動路由，可能選到舊版；手動呼叫時用完整名稱 `/ct:ct-exec` 確認。
 
-#### Codex 搭配 BAT 派工：繼續用 zip 手動安裝
+#### Codex 搭配 BAT 派工：依 BAT 版本
 
-BAT 對 Codex 派工送的是 `$ct-exec T####`，只裝 plugin 時叫不到 CT skill（plugin skill 在 Codex 一定帶前綴 `$ct:ct-exec`，T0349）。
-BAT 不為此修改（D434 B4）。所以 Codex 若要接受 BAT 派工，繼續用 zip 手動安裝；plugin 版適合 Claude Code，
-以及不用 BAT 派工、自己輸入 `$ct:ct-exec` 的 Codex 使用者。各情況的呼叫寫法見
-[auto-session.md](auto-session.md) § 依安裝方式的 skill 呼叫字串。
+BAT 對 Codex 派工送哪個呼叫字串由 BAT 決定，CT 的派工命令不變（v5.14.2+）：
+
+- BAT `>= 0.7.2-pre.1`：BAT 依 Codex 端實際的安裝方式送 `$ct-exec`（手動安裝）或 `$ct:ct-exec`（plugin），zip 手動安裝與 plugin 都能接受 BAT 派工；
+  兩種都裝時用手動安裝那份（所以改用 plugin 時仍要先移除手動安裝，見上方〈從 zip 手動安裝遷移到 plugin〉）
+- 更舊的 BAT：一律送 `$ct-exec`，只裝 plugin 時叫不到 CT skill（plugin skill 在 Codex 一定帶前綴 `$ct:ct-exec`，T0349）；
+  Codex 要接受 BAT 派工就繼續用 zip 手動安裝，或先把 BAT 升到 `0.7.2-pre.1` 以上
+- Codex＋BAT＋plugin 的端到端派工尚未實機驗證（D453）
+
+判斷順序與各情況的呼叫寫法只定義在 [auto-session.md](auto-session.md) § 依安裝方式的 skill 呼叫字串（唯一權威）；
+最低 BAT 版本另列在同檔 § 依賴的 BAT 基礎設施。
 
 #### 版號確認
 
@@ -285,6 +291,7 @@ codex plugin list --json         # ct@control-tower 的 version
 | v5.13.1 | 2026-10-30 | PATCH（依 § SemVer：文件修正，沒有新命令、新設定或不相容變更）：Worker 通知用工單完整 ID——ct-exec、ct-done、`auto-session.md`、`yolo-mode.md`、安裝指南的通知範本由 `T####` 改成 `<工單 ID>`，`--source`、訊息字串、`--ask --source`、手動備援訊息一律用收到的完整 ID（等於 frontmatter `id`，含前綴，不得截短；唯一權威 `work-order-system.md` § 回報與通知用的工單 ID）；Worker 送出前與 frontmatter `id` 比對；塔台端缺前綴容錯（熱區恰好一張「前綴 + 同號」才對上並記錄，多張或找不到問使用者；只保住塔台收單，權威 `work-order-system.md` § 回報處理流程 › 回報 ID 對不上時）；`memory-protocol.md` § BAT 塔台面板讀取契約 對齊 BAT `0.7.1-pre.9`（讀不到時顯示「無法讀取」、`critical` 任何讀取路徑算 High；400 KB 預算與 512 KiB 上限不變）；BMad 舊說法 4 項（以 bmad-guide v6.12.4 為準）。T0341／T0343／D420～D422／D424。BAT 介面、派工命令、斷點 A 正則不變 |
 | v5.14.0 | 2026-10-30 | MINOR（依 § SemVer：新增向下相容的安裝方式，沒有新命令、新設定或不相容變更）：新增 plugin marketplace 安裝方式（Claude Code、Codex；marketplace `control-tower` 在 `gowerlin/Control-Tower` 根目錄，CT plugin `ct` 收 8 個 skill、教學 plugin `ct-guide`；beta 不上架），zip 手動安裝照舊。三個新權威位置：`data-layer-architecture.md` § 寫入規則（Layer 1 加 plugin 安裝路徑；Q2 plugin 由 plugin manager 管理、Q3 plugin 安裝的授權、Q4 plugin 不備份）、本檔 § 安裝／升級流程 › plugin 安裝／升級（安裝、升級、從 zip 遷移時先備份並移除手動安裝、版號確認、回退）、`auto-session.md` § 依安裝方式的 skill 呼叫字串（Claude 手動／plugin 都 `/ct-exec`；Codex 手動 `$ct-exec`、plugin `$ct:ct-exec`）。**Codex 搭配 BAT 派工繼續用 zip 手動安裝**（BAT 對 Codex 送 `$ct-exec`）。另修 plugin 安裝下會壞的讀取路徑（`auto-session.md` 寫死的 `ct-exec/SKILL.md`、ct-insights 預篩腳本）、3 處連結層級；8 個 `agents/openai.yaml` 補 plugin 寫法。T0348～T0352／D432～D437。BAT 介面、CT 最低 BAT 版本、派工命令、斷點 A 正則不變 |
 | v5.14.1 | 2026-10-30 | PATCH（依 § SemVer：文件修正，沒有新命令、新設定或不相容變更）：塔台偵測得到 plugin 安裝的 bmad-guide——`enhancement-integration.md` § Level 2 › 偵測 改成明列搜尋順序（唯一權威）：手動安裝 `skills/bmad-guide/SKILL.md` → Claude plugin（`installed_plugins.json` 的 `bmad-guide@*`）→ Codex plugin（`config.toml` 啟用的 `bmad-guide@*`）；並存時手動優先；`references/` 相對於找到的 `SKILL.md`；plugin 路徑只讀；可用 skill 清單有 bmad-guide 但讀不到檔案時提示使用者一次（不再靜默改手動欄位）；Playbook → bmad-guide 回饋在 plugin 安裝下不改已安裝檔案。本檔 § plugin 安裝／升級 與安裝指南 § 4.1 補同一個 marketplace 的 `bmad-guide@control-tower`（可選，版號跟 BMad-Method 走、不跟 CT）。塔台端範本 `--workorder`、`--close-worker`、`--worktree-status` 由 `T####` 改成 `<工單 ID>`（含前綴、不截短，`auto-session.md` § 執行方式 加說明）。`mono-repo-patterns.md`、`multi-tower-protocol.md` 的 `project-context.md` 對齊 `AGENTS.md` 的專案上下文區塊（BMad v6.11+）。`data-layer-architecture.md` § 寫入規則補一句：設了 `CLAUDE_CODE_PLUGIN_CACHE_DIR` 時 `installed_plugins.json`、`known_marketplaces.json` 也在它指的目錄（Layer 1 範圍不變）。T0357／T0359／T0360／D446／D449／D450。BAT 介面、派工命令的參數與順序、斷點 A 正則不變 |
+| v5.14.2 | 2026-10-30 | PATCH（依 § SemVer：文件修正，沒有新命令、新設定或不相容變更）：Codex 搭配 BAT 派工也支援 plugin 安裝——`auto-session.md` § 依安裝方式的 skill 呼叫字串（唯一權威）改成依 BAT 版本：BAT `>= 0.7.2-pre.1` 依 Codex 端實際的安裝方式送 `$ct-exec`（手動）或 `$ct:ct-exec`（plugin），兩種都裝時用手動那份；更舊的 BAT 一律送 `$ct-exec`，Codex 端只支援手動安裝。同檔 § 依賴的 BAT 基礎設施 加最低 BAT `0.7.2-pre.1` 一列；本檔〈Codex 搭配 BAT 派工：依 BAT 版本〉、`ct-help`、安裝指南同步引用權威。Codex＋BAT＋plugin 端到端派工未實機驗證。D453／D454／T0362。BAT 介面、派工命令的參數與順序、斷點 A 正則不變 |
 
 > v4.x ~ v5.0.2 各列以 `docs/CHANGELOG.md` 對應版本段為準。
 >

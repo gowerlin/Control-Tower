@@ -28,13 +28,13 @@ Guide 講到確切的規則（正則、旗標、路徑）時，不會自己再�
 
 ## 安裝
 
-Guide 和 CT 是**同一個版號**：CT 每發一版（含 patch），同一輪就會出一版同號的 Guide，內容沒受影響時至少更新版號。所以裝 CT v5.14.1 時，搭配的就是 Guide v5.14.1（版本對照見[版本總覽](/versions/)）。
+Guide 和 CT 是**同一個版號**：CT 每發一版（含 patch），同一輪就會出一版同號的 Guide，內容沒受影響時至少更新版號。所以裝 CT v5.14.2 時，搭配的就是 Guide v5.14.2（版本對照見[版本總覽](/versions/)）。
 
 - 發行檔是 `control-tower-guide-v<版號>.zip`，壓縮檔的根層只有一個資料夾 `control-tower-guide/`，裡面是 `SKILL.md` 和 `references/`（v5.12.3 以前根層直接是 `SKILL.md`）。
 - zip 手動安裝時，安裝目錄的名稱用 skill 名稱 `control-tower-guide`，例如 Claude Code 是 `~/.claude/skills/control-tower-guide/`。
 - v5.14.0 起也可以用 plugin marketplace 安裝：plugin 名稱是 `ct-guide`（`ct-guide@control-tower`），和 CT 的 `ct` 放在同一個 marketplace。Codex 用 plugin 安裝時呼叫寫法是 `$ct-guide:control-tower-guide`。見[安裝 › 用 plugin marketplace 安裝](/install#plugin)。
 - zip 手動安裝的安裝與升級做法和 CT 一樣：先備份、先複製到 `skills/` 以外的暫存區複驗、再替換，最後逐檔比對全部 IDENTICAL；新版從下一個 session 才生效。步驟見[安裝](/install)。
-- 版號寫在 `SKILL.md` 內文的第一個註解 `<!-- control-tower-guide-version: 5.14.1 -->`，和 CT 一樣不放在 frontmatter。
+- 版號寫在 `SKILL.md` 內文的第一個註解 `<!-- control-tower-guide-version: 5.14.2 -->`，和 CT 一樣不放在 frontmatter。
 
 Guide 本身是以 Claude skill 的形式打包的。它解說 CT 指令時會同時列出 Claude Code 的 `/` 寫法與 Codex 的 `$` 寫法（例如 `/ct-exec T0001` 與 `$ct-exec T0001`），用 plugin 安裝時的寫法（Codex 的 `$ct:ct-exec T0001`）也會說明，塔台內建的 `*` 命令則另外標明。
 

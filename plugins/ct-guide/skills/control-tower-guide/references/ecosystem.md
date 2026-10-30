@@ -66,7 +66,7 @@ ct-help（操作手冊）
 
 `/` 與 `$` 是**同一個 skill 的兩個入口**，差別只在宿主工具。BAT 派工時由 BAT 依 Worker 使用的 agent 決定送出 `/ct-exec` 還是 `$ct-exec`，塔台不寫死。
 
-v5.14.0 起 CT 也能用 plugin 安裝（plugin `ct`）。Claude Code 寫法不變（`/ct-exec`，完整寫法 `/ct:ct-exec`）；Codex 用 plugin 安裝時要寫 `$ct:ct-exec`，而且 BAT 派工叫不到，所以 Codex 搭配 BAT 繼續用 zip 手動安裝。為什麼、以及兩種安裝並存時誰生效，見 `governance.md` § plugin marketplace：另一種安裝方式；寫法權威是 CT `auto-session.md` § 依安裝方式的 skill 呼叫字串。
+v5.14.0 起 CT 也能用 plugin 安裝（plugin `ct`）。Claude Code 寫法不變（`/ct-exec`，完整寫法 `/ct:ct-exec`）；Codex 用 plugin 安裝時要寫 `$ct:ct-exec`；BAT 派工要 BAT `>= 0.7.2-pre.1` 才會依安裝方式送這個寫法（v5.14.2），更舊的 BAT 叫不到，所以 Codex 搭配舊 BAT 仍用 zip 手動安裝。為什麼、以及兩種安裝並存時誰生效，見 `governance.md` § plugin marketplace：另一種安裝方式；寫法權威是 CT `auto-session.md` § 依安裝方式的 skill 呼叫字串。
 
 `*` 命令與對應的獨立 skill（例如 `*evolve` 與 `ct-evolve`）的差別不在「精簡版 vs 完整版」，而在**在哪個角色裡執行**：
 `*` 命令在塔台角色裡就地處理，獨立 skill 則在自己的 session 以自己的角色執行。

@@ -64,7 +64,7 @@ CT 是在執行時去讀 `bmad-guide` 的 reference，不把它的內容寫死�
 |---|---|---|
 | 指令前綴 | `/control-tower`、`/ct-exec T0001` | `$control-tower`、`$ct-exec T0001` |
 | 安裝位置（zip 手動安裝） | `~/.claude/skills/<skill>/` | `~/.codex/skills/<skill>/` |
-| plugin 安裝（v5.14.0 起） | 照常 `/ct-exec T0001`，完整寫法 `/ct:ct-exec T0001` | 一律帶前綴 `$ct:ct-exec T0001`；接 BAT 派工的 Codex 用 zip 手動安裝 |
+| plugin 安裝（v5.14.0 起） | 照常 `/ct-exec T0001`，完整寫法 `/ct:ct-exec T0001` | 一律帶前綴 `$ct:ct-exec T0001`；接 BAT 派工要 BAT `>= 0.7.2-pre.1`，更舊的 BAT 用 zip 手動安裝 |
 | 升級 | 各自獨立，升級一端不會更新另一端 | 同左 |
 
 工單格式、回報字串、研究型工單的互動規則與 yolo 協定，兩邊一致。同一張工單 `/ct-exec` 或 `$ct-exec`（Codex 用 plugin 安裝時是 `$ct:ct-exec`）都能執行。
@@ -187,7 +187,7 @@ CT 是在執行時去讀 `bmad-guide` 的 reference，不把它的內容寫死�
 ::: details 派工不是一個命令
 CT 沒有 `*dispatch`。派工是開單之後的一個步驟：塔台依 `auto-session` 設定自動派，或給你指令讓你自己開。舊版的 `*help roles`（職責速查卡）也已在 v5.0.3 刪除。完整的現行命令見[指令參考大全](/reference/commands)。
 
-出處：`control-tower/SKILL.md` § Built-In Commands；CT 安裝與使用指南 § 14. 命令速查表（v5.14.1）。
+出處：`control-tower/SKILL.md` § Built-In Commands；CT 安裝與使用指南 § 14. 命令速查表（v5.14.2）。
 :::
 
 ## BAT 相關問題 {#bat}

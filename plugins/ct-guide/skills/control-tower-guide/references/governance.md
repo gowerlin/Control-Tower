@@ -210,8 +210,10 @@ zip 沒有被取代：它是唯一能給每一種 agent 的格式。marketplace 
 所以從 zip 改用 plugin 的第一步是**先備份、再把手動安裝移出 `skills/`**，然後才裝 plugin，開新 session 用完整寫法確認。
 claude.ai 同步下來的 `anthropic-skills:*` 副本不在本機 `skills/`，不受這一步影響，會繼續並存。
 
-**Codex 搭配 BAT：繼續用 zip。** BAT 對 Codex 派工送的是 `$ct-exec`，只裝 plugin 的 Codex 收到後叫不到 CT。
-CT 沒有請 BAT 改，而是寫明這個組合用 zip 手動安裝（理由見 `bat-integration.md` § 誰負責 `/` 還是 `$`）。
+**Codex 搭配 BAT：看 BAT 版本（v5.14.2）。** 5.14.0 時 BAT 對 Codex 派工一律送 `$ct-exec`，只裝 plugin 的 Codex 收到後叫不到 CT，
+所以 CT 寫明這個組合用 zip 手動安裝。BAT `0.7.2-pre.1` 起改由 BAT 依 Codex 端的安裝方式送 `$ct-exec` 或 `$ct:ct-exec`，
+5.14.2 把限制改成：BAT `>= 0.7.2-pre.1` 兩種安裝都支援，更舊的 BAT 仍用 zip。兩種都裝時 BAT 一樣送手動那份，
+所以上面「先移除手動安裝」這一步在 BAT 派工下照樣要做（為什麼由 BAT 判斷，見 `bat-integration.md` § 誰負責 `/` 還是 `$`）。
 
 **自動更新（auto-update）。**
 

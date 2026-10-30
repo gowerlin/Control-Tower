@@ -2,7 +2,7 @@
 name: ct-help
 description: "Control Tower help skill for explaining the Tower and Worker ecosystem, commands, prefixes, workflow, BAT and YOLO concepts, state files, onboarding, and common confusion. Use when the user invokes $ct-help or /ct-help, is new to Control Tower, asks how to use ct-exec, ct-done, ct-status, ct-evolve, ct-fieldguide, or asks what a Tower command means."
 ---
-<!-- ct-help-version: 5.14.1 -->
+<!-- ct-help-version: 5.14.2 -->
 
 # ct-help
 
@@ -40,7 +40,8 @@ Common records:
 
 `/` or `$` skill commands load a dedicated skill. The call string depends on the agent and the install method (v5.14.0+):
 Claude Code uses `/ct-exec T####` for both the zip and the plugin install; Codex uses `$ct-exec T####` for the zip install and
-`$ct:ct-exec T####` for the `ct` plugin install, and BAT dispatch to Codex works only with the zip install. The examples below use the
+`$ct:ct-exec T####` for the `ct` plugin install. BAT dispatch to Codex works with both installs on BAT `>= 0.7.2-pre.1` (BAT picks the
+call string; v5.14.2+), and only with the zip install on older BAT. The examples below use the
 Codex zip-install form. The rule lives only in `../control-tower/references/auto-session.md` § 依安裝方式的 skill 呼叫字串; do not restate it.
 
 

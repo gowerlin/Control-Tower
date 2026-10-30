@@ -133,7 +133,7 @@ mem0 REST API → 向量儲存
 ## Codex 整合
 
 CT 的 8 個 skill 都能在 Codex 中以 `$` 前綴呼叫（`$control-tower`、`$ct-exec T0001`…），塔台與 Worker 可以各自是 Claude Code 或 Codex。
-v5.14.0 起用 plugin 安裝時，Codex 要寫 `$ct:` 前綴（`$ct:control-tower`、`$ct:ct-exec T0001`），而且 BAT 派工只支援 zip 手動安裝（見 `governance.md` § plugin marketplace：另一種安裝方式）。
+v5.14.0 起用 plugin 安裝時，Codex 要寫 `$ct:` 前綴（`$ct:control-tower`、`$ct:ct-exec T0001`），BAT 派工在 BAT `>= 0.7.2-pre.1` 時兩種安裝都支援（BAT 依安裝方式送 `$ct-exec` 或 `$ct:ct-exec`，v5.14.2），更舊的 BAT 只支援 zip 手動安裝（見 `governance.md` § plugin marketplace：另一種安裝方式）。
 
 讓同一套 skill 能在兩邊執行的三件事：
 

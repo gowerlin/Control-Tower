@@ -2,7 +2,7 @@
 name: ct-fieldguide
 description: "Control Tower FIELDGUIDE and DESIGN.md automation skill. Use when the user invokes $ct-fieldguide or /ct-fieldguide, asks to initialize, update, audit, extract, merge, or promote FIELDGUIDE.md guidance, or asks to generate or audit DESIGN.md visual standards from code or a URL."
 ---
-<!-- ct-fieldguide-version: 5.14.1 -->
+<!-- ct-fieldguide-version: 5.14.2 -->
 
 # ct-fieldguide
 

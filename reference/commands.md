@@ -58,7 +58,7 @@ const towerRows = [
 
 <CardTable caption="同一個 skill 在兩種 CLI 的寫法" :columns="['用途', 'Claude Code', 'Codex']" :rows="twoCliRows" />
 
-上表是 zip 手動安裝的寫法。v5.14.0 起用 plugin marketplace 安裝時：Claude Code 照常用上表的寫法，要確定叫到 plugin 版用完整寫法 `/ct:ct-exec T0001`；Codex 一律帶前綴，例如 `$ct:ct-exec T0001`、`$ct:control-tower`，不帶前綴的 `$ct-exec` 叫不到。BAT 對 Codex 派工送的是 `$ct-exec`，所以接 BAT 派工的 Codex 用 zip 手動安裝。安裝方式見[安裝 › 用 plugin marketplace 安裝](/install#plugin)。
+上表是 zip 手動安裝的寫法。v5.14.0 起用 plugin marketplace 安裝時：Claude Code 照常用上表的寫法，要確定叫到 plugin 版用完整寫法 `/ct:ct-exec T0001`；Codex 一律帶前綴，例如 `$ct:ct-exec T0001`、`$ct:control-tower`，不帶前綴的 `$ct-exec` 叫不到。接 BAT 派工時，BAT `>= 0.7.2-pre.1` 依 Codex 端的安裝方式送 `$ct-exec` 或 `$ct:ct-exec`，zip 和 plugin 都能用（v5.14.2 起）；更舊的 BAT 一律送 `$ct-exec`，接它派工的 Codex 用 zip 手動安裝。安裝方式見[安裝 › 用 plugin marketplace 安裝](/install#plugin)。
 
 `*` 命令和同名的獨立 skill（例如 `*evolve` 與 `/ct-evolve`）的差別在**在哪個角色裡執行**，不在功能多寡。
 
@@ -454,7 +454,7 @@ yolo 下塔台另外也接受 `T#### 失敗`。不是這些格式的訊息，會
 - `control-tower/SKILL.md` § Built-In Commands
 - `ct-help/SKILL.md` § Command Families
 - 各 skill 的 `SKILL.md`（`ct-exec`、`ct-done`、`ct-status`、`ct-evolve`、`ct-insights`、`ct-fieldguide`、`control-tower-guide`）
-- CT 安裝與使用指南 § 13. Config 速查表（v5.14.1）、§ 14. 命令速查表（v5.14.1）
+- CT 安裝與使用指南 § 13. Config 速查表（v5.14.2）、§ 14. 命令速查表（v5.14.2）
 - `control-tower/references/tower-config.md` § `*config` 命令、§ 可用選項（表下註明 `gp-prefix` 不是選項）
 - `control-tower/references/multi-tower-protocol.md` § `gp-prefix` 設定（唯一權威定義）
 - `control-tower/references/fieldguide-commands.md`

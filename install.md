@@ -78,7 +78,7 @@ BMad Guide 裝在同一層：Claude Code 是 `~/.claude/skills/bmad-guide/`，Co
 
 ## 確認現行版號 {#check-version}
 
-版號寫在每個 `SKILL.md` 正文的第一個註解（例如 `<!-- control-tower-version: 5.14.1 -->`），frontmatter 不放版號。下面是 zip 手動安裝的查法；用 plugin 安裝的看 `plugin list --json`，見[確認 plugin 版號](#plugin-version)。
+版號寫在每個 `SKILL.md` 正文的第一個註解（例如 `<!-- control-tower-version: 5.14.2 -->`），frontmatter 不放版號。下面是 zip 手動安裝的查法；用 plugin 安裝的看 `plugin list --json`，見[確認 plugin 版號](#plugin-version)。
 
 ::: code-group
 
@@ -217,8 +217,8 @@ v5.14.0 起，CT 也可以用 Claude Code 與 Codex 的 plugin marketplace 安�
 同名的手動安裝還留在 `skills/` 裡時，`/ct-exec`、`$ct-exec` 都會用手動那份，plugin 版不生效，而且看不出差別。所以先照[升級：四步](#upgrade)的 Step 1 把 8 個 skill（有裝 CT Guide、BMad Guide 的話加上 `control-tower-guide`、`bmad-guide`）備份到 `skill-backups/`、逐檔確認備份完整，再把它們從 `~/.claude/skills/`（Codex：`~/.codex/skills/`）**移**到備份目錄，不要直接刪除。之後才裝 plugin。
 :::
 
-::: warning Codex 搭配 BAT 派工：繼續用 zip 手動安裝
-BAT 對 Codex 派工送的是 `$ct-exec T####`，而 plugin 版的 skill 在 Codex 一定帶前綴（`$ct:ct-exec`），叫不到。要讓 Codex 接 BAT 派工，Codex 那一端繼續用 zip 手動安裝。Claude Code 不受影響：plugin 版用不帶前綴的 `/ct-exec` 也叫得到。
+::: warning Codex 搭配 BAT 派工：看 BAT 版本
+BAT `0.7.2-pre.1` 起會看 Codex 那一端怎麼裝：有手動安裝就送 `$ct-exec T####`，只裝 plugin 就送 `$ct:ct-exec T####`，所以 zip 和 plugin 都能接 BAT 派工（CT v5.14.2 起；這條路徑的端到端派工還沒實機驗證過）。兩種都裝時 BAT 送手動那份，所以從 zip 改用 plugin 照樣要先移除手動安裝。更舊的 BAT 一律送 `$ct-exec`，plugin 版在 Codex 一定帶前綴、叫不到，接這種 BAT 派工的 Codex 就繼續用 zip 手動安裝，或先把 BAT 升級。Claude Code 不受影響：plugin 版用不帶前綴的 `/ct-exec` 也叫得到。
 :::
 
 ### Claude Code {#plugin-claude}
@@ -267,7 +267,7 @@ plugin 安裝也一樣要授權，工單要指名 Agent（Claude Code 或 Codex�
 ## 用 Codex 當 Worker 或塔台 {#codex}
 
 - zip 手動安裝時 skill 裝在 `~/.codex/skills/<skill>/`，指令前綴是 `$`：`$control-tower`、`$ct-exec T0001`。用 plugin 安裝時一律帶前綴：`$ct:control-tower`、`$ct:ct-exec T0001`（見 [plugin 安裝的 Codex 段](#plugin-codex)）。
-- 在 BAT 裡，塔台派工用 `--agent default`，由 BAT 依你在 BAT 設定的預設 Agent 決定開 Claude Code 還是 Codex，也由 BAT 決定送 `/ct-exec` 還是 `$ct-exec`。想讓 Worker 用 Codex，改 BAT 的預設 Agent，不要把 `codex` 寫死在工單裡。BAT 對 Codex 送的是不帶前綴的 `$ct-exec`，所以接 BAT 派工的 Codex 要用 zip 手動安裝。
+- 在 BAT 裡，塔台派工用 `--agent default`，由 BAT 依你在 BAT 設定的預設 Agent 決定開 Claude Code 還是 Codex，也由 BAT 決定送 `/ct-exec`、`$ct-exec` 還是 `$ct:ct-exec`。想讓 Worker 用 Codex，改 BAT 的預設 Agent，不要把 `codex` 寫死在工單裡。BAT `>= 0.7.2-pre.1` 依 Codex 端的安裝方式送 `$ct-exec` 或 `$ct:ct-exec`，zip 和 plugin 都能接 BAT 派工；更舊的 BAT 只送不帶前綴的 `$ct-exec`，接它派工的 Codex 要用 zip 手動安裝（見[用 plugin marketplace 安裝](#plugin)）。
 - 不在 BAT 裡時，用環境變數 `CT_AGENT_CMD=claude` 或 `CT_AGENT_CMD=codex` 指定；兩者都裝了又沒指定時，塔台不猜，改給你剪貼簿或文字提示。
 
 如果你想在 `~/.codex/AGENTS.md` 放一段給 Codex 看的 BAT 派工說明，可以參考下面這段。它**是範例，不是權威定義**：派工指令以 `control-tower/references/auto-session.md` 為準，兩者不一致時照 reference 改這段，不要反過來。
@@ -378,7 +378,7 @@ CT 不預先判斷你的 BAT 是哪一版：照常呼叫，失敗時依結束碼
 
 ## 延伸閱讀 {#further}
 
-- CT 安裝與使用指南 § 4. 安裝（4.1 安裝／升級（現行流程，含〈用 plugin marketplace 安裝／升級〉）、4.2 Agent CLI 選擇、4.3 Skill 架構（v5.14.1））、§ 2.56、§ 2.57
+- CT 安裝與使用指南 § 4. 安裝（4.1 安裝／升級（現行流程，含〈用 plugin marketplace 安裝／升級〉）、4.2 Agent CLI 選擇、4.3 Skill 架構（v5.14.2））、§ 2.56、§ 2.57、§ 2.58
 - `control-tower/references/version-governance.md` § 安裝／升級流程（含 plugin 安裝／升級）、§ 版號事實來源
 - `control-tower/references/data-layer-architecture.md` § 寫入規則（Q1～Q4：Layer 1 路徑（含 plugin 安裝路徑）、備份落點、唯一例外）
 - `control-tower/references/auto-session.md` § BAT 內部終端路由（Better Agent Terminal），派工指令的權威；§ 依安裝方式的 skill 呼叫字串

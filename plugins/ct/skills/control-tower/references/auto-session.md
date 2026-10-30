@@ -879,7 +879,7 @@ Fallback：
 - `--mode`：v4.3.0+ 顯式傳遞 runtime mode 給 Worker（注入 `CT_MODE` env），Worker 不讀 config（D062 無狀態原則）
 - `--interactive` / `--no-interactive`：研究型工單 Worker 互動旗標（注入 `CT_INTERACTIVE` env），由塔台啟動詢問決定（見 [yolo-mode.md](yolo-mode.md) § 啟動詢問）
 - `--agent default` 由 BAT 解析為 workspace defaultAgent → global defaultAgent → fallback CLI；Skill 不硬編碼 `codex` / `claude`
-- `--skill` + `--workorder` 是 agent-neutral payload；Tower skill 不寫 `/` 或 `$` prefix（也不寫 `ct:`），由 BAT app `terminal:create-agent-command` 依 resolved agent 組出 `/ct-exec T####`（Claude）或 `$ct-exec T####`（Codex）；Codex 只裝 CT plugin 時叫不到，各 agent／安裝方式的寫法見下方 § 依安裝方式的 skill 呼叫字串（v5.14.0+）
+- `--skill` + `--workorder` 是 agent-neutral payload；Tower skill 不寫 `/` 或 `$` prefix（也不寫 `ct:`），由 BAT app `terminal:create-agent-command` 依 resolved agent 組出 `/ct-exec T####`（Claude）或 Codex 寫法（`$ct-exec T####`；Codex 只裝 CT plugin 時，BAT `>= 0.7.2-pre.1` 送 `$ct:ct-exec T####`，更舊的 BAT 叫不到），各 agent／安裝方式／BAT 版本的寫法見下方 § 依安裝方式的 skill 呼叫字串（v5.14.0+）
 - `--workorder` 的合法值依 [work-order-system.md](work-order-system.md) § 工單 ID 格式（權威定義），**含帶前綴的 ID**
 - **範本裡的 `<工單 ID>`**（v5.14.1+）：本檔與其他文件的塔台端指令範本（派工 `--workorder`、`--close-worker`、`--worktree-status`）
   一律寫 `<工單 ID>`，代入工單 frontmatter `id` 原樣，含前綴、不截短成 `T` 加數字（例 `--workorder LB-T0184`，不是 `--workorder T0184`）；
@@ -901,7 +901,8 @@ Fallback：
 
 > 🔴 本小節是「CT skill 在各 agent、各安裝方式下怎麼呼叫」的**唯一權威定義**。本檔其他各處（B 面矩陣、C 面剪貼簿、
 > 派發後行為的文字提示、§ 安全邊界）、`ct-help`、`ct-exec/agents/openai.yaml` 與安裝指南一律引用本小節，不另寫規則。
-> 依據：T0349 實機驗證（D435）；BAT 不為此修改（D434 B4）。plugin 名稱 `ct`、marketplace `control-tower`，安裝流程見
+> 依據：T0349 實機驗證（D435）；BAT 自 `0.7.2-pre.1` 起依 Codex 端的安裝方式組呼叫字串（D453，取代 D434 B4 的「BAT 不為此修改」）。
+> plugin 名稱 `ct`、marketplace `control-tower`，安裝流程見
 > [version-governance.md](version-governance.md) § plugin 安裝／升級。
 
 | Agent | 安裝方式 | 呼叫字串（以 `ct-exec` 為例） | BAT 派工（`--skill ct-exec`） |
@@ -910,14 +911,20 @@ Fallback：
 | Claude Code | plugin `ct` | `/ct-exec T####`；完整寫法 `/ct:ct-exec T####` 也可以 | ✅（BAT 送 `/ct-exec T####`，不用改） |
 | Claude Code | 兩者並存（不建議） | `/ct-exec` 用**手動安裝**那份；`/ct:ct-exec` 一定用 plugin 版 | ✅，但用的是手動安裝那份 |
 | Codex | zip 手動安裝 | `$ct-exec T####` | ✅ |
-| Codex | plugin `ct` | **`$ct:ct-exec T####`**（`$ct-exec` 叫不到：不會注入 plugin 的 `SKILL.md`） | ❌ **不支援**：BAT 送 `$ct-exec`。Codex 要接受 BAT 派工就用 zip 手動安裝 |
+| Codex | plugin `ct` | **`$ct:ct-exec T####`**（`$ct-exec` 叫不到：不會注入 plugin 的 `SKILL.md`） | BAT `>= 0.7.2-pre.1`：✅（BAT 判斷為 plugin 安裝，送 `$ct:ct-exec T####`）；更舊的 BAT：❌ **不支援**（送 `$ct-exec`），Codex 要接受 BAT 派工就用 zip 手動安裝 |
 | Codex | 兩者並存（不建議） | `$ct-exec` 用**手動安裝**那份；`$ct:ct-exec` 用 plugin 版 | ✅，但用的是手動安裝那份 |
 
 規則：
 
 1. **其他 CT skill 同規則**：把 `ct-exec` 換成 skill 名稱（例 Claude `/ct-done T####`、`/control-tower`；Codex plugin `$ct:ct-done T####`、`$ct:control-tower`）。
-2. **BAT 派工**：塔台只傳 `--skill` + `--workorder`，不寫 `/`、`$` 或 `ct:` 前綴（§ 執行方式）。BAT 依 resolved agent 組出
-   `/ct-exec T####`（Claude）或 `$ct-exec T####`（Codex），所以 Codex 端只有手動安裝能接受 BAT 派工。
+2. **BAT 派工**：塔台只傳 `--skill` + `--workorder`，不寫 `/`、`$` 或 `ct:` 前綴（§ 執行方式）；派工命令不因安裝方式或 BAT 版本改變。
+   呼叫字串由 BAT 依 resolved agent 組出：
+   - Claude：`/ct-exec T####`（手動安裝、plugin 都叫得到）
+   - Codex，BAT `>= 0.7.2-pre.1`（v5.14.2+）：BAT 在 Codex 端判斷安裝方式——手動安裝的 skill 目錄存在 → `$ct-exec T####`；
+     否則 Codex 設定有啟用中的 `ct@<任一 marketplace>` plugin → `$ct:ct-exec T####`；判斷不了 → `$ct-exec T####`。
+     兩種都裝時送手動那份，與 Codex 自己載入的一致。判斷位置與細節（`CODEX_HOME` 的來源、遠端分頁）以 BAT 為準，CT 不複述
+   - Codex，更舊的 BAT：一律 `$ct-exec T####`，所以只有手動安裝能接受 BAT 派工
+   - Codex＋BAT＋plugin 的端到端派工尚未實機驗證（BAT 以隔離試裝驗證判斷結果與 Codex 一致，D453）
 3. **非 BAT 路徑**（B 面開新分頁、C 面剪貼簿、`auto-session = ask`／`off` 的文字提示、§ 安全邊界 白名單）：本檔寫的 `/ct-exec T####`
    是樣板（Claude 寫法）。`<agent-cli>` 解析為 `codex` 時改用 Codex 寫法：預設寫手動安裝的 `$ct-exec T####`，並在文字提示加一行
    「只裝 CT plugin 時改輸入 `$ct:ct-exec T####`」。塔台不偵測 Worker 端的安裝方式（判斷依據不足，T0348 B2）。
@@ -1254,6 +1261,7 @@ BAT 路由插入現有降級鏈的**最高優先位置**：
 | codex 分頁的 OSC 7501：`blockedDetection: osc`、`blockedReason: input`、codex 的 `--wait-started` / `agentStarted` | v5.8.0+；需 **BAT `>= 0.7.0-pre.9`**（T0621）且 codex `>= 0.163.0`。舊 BAT（≤ `0.7.0-pre.8`）或較舊 codex → `none` / `null` / `started: unknown`，行為同 v5.7.2。見 § Worker 啟動確認 與 [yolo-mode.md](yolo-mode.md) § 斷點 D |
 | `bat-notify.mjs --ask` / `--wait-answer` / `--cancel-question`、`bat-terminal.mjs --answer`、MCP `bat_wait_question` / `bat_list_questions`、`blockedReason: tower` / `pendingQuestions` | v5.7.0+ yolo Worker 問塔台的 BAT 通道；需 BAT **`>= 0.7.0-pre.7`**（CT-T019／T0607／T0608／T0611）。更舊的 BAT 降級回工單檔往返。參數、exit code、欄位與版本判定見 [yolo-mode.md](yolo-mode.md) § Worker 向塔台提問 › BAT 通道 |
 | ListAgents 上的 claude 分頁名稱（`--name`）、MCP `claudeSessionName` / `claudeSessionId`、`bat_list_terminals` `scope: towers`、「以塔台開啟 Claude」 | v5.9.0+ 跨 session 選收件人與面板提示；需 BAT **`>= 0.7.1-pre.1`**（CT-T021／PLAN-050／T0641–T0644）。舊 BAT（≤ `0.7.0-pre.9`）沒有名稱、沒有這兩個鍵、`scope: towers` 回 `INVALID_ARGS`，行為同 v5.8.1。見 § BAT MCP 唯讀 tool 與 [cross-project-coordination.md](cross-project-coordination.md) § 跨 session 選收件人 |
+| BAT 對 Codex 依安裝方式組呼叫字串（`--skill` 派工與面板一鍵派工） | v5.14.2+ Codex 用 plugin 安裝也能接受 BAT 派工；需 BAT **`>= 0.7.2-pre.1`**。更舊的 BAT 對 Codex 一律送 `$ct-exec`，Codex 端只能用 zip 手動安裝；派工命令不變。見 § 依安裝方式的 skill 呼叫字串 |
 | RemoteServer | BAT 啟動後自動運行的 WebSocket server |
 | `terminal:created-externally` | 外部建立的終端 → UI 同步（縮圖 + xterm） |
 | `terminal:notify` | 通知事件 → Toast + Badge 冒泡 |
