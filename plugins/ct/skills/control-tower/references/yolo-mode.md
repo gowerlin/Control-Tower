@@ -210,15 +210,41 @@ on_worker_report_done(T_done):
 
 **判準（機械化 regex）**：
 
-Worker 收尾訊息必須**精準匹配**以下 regex：
+Worker 的通知字串以**結尾**判讀（v5.15.0）：取字串結尾最後一個 `<工單 ID> <關鍵字>`；它前面只能是空的，
+或是一則以上同樣格式的完整通知（預填殘留，見下方）。整個字串必須匹配以下 regex：
 
 ```regex
-^<WORKORDER_ID>\s+(完成|部分完成|需要協助|提問|失敗)\s*$
+^(?:<WORKORDER_ID>\s+(?:完成|部分完成|需要協助|提問|失敗)\s*)*(<WORKORDER_ID>)\s+(完成|部分完成|需要協助|提問|失敗)\s*$
 ```
 
 `<WORKORDER_ID>` 是 [work-order-system.md](work-order-system.md) § 工單 ID 格式（權威定義）
 所定義的具名片段，**套用時展開為該處的值，本節不複述**。
 ⚠️ 它涵蓋帶前綴的工單 ID：`CP-T0113 完成` 是合法回報，不得判為斷點 A。
+
+- 第 1 組是工單 ID、第 2 組是關鍵字，都取自結尾那一段。ID 一律用 `<WORKORDER_ID>` 比對，🔴 **不得**用 `\S+` 抓 ID：
+  `\S+` 會把前一段的關鍵字一起抓進來（`T0715 提問T0715 提問` 會抓到 `提問T0715`）。
+- **為什麼看結尾**（v5.15.0；BAT D190 對 Q-B3 的答覆）：Worker 的通知是 BAT 在塔台輸入框預填字串再按 Enter。預填成功、Enter 沒送出時
+  （例如 headless 沒有 client），字串會留在塔台輸入框，BAT 無法可靠清掉；Worker 改送的下一則會直接接在後面、不加分隔，
+  塔台收到的是 `T0715 提問T0715 提問`。v5.14.4 以前要求整個字串只有一則，這種情況會誤觸斷點 A。
+- 前面黏著的段落是之前沒送出的通知：和結尾那一段同一張工單 → 不另外處理；是別張工單的合法通知（兩個 Worker 同時送出時交錯）→
+  也照那一張工單處理，等同另外收到一則。
+- 🔴 塔台被叫醒後一律以 `bat_list_questions` 與工單標記判斷有幾題（§ Worker 向塔台提問 › 塔台端 第 1 點），**不**以通知字串的段數判斷。
+- 改寫前後的判讀：原本合法的字串仍合法；原本不合法的字串，除了「多則合法通知黏在一起」之外，仍觸發斷點 A。
+
+  | 收到的字串 | v5.14.4 | v5.15.0 |
+  |---|---|---|
+  | `T0341 完成` | 合法 | 合法 |
+  | `LB-T0184 部分完成` | 合法 | 合法 |
+  | `T0001 提問`（結尾有空白） | 合法 | 合法 |
+  | `T0715 提問T0715 提問` | 斷點 A | 合法（結尾 `T0715 提問`，前面同一張不另外處理） |
+  | `T0715 提問 T0715 提問` | 斷點 A | 合法（同上） |
+  | `T0001 提問T0002 完成` | 斷點 A | 合法（結尾 `T0002 完成`；`T0001 提問` 照 T0001 另外處理） |
+  | `T0001 執行時遇到問題` | 斷點 A | 斷點 A |
+  | `T0001完成`（ID 與關鍵字之間沒有空白） | 斷點 A | 斷點 A |
+  | `我覺得 T0001 完成` | 斷點 A | 斷點 A（前面不是完整通知） |
+  | `提問T0715 提問` | 斷點 A | 斷點 A（同上） |
+  | `T0715 提問 好了` | 斷點 A | 斷點 A（結尾不是關鍵字） |
+  | ` T0001 完成`（開頭有空白） | 斷點 A | 斷點 A |
 
 對應的合法字串（與 `ct-exec` § BAT Notify And Fallback、`ct-done` § BAT Notify 鎖定一致）（`<工單 ID>` = 工單完整 ID，含前綴、不得截短，規則見 [work-order-system.md](work-order-system.md) § 回報與通知用的工單 ID）：
 
@@ -554,6 +580,15 @@ Worker 以 helper 提問、以唯讀 MCP 長輪詢等答覆；塔台以唯讀 MC
   Windows PowerShell 5.1 的管線預設不是 UTF-8，會弄壞中文，不得使用。
 - 權杖：題目與答覆裡不得寫出任何權杖值（[auto-session.md](auto-session.md) § 範圍權杖與分頁角色 第 2 點）；BAT 收件時的遮罩不改變這條規則。
 - 不需要事先判斷 BAT 版本：直接送，依下方「版本判定與降級」表的結果降級。
+- **`--ask --no-pty-write`**（v5.15.0，一批多題的前 N-1 題用，§ Worker 端 3-A 第 1 步）：題目照常登記，通知只做 UI（塔台分頁的 toast 與徽章），
+  不預填、不按 Enter，所以塔台不會因此開始新的一輪。CT 依賴「`--ask --no-pty-write` 只做 UI 通知、不寫塔台 PTY」這個行為，
+  **BAT 已確認**是支援的組合（BAT D190，BAT `203bd8d7`；Q-B1）：helper 只呼叫 `question:ask` 與 `terminal:notify`，不寫 PTY、不切換分頁或焦點、
+  不讓塔台開始新的一輪；這段行為自 `--ask` 上線以來沒變，最低 BAT 版本同 `--ask`。BAT `>= 0.7.2-pre.4` 起列為正式契約（`>= 0.7.0-pre.7` 起就是這個行為），BAT 的介面文件與守門測試從這一版起涵蓋它；
+  之後與本節不一致時，照本節開頭以 BAT 權威為準。`--no-pty-write` 放在 `--ask` 前後都一樣；stdout 與 `--submit` 同格式（`question:`／`expires:`／`notified: yes`）。
+  另外兩點（BAT D190 要求一併註明）：
+  - `--no-pty-write` 與 `--submit` 互斥：兩個都帶 → helper exit `1`、stderr `ask: USAGE`，不連線、不登記題目。同一個 `--ask` 只能帶其中一個。
+  - `notified: yes` 只代表 BAT **接受了**通知事件，不代表有視窗顯示了 toast：沒有視窗、或 headless 沒有 client 連線時一樣回 `notified: yes`
+    （和 keypress 的 `no-client` 不同）。所以它不是「塔台看到了」的證據；前 N-1 題本來就不叫醒塔台，叫醒塔台的是第 N 題（§ Worker 端 3-A 第 2 步）。
 
 **MCP tool**（唯讀；問答的寫入沒有 MCP tool，只走 helper）。錯誤判讀與降級照 [auto-session.md](auto-session.md) § BAT MCP 唯讀 tool 的判斷依據與降級鏈：
 
@@ -568,7 +603,10 @@ Worker 有 `blocking` 的待答題時 `state: blocked`、`blockedReason: tower`�
 **限制**（BAT 常數，CT 不另訂）：
 
 - `--expires-min` 只收 `1`～`120`（分鐘）。CT 固定用生效的 `worker_question_timeout`（`0` 不用本通道，所以落在範圍內）。
-- 🔴 `blocking` 題目超過 120 s 沒有提問的 Worker 呼叫等待 → `expired` / `not-polled`；單次等待最多 45 s。
+- 🔴 `blocking` 題目的 120 s 租約**逐題計算**（BAT `QUESTION_POLL_LEASE_MS`；v5.15.0 起寫明，BAT D190）：從登記（`--ask`）起算，
+  只有提問的 Worker 對**該題**的等待會續約（呼叫時與結束時各續一次，等待開著的期間不會過期），等 A 題不會替 B 題續約。
+  某一題超過 120 s 沒有被等 → 該題 `expired` / `not-polled`。單次等待最多 45 s；每個呼叫者同時最多 8 個等待（超過會失敗，`TOO_MANY_WAITS`）。
+  一批多題怎麼讓**每一題**都在 120 s 內被等到，見 § Worker 端 3-A 第 3 步。
 - 每個 Worker 同時最多 8 題待答（超過 → `--ask` exit `10`）。題目 ≤ 4 000 字、`detail` ≤ 8 000 字、選項最多 10 個（每個 ≤ 500 字）、答覆 ≤ 8 000 字。
 - 題目只在記憶體：BAT 重開或 headless server 重啟後舊 id 回 `lost`；Terminal Server recovery → `cancelled`；Worker 或塔台分頁結束 → `cancelled`。
 - 使用者在 Worker 分頁輸入**不影響**題目（不取消、不清除 `blocked` / `tower`）。
@@ -577,7 +615,7 @@ Worker 有 `blocking` 的待答題時 `state: blocked`、`blockedReason: tower`�
 
 | 端 | 判定為「BAT 通道不可用」 | 降級 |
 |---|---|---|
-| Worker 提問 | `--ask` exit ≠ `0`：舊 helper（stderr `Unknown option '--ask'`）、新 helper 舊 host（`ask: UNSUPPORTED`），以及 exit `3` / `10` 與其他 `1` | 該題加 `- **通道**：工單` 標記、commit 後改送一般 `T#### 提問` 通知（多題只送一次，v5.7.1，§ Worker 端 3-A 第 2 步），照 § Worker 端 3-B 等工單答覆行（題目已在工單；helper 失敗時已取消該題，不留下塔台看不到的題目） |
+| Worker 提問 | `--ask` exit ≠ `0`：舊 helper（stderr `Unknown option '--ask'`）、新 helper 舊 host（`ask: UNSUPPORTED`），以及 exit `3` / `10` 與其他 `1` | 該題加 `- **通道**：工單` 標記並 commit；一般 `T#### 提問` 通知只在一批的最後一題（第 N 題）也退回時才送，而且只送一則（v5.15.0，§ Worker 端 3-A 第 2 步），照 § Worker 端 3-B 等工單答覆行（題目已在工單；helper 失敗時已取消該題，不留下塔台看不到的題目） |
 | Worker 等待 | MCP `bat_wait_question` 不存在、回 `UNSUPPORTED` / `CONNECT_FAILED` 或取不到 code 的錯誤；`--wait-answer` exit ≠ `0`；回傳 `status` 為 `lost` / `cancelled` / `expired` | MCP 不能用 → 改用 `--wait-answer`；`--wait-answer` 也失敗 → 取消該題（§ Worker 端 3-A 第 5 步）、剩餘時間照 3-B；`lost` / `cancelled` → 剩餘時間照 3-B；`expired` → § 備援。改走 3-B 的題都先照 § Worker 端 3-A 第 6 步加 `通道` 標記、commit、送一次一般 `T#### 提問`（v5.7.2） |
 | 塔台讀取 | `bat_list_questions` 不存在 / `UNSUPPORTED`、狀態回傳沒有 `pendingQuestions` 欄位 | 讀工單 `### 待塔台決策`，照 § 塔台端 第 3 點的工單答覆寫答覆行。列表能用但裡面找不到該題 → 不屬本列，照 § 塔台端 第 1 點的表（有 `通道` 標記 → 工單答覆；沒有 → 先不答，v5.7.1） |
 | 塔台答覆 | `--answer` exit `3`（含 `answer: LOST`）或 `1`（含 `Unknown option '--answer'`、`answer: UNSUPPORTED`） | 照 § 塔台端 第 3 點的工單答覆寫答覆行（exit `9` / `4` 也見該點） |
@@ -590,7 +628,7 @@ Worker 有 `blocking` 的待答題時 `state: blocked`、`blockedReason: tower`�
 - `--ask` 本身逾時（BAT 3 s 沒回應，exit `1`）時 helper 拿不到 id、無法取消；BAT 若已登記該題，塔台可能在 `bat_list_questions` 看到並以 BAT 答覆，
   Worker（已改等工單答覆行）收不到。這題由 BAT 租約在 120 s 內 `expired`；若塔台已答，Worker 最後逾時走 § 備援，塔台在 Renew 區段再答一次。
   v5.7.1 起 Worker 對這題加 `- **通道**：工單` 標記，塔台看到標記就改工單答覆（§ 塔台端 第 1 點），所以只剩「塔台在標記寫入前就處理了別題的通知、
-  並以 BAT 答了這題」時才會發生。
+  並以 BAT 答了這題」時才會發生。v5.15.0 起一批的前 N-1 題不會叫醒塔台（§ Worker 端 3-A 第 1 步），這種情況只剩第 N 題會遇到。
 - Worker 等待中 BAT 失效且 `--cancel-question` 也失敗時同上：最後由 § 備援 收尾。v5.7.2 起 Worker 改走工單時一樣加 `通道` 標記並送一般 `提問`
   （§ Worker 端 3-A 第 6 步），所以只剩「塔台在標記寫入前就以 BAT 答了這題」時才會發生。
 - **BAT 已結束題目的保留規則**（BAT 常數，CT 不另訂；出處 BAT `electron/tower-questions.ts` `QUESTION_ENDED_RETENTION_MS` / `QUESTION_ENDED_MAX`
@@ -637,6 +675,7 @@ Worker 有 `blocking` 的待答題時 `state: blocked`、`blockedReason: tower`�
   已完成、依 commit 政策要 commit 的產品變更也一樣。commit 寫法照 `ct-exec/SKILL.md` § Phase 4 › Commit rules
   （隔離工單照同檔 § Worktree Isolation 第 2、3 點：工單 commit 到 `$CT_HOME`、產品 commit 在 worktree）。
 - 然後照第 3 點通知塔台：BAT 通道的 `--ask`，或一般的 **`T#### 提問`** 通知（yolo 照常 `--submit`），**二擇一，同一題不重複通知**。
+  一次問多題時，同一批只有最後送出的那則會叫醒塔台（v5.15.0，3-A 第 1、2 步）。
   上面三步（寫題目、`tower_question: open`、commit）走不走 BAT 通道都一樣（v5.7.0，雙寫）。
 
 **3. 送出與原地等待**：
@@ -650,7 +689,25 @@ Worker 有 `blocking` 的待答題時 `state: blocked`、`blockedReason: tower`�
 
 **3-A BAT 通道**（BAT `>= 0.7.0-pre.7`）：
 
-1. 每題送一次 `--ask`（一題一個問題 id，多題就依序送）。helper 路徑與 node 照 `ct-exec/SKILL.md` § BAT Notify And Fallback；題目內容只走 stdin：
+1. 每題送一次 `--ask`（一題一個問題 id，多題就依序送）。helper 路徑與 node 照 `ct-exec/SKILL.md` § BAT Notify And Fallback；題目內容只走 stdin。
+   **一批 N 題只叫醒塔台一次**（v5.15.0）：
+
+   - N = 1：這一題用 `--ask --submit`（同 v5.14.4）。
+   - N ≥ 2：第 1～N-1 題用 `--ask --no-pty-write`（不帶 `--submit`）。題目照常登記，塔台分頁只顯示 toast 與徽章，不會開始新的一輪。
+     第 N 題最後送，用 `--ask --submit`，只有這一則會叫醒塔台。送出順序與退回的處理見第 2 步。
+   - 🔴 `--submit` 與 `--no-pty-write` 互斥（兩個都帶 → helper exit `1`、`ask: USAGE`，題目沒有登記），同一個 `--ask` 只帶其中一個。
+   - 這依賴 BAT「`--ask --no-pty-write` 只做 UI 通知、不寫塔台 PTY」的行為，BAT 已確認（BAT D190），見 § BAT 通道。
+
+   第 1～N-1 題（N ≥ 2 才有）：
+
+   ```bash
+   "${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR/bat-notify.mjs" --ask --source "<工單 ID>" --target "$BAT_TOWER_TERMINAL_ID" \
+     --no-pty-write --expires-min <worker_question_timeout> "<工單 ID> 提問" <<'JSON'
+   {"question":"Q-n：<一句話問題>","options":["<選項 A>","<選項 B>"],"detail":"Worker 建議：…\n影響範圍：…\n阻塞：…","blocking":true}
+   JSON
+   ```
+
+   第 N 題（N = 1 時就是這一題）：
 
    ```bash
    "${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR/bat-notify.mjs" --ask --source "<工單 ID>" --target "$BAT_TOWER_TERMINAL_ID" \
@@ -662,30 +719,77 @@ Worker 有 `blocking` 的待答題時 `state: blocked`、`blockedReason: tower`�
    - `<工單 ID>` 是工單完整 ID，含前綴、不得截短；送出前與 frontmatter `id` 比對（[work-order-system.md](work-order-system.md) § 回報與通知用的工單 ID）。
    - `question` 以工單題號 `Q-n：` 開頭，內容與工單的題目相同（塔台據此對應工單題目）；`options` 照工單題目的選項，不列「其他」
      （BAT 預設允許自由文字）；`detail` 放 Worker 建議、影響範圍、阻塞；`blocking` 固定 `true`。
-   - `--expires-min` = 生效的 `worker_question_timeout`；`--submit` 照 yolo 規則。PowerShell 用 pwsh 7 的 here-string 管線
+   - `--expires-min` = 生效的 `worker_question_timeout`；第 N 題的 `--submit` 照 yolo 規則。PowerShell 用 pwsh 7 的 here-string 管線
      （`@'…'@ | & $n $h --ask …`），不用 Windows PowerShell 5.1。
-   - `--ask` 自己就會通知塔台 `T#### 提問`：成功後**不要再另送一般通知**。
+   - 每一則 `--ask` 都帶通知字串 `T#### 提問`：第 1～N-1 題只出現在 toast，第 N 題預填並送出、叫醒塔台。`--ask` 成功的題**不要再另送一般通知**。
    - 一次問多題時，**先把所有題的 `--ask` 送完**（含第 2 步的標記、commit 與一般通知），才進入第 3 步的等待（v5.7.1，T0170）。
-     從第一題 `--ask` 成功到開始等待，不得超過 120 s（§ BAT 通道 › 限制）。
+     租約以**每一題**計（v5.15.0）：每一題從它自己的 `--ask` 成功起 120 s 內都要有第一次等待（§ BAT 通道 › 限制、第 3 步），所以送出階段不要拖。
 2. exit `0` → 從 stdout 的 `question: <id>` 行取得問題 id。exit ≠ `0`（任何值）→ 這題改 3-B，在工單該題 `#### Q-n` 的最後加一行
-   `- **通道**：工單`（v5.7.1；表示「這題改等工單答覆」，不是答覆行，第 3-B 的比對不會把它當成答覆）。所有題都送完後：
-   - 有任何一題加了標記 → **commit 工單**（只多了標記行；commit 寫法同第 2 點）→ **最後**送**一次**一般 `T#### 提問` 通知
-     （不論幾題退回都只送一次）→ 之後才進入等待，退回的題照 3-B 等工單答覆行。
-   - 沒有任何題退回 → 不加標記、不送一般 `提問`（每題的 `--ask` 已各送一則通知）。
-   - 這個順序的目的（F-1）：標記在最後那則 `提問` 送出前已 commit，塔台處理那則通知時一定看得到；工單裡沒有標記、BAT 列表裡也還沒有的題，
-     一定還有後續通知（它自己的 `--ask`，或最後那則 `提問`），所以塔台可以照 § 塔台端 第 1 點先不答它。
+   `- **通道**：工單`（v5.7.1；表示「這題改等工單答覆」，不是答覆行，第 3-B 的比對不會把它當成答覆）。送出順序（v5.15.0；N = 1 時只有 c、d）：
+   - **a.** 第 1～N-1 題依序送 `--ask --no-pty-write`，退回的題各加標記。
+   - **b.** a 有任何一題加了標記 → **commit 工單**（只多了標記行；commit 寫法同第 2 點）。也可以每加一個標記就 commit 一次，只要都在 c 之前。
+   - **c.** 送第 N 題 `--ask --submit`。exit `0` → 不加標記、不送一般 `提問`（這一則已叫醒塔台）。
+   - **d.** 第 N 題退回 → 加標記、**commit 工單** → 送**一則**一般 `T#### 提問`（依 `ct-exec/SKILL.md` § BAT Notify And Fallback，yolo 照常 `--submit`）。
+     🔴 這三件事**緊接著做**，中間不做其他事（v5.15.0，BAT D190）。原因：helper 只取消了第 N 題，前 N-1 題仍在 BAT 待答，塔台卻還沒被叫醒
+     （它們只有 toast）；Worker 要送完這一則才開始第 3 步的等待，而租約逐題計算（§ BAT 通道 › 限制），拖久了前面的題會在塔台看到之前就 `expired`。
+     - 退回時 stderr 是 `ask: NOTIFY_FAILED` → 題目登記過、通知失敗（helper 已取消該題）。這時第 N 題的 `T#### 提問` 可能已預填在塔台輸入框、
+       只是 Enter 沒送出；d 的一般 `提問` 會接在它後面一起送出，塔台以字串結尾判讀，讀得懂（§ 斷點 A）。照 d 做，不另外處理。
+     - BAT `>= 0.7.2-pre.4` 才有：stderr 另有一行 `ask: NOTIFY_STEP <notify|pty-write|keypress>`，說明通知失敗在哪一步，可選用（可以記進回報）。
+       🔴 **不得依賴它**決定流程：更舊的 BAT 沒有這一行；有沒有、是哪一步，處理都照 d。
+
+   之後才進入等待，退回的題照 3-B 等工單答覆行。
+
+   - 結果：一批 N 題，塔台只被叫醒一次，叫醒它的是第 N 題的 `--ask`，或第 N 題退回後的那則一般 `提問`。一般 `提問` 只在第 N 題退回時送，
+     前面退回幾題都不另送。第 6 步的晚退回是之後才發生的新資訊，會再叫醒一次，不算在內。
+   - 這個順序的目的（F-1）：同一 Worker 的最後一則通知送出時，同一批每一題不是已登記到 BAT，就是已加標記並 commit。逐步推演：
+     1. 第 1～N-1 題 exit `0` = 題目已登記，而且 UI 通知也成功（helper 任一步失敗都會取消該題並 exit `1`）。exit ≠ `0` = 這題沒有留在 BAT
+        （helper 已取消，或根本沒登記）→ 加標記。
+     2. 有標記 → 先 commit。
+     3. 第 N 題的 `--ask --submit` 是這一批第一則會叫醒塔台的通知；送出時第 1～N-1 題都已登記，或已加標記並 commit → F-1 成立。
+     4. 第 N 題退回 → 標記、commit 之後才送一般 `提問`，這一則才是最後一則 → F-1 仍成立。
+
+     所以塔台處理叫醒它的那則通知時，不會遇到「工單裡沒有標記、BAT 列表裡也還沒有」的題。萬一遇到（例如 v5.14.4 以前的 Worker 每題都 `--submit`，
+     見 § BAT / Worker 版本相容），那題一定還有後續通知（它自己的 `--ask`，或最後那則 `提問`），塔台照 § 塔台端 第 1 點先不答它。
+   - 兩個邊界（v5.14.4 就有，這個順序沒有讓它變多）：
+     - 第 N 題的 helper 預填成功、送 Enter 失敗而退回（helper 取消該題、exit `1`、`ask: NOTIFY_FAILED`）：塔台輸入框留著沒送出的 `T#### 提問`，
+       BAT 無法可靠清掉（BAT D190 對 Q-B3 的答覆：BAT 看不到輸入框內容，Esc 會中斷塔台正在跑的回合，Ctrl+U、Backspace 可能刪到使用者打的字）。
+       接著 d 的一般 `提問 --submit` 會接在後面一起送出（`T0715 提問T0715 提問`）；v5.15.0 起塔台以字串結尾判讀，照常當成一則 `提問`，
+       不觸發斷點 A（§ 斷點 A）。另一種情況是 BAT 3 s 等不到回覆或連線中斷：Enter 可能其實已送達，塔台醒來時第 N 題已被取消、還沒有標記 →
+       § 塔台端 第 1 點表的「列表有、`cancelled`」列，走工單答覆；之後那則一般 `提問` 照重複通知處理。
+     - Worker 送完第 1～N-1 題、還沒送第 N 題就當掉：塔台沒有被叫醒（前面幾題只有 toast），Worker 分頁結束時 BAT 會取消它的題目
+       （§ BAT 通道 › 限制）。塔台在使用者詢問或查狀態時看到，再照 § 斷點 D 或一般流程處理。v5.14.4 也有「Worker 送完前當掉」的情況，風險相同。
    - 第 3 步起才改 3-B 的題（`--ask` 已成功；`lost`、`cancelled`，含 Worker 自己取消）也加同一行標記並送一般 `提問`，見第 6 步
      （v5.7.2，D055；推翻 v5.7.1「標記只在這一步加、晚退回不加標記也不另送通知」）。
-3. 等答覆：迴圈呼叫 MCP `bat_wait_question`（`questionId` = 該 id，每次 ≤ 45 s）。MCP 不能用時（見 § BAT 通道 › 版本判定與降級）改用
+3. 等答覆：對每一題呼叫 MCP `bat_wait_question`（`questionId` = 該題的 id，`timeoutMs` 見下）。MCP 不能用時（見 § BAT 通道 › 版本判定與降級）改用
 
    ```bash
-   "${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR/bat-notify.mjs" --wait-answer <id>
+   "${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR/bat-notify.mjs" --wait-answer <id> --timeout-ms <毫秒>
    ```
 
-   stdout 一行 JSON，欄位同 `bat_wait_question` 的回傳；任何 `status`（含 `pending`、`lost`）都是 exit `0`，exit ≠ `0` 是錯誤。
+   stdout 一行 JSON，欄位同 `bat_wait_question` 的回傳（含 `questionId`）；任何 `status`（含 `pending`、`lost`）都是 exit `0`，exit ≠ `0` 是錯誤。
    - `changed: false` + `status: pending` = 這次逾時 → 再呼叫。
-   - 🔴 兩次呼叫的間隔不得超過 120 s（`blocking` 題目沒人等會 `expired` / `not-polled`）。先做 `阻塞：否` 的不受影響步驟時也一樣；
-     做不到就不要在等待期間做其他步驟。
+   - 🔴 **租約逐題計算**（v5.15.0，BAT D190；§ BAT 通道 › 限制）：等 A 題不會替 B 題續約。**每一題**從登記（`--ask` exit `0`）起 120 s 內
+     都要有自己的第一次等待；之後每一題從上一次等待結束到下一次等待開始，也不得超過 120 s。只等其中一題、其他題沒人等，那些題會 `expired` / `not-polled`。
+   - **每次等待的逾時** = `min(45, floor(90 / K))` 秒，K = 呼叫當下還在等（還沒收到結束狀態）的題數：K = 1、2 → 45 s；3 → 30 s；4 → 22 s；8 → 11 s。
+     MCP 的 `timeoutMs`、`--wait-answer` 的 `--timeout-ms` 都填這個秒數乘 1000。每題各等一次（一輪）的逾時加起來最多 90 s，
+     就算一題一題依序呼叫，也留 ≥ 30 s 給呼叫之間的開銷。
+   - **一輪的做法**：
+     - 優先**同時等**：每一輪對所有還在等的題各發一個等待，同時進行。MCP 在同一則回覆裡並行呼叫多個 `bat_wait_question`（每題一個）；
+       只能用 `--wait-answer` 的平台在一個 shell 指令裡把每題放到背景、再一起等（每一行開頭是題目 id，對得回題目）：
+
+       ```bash
+       for id in <id-1> <id-2> <id-3>; do
+         ( out=$("${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR/bat-notify.mjs" --wait-answer "$id" --timeout-ms <毫秒>); echo "$id exit=$? $out" ) &
+       done; wait
+       ```
+
+       pwsh 7 可用 `ForEach-Object -Parallel`。同時進行的等待最多 8 個（BAT 每個呼叫者的上限；每個 Worker 同時最多也只有 8 題待答）。
+       平台實際上把並行呼叫依序執行時，上面的逾時仍然守得住間隔。
+     - 平台不能同時發出多個等待 → 依登記順序**輪流**，每次用上面的逾時；輪流期間不做其他事。
+     - 一輪結束後照第 4 步處理各題結果，對仍 `pending` 的題立刻開下一輪（K 重新算）。
+   - **第一輪**：第 2 步送完就立刻開始，依登記順序。輪流時後面的題要等前面幾題的逾時加上呼叫開銷才輪到，所以從第 1 題登記到第一輪開始越短越好；
+     送出階段拖久了（例：第 1 題登記後已超過 30 s 才要開始），先對已登記的每一題各送一次逾時 `0` 的等待（立即回傳，只續約），再開始第一輪。
+   - 先做 `阻塞：否` 的不受影響步驟時，每一題也都要守上面的間隔；做不到就不要在等待期間做其他步驟。
    - `--wait-answer` 也 exit ≠ `0` → 照第 5 步取消這題，剩餘時間改 3-B（先照第 6 步）。
    - BAT 通道的等待本身就是等待工具：沒有 Monitor 之類工具的平台（例 codex）也能走 3-A。
 4. 看回傳的 `status`：
@@ -719,7 +823,7 @@ Worker 有 `blocking` 的待答題時 `state: blocked`、`blockedReason: tower`�
    - 塔台若在標記寫入前已經依列表 `cancelled` 或 `--answer` exit `9` 寫了這題的工單答覆行，標記與這則 `提問` 不會造成重複答覆：
      塔台收到時該題已有答覆，照 § 塔台端 第 1 點「沒有任何未答的題 → 不動作」。
    - 這是 3-B「等待期間對工單檔只讀不寫」的唯一例外，範圍只限：標記行、這一次 commit、一則一般 `提問`。
-     做完再回到其他題的 BAT 等待，兩次呼叫的間隔仍不得超過 120 s（第 3 步）。
+     做完再回到其他題的 BAT 等待；每一題兩次等待的間隔仍不得超過 120 s（逐題計算，第 3 步）。
 
 **3-B 工單檔等待**（v5.6.1 原第 3 點；BAT 通道沒用或已降級時）：
 
@@ -793,8 +897,10 @@ Worker 有 `blocking` 的待答題時 `state: blocked`、`blockedReason: tower`�
      走 **工單答覆**。
    - 🔴 判斷只看「列表狀態＋工單標記」，**不得**用「列表目前沒有 `pending` 題」推論 Worker 已送完：塔台剛答完一題時，`pending` 列表會暫時是空的，
      後面幾題可能還沒登記到 BAT（F-1，T0616 實測的競態）。
+   - 🔴 題數也只看「列表＋工單」（v5.15.0）：一則通知字串可能是幾則黏在一起（§ 斷點 A 的結尾判讀），字串的段數不代表題數，一則也不代表只有一題。
    - Worker 在最後一則通知之前，每一題不是已登記到 BAT、就是已加標記（§ Worker 端 3-A 第 2 步），所以處理到同一 Worker 的最後一則通知時，
-     還沒有結果的題不會落在「列表沒有、也沒有標記」那列。一直沒有後續通知時（例如 Worker 是 v5.7.0 以前的 `ct-exec`，見 § BAT / Worker 版本相容），
+     還沒有結果的題不會落在「列表沒有、也沒有標記」那列。v5.15.0 起一批只有一則會叫醒塔台的通知（第 N 題的 `--ask`，或第 N 題退回後的一般 `提問`），
+     它就是最後一則。一直沒有後續通知時（例如 Worker 是 v5.7.0 以前的 `ct-exec`，見 § BAT / Worker 版本相容），
      Worker 逾時走 § 備援，塔台在 `需要協助` 後照「收到備援」答覆：不會有題目永遠等不到答覆，最壞是等到逾時。
    - `lost` 不在上表：它只出現在單題回傳（`--answer` exit `3`、`bat_wait_question`），**不會**出現在 `bat_list_questions` 的列表
      （§ BAT 通道 › 已知限制）。BAT 重開後舊題從列表消失，落「有標記」或「列表沒有、也沒有標記」列。
@@ -809,10 +915,32 @@ Worker 有 `blocking` 的待答題時 `state: blocked`、`blockedReason: tower`�
      反過來，`--answer` 先成功（exit `0`）的題，Worker 在等待中收到 `answered`，不會走第 6 步。
    - 🔴 同一題只能有一個生效的答覆：`--answer` exit `0` 之後不得再寫工單答覆行，寫了工單答覆行之後不得再 `--answer`。
      `--answer` 失敗（exit `3` / `1`，或 `9` 的 `cancelled`）後改寫工單答覆行不算重複。
-   - 沒有任何未答的題（例如同一批題目的第二個 `提問` 通知）→ 不動作。
+   - **重複通知用最少的檢查**（v5.15.0）：同一張工單的 `提問` 仍可能連來好幾則。v5.14.4 以前的 Worker 每題都叫醒塔台一次；
+     Claude CLI 也會把塔台忙碌時收到的通知排隊，再一則一則送進來。所以每一則 `提問` 先只做這兩項檢查：
+     1. 呼叫 `bat_list_questions` 一次（`status: all`；`terminalId` 同上）。
+     2. 用一次 grep 讀工單 `### 待塔台決策` 的題號（`#### Q-n`）、答覆行（`- **塔台答覆 Q-n**`）與 `通道` 標記行，不重讀整張工單。
+        有還沒答的題時，同一次一併查 `_tower-state.md` YOLO 歷程裡這張工單的 `[提問]` 條目（第 2 點的等待條目）。
+
+     照上表逐題判斷後，沒有任何**新題**就回一行 `T#### 提問：沒有新題（<各題狀態>）` 結束。不重跑代決邊界、不寫決策日誌、不寫 YOLO 歷程，
+     也不重出 `⏸ YOLO PAUSED`。「沒有新題」= 每一題都屬於下面其中一種：
+     - 已答：工單有答覆行，或列表 `answered`；
+     - 已升級給使用者、還在等回答（第 2 點）；
+     - 落「列表沒有、也沒有標記」，這一則先不答。
+
+     有新題才照第 2 點起處理那幾題。
+     - 🔴 第 2 項不能省：只看列表會漏掉 `--ask` 失敗、只有工單標記的題（F-1）。也不得因為「上一輪剛處理過這張工單」就直接結束：
+       塔台不知道這則通知是何時送出的，Worker 可能剛加了標記，或剛登記了題目。
 2. 每題依**代決邊界**判斷：
    - **工單範圍內的技術／實作選擇** → 塔台決定。
    - **範圍變更、刪除／不可逆操作、對外發布、需要使用者偏好的選擇** → 先問使用者（格式見下），使用者回答後再答覆。
+   - **已升級給使用者、還在等回答的題不重複提醒**（v5.15.0）：
+     - 升級時（顯示 `⏸ YOLO PAUSED — 提問需要你決定` 的同時），在 YOLO 歷程寫一筆等待條目：
+       `[提問] <時間> — T#### Q-n <問題摘要> → 等使用者決定（已提醒）`。
+     - 之後同一張工單的任何通知（同一批的重複通知、晚退回的一般 `提問`、收到備援的 `需要協助`），只要這題的最新 `[提問]` 條目還是等待條目，
+       就**不再重出 `⏸ YOLO PAUSED`**，也不另外提醒。只照第 1 點的表更新這題之後要走哪個通道答覆
+       （例如列表從 `pending` 變成 `cancelled`，或出現了標記 → 之後改工單答覆）。
+     - 使用者回答後照第 3 點答覆（通道依回答當下第 1 點的判斷；Worker 已走備援就寫在 Renew 區段），再寫一筆結果條目（`…（使用者決定）`）。
+     - 條目寫在 `_tower-state.md`，塔台 context 被壓縮後仍讀得到：這題的最新 `[提問]` 條目是等待條目，就表示還在等使用者。
 3. 依第 1 點的結果答覆：
    - **BAT 答覆**（v5.7.0+）：答覆文字只走 stdin（同 § BAT 通道 的 stdin 規則）：
 
@@ -854,7 +982,7 @@ Worker 有 `blocking` 的待答題時 `state: blocked`、`blockedReason: tower`�
   請輸入：
 ```
 
-使用者回答前 Worker 可能已逾時走備援：照下方「收到備援」處理，答覆改寫在 Renew 區段。
+使用者回答前 Worker 可能已逾時走備援：照下方「收到備援」處理，答覆改寫在 Renew 區段；已升級、還在等的題不重出這個暫停（第 2 點，v5.15.0）。
 走 BAT 答覆的題目升級給使用者時仍是 `pending`，但會在 `expiresAt` 過期（v5.7.0+）：使用者回答後照第 3 點答覆，
 過期了（`--answer` exit `9`、`status: expired …`）就照下方「收到備援」。
 
@@ -871,6 +999,8 @@ Worker 有 `blocking` 的待答題時 `state: blocked`、`blockedReason: tower`�
 - 提問本身不計入 `yolo_max_retries`、不算 Renew、不算 FAILED，也不是斷點。
 - 走備援時就是一次一般的 `BLOCKED` + Renew：照既有規則計入斷點 B-1（Renew 次數）與 B-2（連續 FAILED / BLOCKED）。
 - YOLO 歷程每題追加：`[提問] <時間> — T#### Q-n <問題摘要> → <答覆摘要>（塔台代決 / 使用者決定 / 逾時走備援）`。
+- 升級給使用者的題先寫等待條目 `[提問] <時間> — T#### Q-n <問題摘要> → 等使用者決定（已提醒）`，使用者回答後再寫結果條目（v5.15.0，§ 塔台端 第 2 點）。
+  同一題以最新一筆為準；「本 session 提問」每題只算一次（寫等待條目時算，結果條目不再加）。沒有新題的重複通知不寫條目。
 
 ### `worker_question_timeout` 的取值
 
@@ -924,7 +1054,7 @@ yolo 模式啟動時，塔台在 `_tower-state.md` **必要區段清單**之外�
 | 塔台派發下一張工單 | 追加 `[派發]` 條目 |
 | Worker 回報完成 | 追加 `[完成]` 條目 |
 | 斷點 A/B/C/D/E 觸發 | 追加 `[斷點 X]` 條目 + 更新計數器（D 同一個 `blockedSince` 只記一次） |
-| 收到 `T#### 提問`（v5.5.0+） | 每題追加 `[提問]` 條目 + 更新「本 session 提問」（格式見 § Worker 向塔台提問 › 計數） |
+| 收到 `T#### 提問`（v5.5.0+） | 每題追加 `[提問]` 條目 + 更新「本 session 提問」（格式見 § Worker 向塔台提問 › 計數）；升級給使用者時先寫等待條目、回答後寫結果條目，沒有新題的重複通知不寫（v5.15.0） |
 | 使用者輸入「停」/「stop」/「abort」 | 追加 `[使用者中斷]` 條目 + 不更新 A/B/C/D/E 計數器 |
 | 使用者恢復流程 | 追加 `[恢復]` 條目 |
 | yolo 模式關閉 | `### 當前 Session` 移至 `### 歷史 Session` 摘要 |
@@ -966,7 +1096,7 @@ yolo 模式啟動時，塔台在 `_tower-state.md` **必要區段清單**之外�
 | C | `⏸ YOLO PAUSED — 斷點 C 觸發` |
 | D（v5.5.0+） | `⚠️ YOLO 斷點 D（不暫停）— <分頁標題> 在等你回答（原因：<blockedReason>，從 HH:MM 起）`；非 yolo 為 `ℹ️ 斷點 D — <分頁標題> 在等你回答（原因：<blockedReason>，從 HH:MM 起）` |
 | E（v5.3.0+） | `⏸ YOLO PAUSED — 斷點 E（合併前確認）`；非 yolo 為 `⏸ 合併前確認` |
-| 提問需要使用者決定（v5.5.0+，非斷點） | `⏸ YOLO PAUSED — 提問需要你決定`（塔台代決的題目不顯示暫停，見 § Worker 向塔台提問 › 塔台端） |
+| 提問需要使用者決定（v5.5.0+，非斷點） | `⏸ YOLO PAUSED — 提問需要你決定`（塔台代決的題目不顯示暫停，見 § Worker 向塔台提問 › 塔台端）；同一題只顯示一次，之後的通知不再重出（v5.15.0） |
 | 使用者中斷（非斷點） | `🛑 YOLO PAUSED — 使用者中斷` |
 
 ### PLAN 完成
@@ -1047,6 +1177,8 @@ yolo 為**新增**第四階，啟用前需使用者明確下 `*config auto-sessi
 | Worker skill `ct-exec`（晚退回也加 `通道` 標記） | v5.7.2 | `--ask` 成功後才改走工單的題也加標記並送一般 `提問`（§ Worker 端 3-A 第 6 步），塔台不依賴 BAT 保留期。v5.7.1 的 Worker 不加：塔台只能靠列表 `cancelled` 列或 `--answer` exit `9`（§ 塔台端 第 1、3 點），超過 BAT 保留期（10 分鐘／64 筆）或 BAT 重開就落「列表沒有、也沒有標記」，要等 Worker 逾時走 § 備援。不會答錯，只會慢 |
 | BAT `bat-terminal.mjs --wait-started`（Worker 啟動確認）、`disableAllHooks` → `blockedDetection: none` | `0.7.0-pre.6` | 派工帶 `--wait-started 30000`，exit `8` 不重派、不是斷點；更舊的 BAT 去掉參數重派一次（見 [auto-session.md](auto-session.md) § Worker 啟動確認）。斷點 D 已知限制第 4 點依版本不同（見 § 斷點 D） |
 | BAT codex OSC 7501（`blockedDetection: osc`、`blockedReason: input`、codex `agentStarted`；BAT T0621，另需 codex `>= 0.163.0`） | `>= 0.7.0-pre.9` | v5.8.0+：codex Worker 的 `input` 走斷點 D（§ 斷點 D）、`--wait-started` 對 codex 回 `started: <時間>` 或 exit `8`（[auto-session.md](auto-session.md) § Worker 啟動確認）。舊 BAT（≤ `0.7.0-pre.8`）或較舊 codex → `blockedDetection: none`、`agentStarted: null`、`started: unknown`，行為同 v5.7.2 |
+| Worker skill `ct-exec` 與 control-tower（一批只叫醒塔台一次、重複通知最少檢查） | v5.15.0 | **新 Worker＋舊塔台**：相容。塔台只收到 1 則，照 v5.14.4 的 § 塔台端 第 1 點表處理（那時每題都已登記或已加標記）。**舊 Worker（v5.7.0～v5.14.4，每題 `--submit`）＋新塔台**：仍是 N 則，由 § 塔台端 第 1 點的最少檢查兜底（每則重複只回一行），已升級給使用者的題不重複提醒（第 2 點）。**不認 `--ask` 的舊 helper**（BAT < `0.7.0-pre.7`）：每題 exit ≠ `0` → 全部加標記、commit 後只送一則一般 `提問`（§ Worker 端 3-A 第 2 步 d），仍是 1 則；helper 不接受 `--no-pty-write` 時也一樣走標記。前 N-1 題用的 `--ask --no-pty-write` 只做 UI 通知這一點，BAT 已確認（BAT D190），BAT `>= 0.7.2-pre.4` 起列為正式契約（`>= 0.7.0-pre.7` 起就是這個行為），最低版本同 `--ask`（§ BAT 通道） |
+| 塔台 control-tower（斷點 A 結尾判讀）、Worker skill `ct-exec`（多題逐題等待、第 N 題退回後緊接著送一般 `提問`） | v5.15.0 | **舊塔台**收到黏在一起的通知（`T0715 提問T0715 提問`）仍觸發斷點 A（安全，同 v5.14.4，使用者選 [A] 即可續行）。**v5.7.0～v5.14.4 的 Worker** 一批多題時可能依序輪流、每次等 45 s：4 題以上，或呼叫之間的開銷大時，先登記的題會 `expired`，那題走 § 備援、塔台在 Renew 區段答（不會答錯，只會慢）；更新 Worker 後解決。兩者都是 v5.7.x 起就有的問題，v5.15.0 一併修正 |
 
 **漸進式啟用**：任一組件版本不足時：
 - BAT 舊版本 → Worker yolo 降級為 on（Worker skill 已規格化）
@@ -1129,8 +1261,22 @@ yolo 為**新增**第四階，啟用前需使用者明確下 `*config auto-sessi
 - 降級：舊 BAT（`--ask` exit ≠ `0`）→ Worker 在 Q-1 下加 `- **通道**：工單`、commit 後改送一般 `T0001 提問`、塔台看到標記 → 工單答覆，結果同第一個情境；
   等待中 `lost` / `cancelled` → Worker 在 Q-1 下加 `通道` 標記、commit、送一般 `T0001 提問`（v5.7.2）→ 塔台看到標記 → 工單答覆、Worker 剩餘時間讀工單
   （標記寫入前塔台先處理到原本那則通知：列表 `cancelled` 或 `--answer` exit `9`（`cancelled`）→ 同樣工單答覆，之後那則 `提問` 不動作）；`expired` → 同逾時
-- 多題（v5.7.1）：Q-1、Q-2 `--ask` 成功、Q-3 失敗 → Worker 三題都送完、Q-3 加 `通道` 標記、commit、最後送一則一般 `T0001 提問` → 塔台每則通知只答
-  列表 `pending` 的題（BAT）與有標記的題（工單），列表沒有又沒標記的題先不答 → 每題只有一個通道的答覆
+- 多題（v5.7.1；v5.15.0 起 Q-1、Q-2 用 `--ask --no-pty-write`、Q-3 用 `--ask --submit`）：Q-1、Q-2 `--ask` 成功、Q-3 失敗 → Worker 三題都送完、
+  Q-3 加 `通道` 標記、commit、最後送一則一般 `T0001 提問` → 塔台每則通知只答列表 `pending` 的題（BAT）與有標記的題（工單），
+  列表沒有又沒標記的題先不答 → 每題只有一個通道的答覆
+- 一批只叫醒一次（v5.15.0）：
+  - 三題都成功：Q-1、Q-2 `--ask --no-pty-write`，Q-3 `--ask --submit` → 塔台只收到一則 `T0001 提問`（一輪），`bat_list_questions` 三題 `pending`
+  - 第 1 題退回：Q-1 退回、加標記 → Q-2 `--no-pty-write` → commit → Q-3 `--submit` → 標記的 commit 早於 Q-3；塔台一輪，Q-1 走工單答覆、Q-2／Q-3 走 BAT 答覆
+  - 第 N 題退回：Q-1、Q-2 `--no-pty-write` → Q-3 退回 → 加標記、commit → 一則一般 `T0001 提問 --submit` → 塔台只收到這一則（一輪）
+- 重複通知（v5.15.0）：v5.14.4 的 Worker 三題各 `--submit` → 塔台第一則照常處理；後兩則以列表＋工單 grep 判斷沒有新題，各回一行。
+  其中一題升級給使用者 → `⏸ YOLO PAUSED` 只出現一次，YOLO 歷程有等待條目；使用者回答後答覆並寫結果條目
+- 多題逐題等待（v5.15.0）：Q-1～Q-4 都 `--ask` 成功（`blocking: true`），塔台 3 分鐘後才答 → Worker 每一輪四題各等一次，逾時 22 s
+  （同時等，或依登記順序輪流），每一題從登記到第一次等待、以及兩次等待之間都 ≤ 120 s → 四題都收到 `answered`，沒有任何一題 `expired` / `not-polled`。
+  反例（v5.14.4 的讀法）：依序輪流、每次 45 s，Q-1 兩次等待之間隔了另外三題的 135 s → Q-1 `expired`（`not-polled`）
+- 黏在一起的通知（v5.15.0）：Q-1、Q-2 `--no-pty-write` 成功；Q-3 `--ask --submit` 預填後 Enter 沒送出（exit `1`、`ask: NOTIFY_FAILED`）→
+  Worker 加標記、commit、緊接著送一般 `T0001 提問 --submit` → 塔台收到 `T0001 提問T0001 提問`，以結尾判讀為一則 `提問`、不觸發斷點 A；
+  題數以 `bat_list_questions`（Q-1、Q-2 `pending`）與工單標記（Q-3）判斷 → Q-1、Q-2 走 BAT 答覆、Q-3 走工單答覆。
+  同一字串送給 v5.14.4 的塔台 → 斷點 A（相容列）
 
 ### T10：斷點 D（v5.5.0+）
 

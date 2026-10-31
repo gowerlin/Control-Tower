@@ -7,7 +7,7 @@
 // 規劃文件的引用）對全站生效，
 // 頁面上的範例編號只放行 EXAMPLE_IDS 列出的；其他類別只對更版紀錄（versions/releases.md 與建置出的 releases.html）生效：
 // commit SHA、BAT 內部文件路徑、BAT 回函與介面契約條目（F-n、O-n、C-n）、內部階段名（「智能 P2」這類）。
-// HTML 先去掉標籤再比對（資產檔名的雜湊不算）。
+// HTML 先去掉標籤再比對（資產檔名的雜湊不算）；建置產物裡 JS、JSON 與內嵌腳本的 Vite 產物雜湊也先遮掉（maskViteHashes）。
 // 落點檢查名 C-0～C-4 在落點檢查語境裡不算條目（maskLandingCheckIds，sync-ct-release.mjs 共用）。
 //
 // 只輸出「檔案:行:類別」與各類計數，不輸出命中的原文（避免把敏感值印進日誌）。命中數 > 0 時 exit 1。
@@ -140,7 +140,17 @@ const stripTags = text => text.replace(/<\/?(?:p|li|ul|ol|h[1-6]|div|blockquote|
 // HTML 註解只拿掉 <!-- 與 -->、內文照樣比對（原始檔的註解會跟著匯出），要在 stripTags 之前做
 const uncomment = text => text.replace(/<!--|-->/g, ' ')
 
-const isReleases = file => /(^|\/)versions\/releases\.(md|html)$/.test(file.split(path.sep).join('/'))
+// Vite 產物雜湊：建置產物的檔名「<名稱>.<8 碼雜湊>.js」（另有 .lean.js、.mjs、.css）被其他 JS 的 import 引用，
+// 頁面雜湊表（HTML 內嵌的 __VP_HASH_MAP__ 與 hashmap.json）另外寫成「"<頁>.md":"<8 碼雜湊>"」（內嵌時引號帶反斜線）。
+// 雜湊是 base64url 字元、隨內容變，可能剛好是「.」接「D＋兩、三位數字」再接「-」的形狀而命中決策號，每次發版都要人工判定。
+// 比對內部 id 前把這兩種位置的雜湊段換成同長度的底線（行內位置不變）：只遮雜湊段，名稱與頁面內容裡的編號照舊比對，
+// 決策號規則本身不放寬；只對建置產物（isBuildOutput）做，原始檔照舊
+const VITE_HASHED_NAME = /(\.)[A-Za-z0-9_-]{8}(?=\.(?:lean\.)?(?:js|mjs|css)\b)/g
+const VP_HASH_MAP_ENTRY = /(\.md\\?":\\?")[A-Za-z0-9_-]{8}(?=\\?")/g
+const maskHash = (match, prefix) => prefix + '_'.repeat(match.length - prefix.length)
+const maskViteHashes = text => text.replace(VITE_HASHED_NAME, maskHash).replace(VP_HASH_MAP_ENTRY, maskHash)
+
+const isReleases = file =>/(^|\/)versions\/releases\.(md|html)$/.test(file.split(path.sep).join('/'))
 
 function usage(message) {
   if (message) console.error(`deid-scan: ${message}`)
@@ -318,8 +328,14 @@ function main() {
     const internalPatterns = releases ? [...INTERNAL_NUMBER_PATTERNS, ...INTERNAL_RELEASE_PATTERNS] : INTERNAL_NUMBER_PATTERNS
     const content = fs.readFileSync(file, 'utf8')
     const lines = content.split(/\r?\n/)
-    // 內部 id 類別比對的文字：HTML 先去標籤（資產檔名的雜湊不算，註解內文留著），再把落點檢查名遮掉（整份一起判斷，句子可跨行）
-    const internalLines = args.internalIds ? maskLandingCheckIds(file.endsWith('.html') ? stripTags(uncomment(content)) : content).split(/\r?\n/) : []
+    // 內部 id 類別比對的文字：HTML 先去標籤（資產檔名的雜湊不算，註解內文留著），建置產物再遮掉 Vite 產物雜湊，
+    // 最後把落點檢查名遮掉（整份一起判斷，句子可跨行）
+    let internalText = ''
+    if (args.internalIds) {
+      internalText = file.endsWith('.html') ? stripTags(uncomment(content)) : content
+      if (isBuildOutput(file)) internalText = maskViteHashes(internalText)
+    }
+    const internalLines = args.internalIds ? maskLandingCheckIds(internalText).split(/\r?\n/) : []
     lines.forEach((raw, i) => {
       let line = raw
       for (const entry of allow) {

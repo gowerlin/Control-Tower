@@ -60,7 +60,7 @@ PORTAL_BASE=/Control-Tower/ PORTAL_SITE_URL=https://<owner>.github.io/Control-To
 | 腳本 | 用途 |
 |---|---|
 | `scripts/sync-ct-release.mjs` | 維護者本機用：CT 發版後同步版本資料與更版紀錄頁，產出後自動掃描；要先設定下面兩個變數 |
-| `scripts/deid-scan.mjs` | 去識別掃描：找出不該公開的路徑、權杖、識別碼等，掃描 `.md`、`.yml`、`.gitignore` 等文字檔（二進位檔跳過）。`npm run deid` 掃原始檔與 `.vitepress/dist/`，並加掃內部編號（`--internal-ids`：工單、決策等編號對全站生效，頁面上的範例編號另列允許清單；commit SHA、BAT 契約條目等只對更版紀錄生效）。plugin marketplace 的 repo 名稱只在 CT 發行物（CT 與 Guide 的 skill 檔、CT 的 `CHANGELOG.md`）裡放行，名稱讀 `.vitepress/config.mts` 的設定常數；頁面要寫就用設定常數組出 |
+| `scripts/deid-scan.mjs` | 去識別掃描：找出不該公開的路徑、權杖、識別碼等，掃描 `.md`、`.yml`、`.gitignore` 等文字檔（二進位檔跳過）。`npm run deid` 掃原始檔與 `.vitepress/dist/`，並加掃內部編號（`--internal-ids`：工單、決策等編號對全站生效，頁面上的範例編號另列允許清單；commit SHA、BAT 契約條目等只對更版紀錄生效；建置產物檔名與頁面雜湊表裡的 Vite 雜湊不算編號）。plugin marketplace 的 repo 名稱只在 CT 發行物（CT 與 Guide 的 skill 檔、CT 的 `CHANGELOG.md`）裡放行，名稱讀 `.vitepress/config.mts` 的設定常數；頁面要寫就用設定常數組出 |
 | `scripts/build-plugin-marketplace.mjs` | 維護者本機用：從 CT、CT Guide 與 BMad Guide 的版本目錄產生 plugin marketplace（`.claude-plugin/marketplace.json`、`plugins/ct`、`plugins/ct-guide`、`plugins/bmad-guide`）。用法 `--ct <版號> --guide <版號> --bmad-guide <版號> (--out <目錄> \| --dry-run)`，三個版號都必填（匯出時 CT 與 Guide 取自 `ct-release.json`，bmad-guide 取自 `data/bmad-guide.json`）。檢查 8 個 CT skill 與 Guide 的版號註解、bmad-guide 的 `current_version` 等於指定版號，`plugin.json` 的 `version` 由版號產生；beta、預覽版不上架。需要 CT 的原始碼目錄，不在公開 repo；匯出公開 repo 時會用它產生 marketplace |
 | `scripts/build-artifact.mjs` | `npm run build:artifact`：建置不需要伺服器路由的靜態預覽包（`dist-artifact/`），自我檢查後對預覽包跑去識別掃描（含 `--internal-ids`），命中就失敗；要先設定下面兩個變數 |
 

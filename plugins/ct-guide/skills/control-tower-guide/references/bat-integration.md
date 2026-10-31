@@ -110,6 +110,7 @@ CT-T021 方向反過來：需求由 CT 塔台先提給 BAT（D067，CT 不向 Cl
 ③ Worker 執行與通知      ct-exec 收尾後 bat-notify：on 預填、yolo 自動送出（--submit）
                          yolo 執行中有問題：送 T#### 提問，在工單裡等塔台答覆（v5.5.0）
                          BAT >= 0.7.0-pre.7：題目照樣寫工單，再以 --ask 問、bat_wait_question 等（v5.7.0）
+                         一次多題：前幾題 --ask --no-pty-write、最後一題 --submit，一批只叫醒塔台一次（v5.15.0）
         ↓
 ④ 收單回收              worker_auto_close: done 時 --close-worker（隔離工單加 --worktree keep）
                          同一張工單要重派時，先 --close-worker … --delay-ms 0 回收舊分頁再回到 ②（v5.12.0）
@@ -632,6 +633,7 @@ CT 從不預先判斷 BAT 版本：一律先照常呼叫，失敗才依 exit cod
 | v5.14.2 | Codex 用 plugin 安裝也能接 BAT 派工：BAT 依 Codex 端的安裝方式送 `$ct-exec` 或 `$ct:ct-exec`（CT 派工命令不變；端到端派工未實機驗證） | `>= 0.7.2-pre.1` | 對 Codex 一律送 `$ct-exec`：只裝 plugin 的 Codex Worker 叫不到 CT skill，照 v5.14.0 用 zip 手動安裝；Claude Code 不受影響 |
 | v5.14.3 | 「一個塔台、多個巢狀的獨立 repo」配置（文件）：Worker 在上層執行，派工 `--cwd` 與面板一鍵派工的 cwd 都是上層＝BAT workspace 根；這種工單不能 `isolation: worktree`（不涉 BAT 介面；面板一鍵派工未實機驗證） | 無新門檻（BAT 介面、參數與順序不變） | — |
 | v5.14.4 | Level 2 找 bmad-guide 依 runtime 分開（本 runtime 手動 → 本 runtime plugin → 另一個 runtime 只當讀檔來源）、Claude plugin 位置只有一處 `${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}`（不涉 BAT 介面） | 無新門檻（BAT 介面、參數與順序不變） | — |
+| v5.15.0 | yolo 一次問多題只叫醒塔台一次：前 N-1 題 `--ask --no-pty-write`、最後一題 `--ask --submit`；塔台收到重複通知時只做最少的檢查，已升級給使用者的題不重複提醒（CT 端改動；`--no-pty-write` 只做 UI 通知，BAT 已確認是支援的組合，BAT `>= 0.7.2-pre.4` 起列為正式契約（`>= 0.7.0-pre.7` 起就是這個行為））；一併修正：多題等待的租約逐題計算、斷點 A 改看通知字串結尾 | 無新門檻（`--ask` 仍需 `>= 0.7.0-pre.7`） | helper 不認 `--ask` 或 `--no-pty-write` → 該題加標記、改走工單檔往返，一批仍只叫醒一次 |
 
 `BAT_HELPER_NODE`（v5.2.1）沒有版本門檻：本機沒有這個變數就用 `node`，只有遠端分頁會由 BAT 注入。
 版號以 CT 的 `version-governance.md` § 歷史版號表 與 `auto-session.md` § 依賴的 BAT 基礎設施 為準；v5.1.0 的 BAT 版本出自 CT `CHANGELOG.md` [5.12.3]：[5.1.0] 原寫 `0.6.1-pre.3`，v5.12.3 依 BAT 塔台回覆更正為 `>= 0.6.1-pre.4`（歷史段落不改）。

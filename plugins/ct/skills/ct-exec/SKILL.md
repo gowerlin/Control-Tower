@@ -2,7 +2,7 @@
 name: ct-exec
 description: "Control Tower Worker skill for executing a work order end to end from any sub-session. Use when the user invokes $ct-exec or /ct-exec with a T#### work order, asks a worker to start or resume scoped execution, or needs the full lifecycle of reading the work order, marking IN_PROGRESS, implementing only the listed scope, validating, writing the report, committing when required, and notifying Tower or providing a fallback completion message."
 ---
-<!-- ct-exec-version: 5.14.4 -->
+<!-- ct-exec-version: 5.15.0 -->
 
 # ct-exec
 
@@ -336,16 +336,25 @@ The single authoritative definition is `../control-tower/references/yolo-mode.md
   - every `#### Q-n：` heading carries the question text and is followed by its 「提問時間」 line (v5.7.1, same as § Phase 4 self-check (a));
     take its value as `../control-tower/references/yolo-mode.md` § Worker 端 第 2 點 says (v5.8.1).
 - The three steps above (write the questions, add `tower_question: open`, commit) are the same whether or not the BAT channel is used
-  (v5.7.0, written to both places). Then notify Tower once per question, by exactly one of the two ways below; never both.
+  (v5.7.0, written to both places). Then send each question once, by exactly one of the two ways below; never both.
 - BAT channel (v5.7.0+, BAT `>= 0.7.0-pre.7`; authority § Worker 端 3-A, with the commands, exit codes, result fields and the
   version/fallback table in § BAT 通道): unless `worker_question_timeout = 0`, send each question with `bat-notify.mjs --ask`, question
-  text on stdin only (never in argv), then keep calling `bat_wait_question` (fallback `--wait-answer`) with no gap over 120 s until it
-  ends. `answered` → log it in `### 互動紀錄` and continue. Any failure of the channel (`--ask` fails, `lost`, `cancelled`, the wait
-  tools fail) drops that question to the work order wait below; `expired` goes to the fallback. `--ask` already notifies Tower.
-- Several questions (v5.7.1, authority § Worker 端 3-A steps 1–2): send every `--ask` first, then start waiting (within 120 s of the
-  first successful `--ask`). Each question whose `--ask` failed gets a line `- **通道**：工單` at the end of its `#### Q-n`; if any did,
-  commit the work order and only then send one plain `<工單 ID> 提問` (once, however many failed). If none failed, add no marker and send no
-  plain `提問`.
+  text on stdin only (never in argv), then keep calling `bat_wait_question` (fallback `--wait-answer --timeout-ms`) until it ends.
+  The 120 s lease counts per question (v5.15.0): every question needs its own first wait within 120 s of its `--ask`, and no gap over
+  120 s between two of its waits; waiting on one question never renews another. Each wait's timeout is `min(45, floor(90 / K))` s for
+  K questions still waiting; wait on all of them each round, at the same time when the platform can (at most 8), otherwise in turn,
+  doing nothing else in between. `answered` → log it in `### 互動紀錄` and continue. Any failure of the channel (`--ask` fails, `lost`, `cancelled`, the wait
+  tools fail) drops that question to the work order wait below; `expired` goes to the fallback. `--ask` carries the notification itself:
+  never send a plain one for a question whose `--ask` succeeded.
+- Several questions (v5.15.0, authority § Worker 端 3-A steps 1–2): only the last notification of a batch of N wakes Tower.
+  a. Send questions 1 … N-1 with `--ask --no-pty-write` (no `--submit`; the two flags are mutually exclusive: both → exit `1`,
+     `ask: USAGE`, nothing registered). Each one that fails gets a line `- **通道**：工單` at the end of its `#### Q-n`.
+  b. If any got the marker, commit the work order.
+  c. Send question N with `--ask --submit`. Success → no plain `提問`.
+  d. Question N fails → mark it, commit, then send one plain `<工單 ID> 提問` — right after each other, nothing in between (v5.15.0):
+     questions 1 … N-1 are still pending in BAT and Tower is not awake yet. BAT `>= 0.7.2-pre.4` also prints `ask: NOTIFY_STEP <step>`; optional,
+     record it if you like, but never let it change the flow (older BAT does not print it).
+  Then start waiting at once (every question within 120 s of its own `--ask`). One question: just `--ask --submit`, as before.
 - Late drop (v5.7.2, authority § Worker 端 3-A step 6): a question whose `--ask` succeeded but that drops to the work order wait later
   (`lost`, `cancelled` including your own cancel with `status: cancelled worker`, or no usable wait tool) also gets the marker line;
   commit the work order, send one plain `<工單 ID> 提問` (one for all questions dropping at the same time), then wait for its answer line.
@@ -475,7 +484,8 @@ manual fallback message.
    - `FAILED` / `BLOCKED`: `<工單 ID> 需要協助`
    - Still `IN_PROGRESS` with open questions for Tower (`CT_MODE=yolo` only, v5.5.0+): `<工單 ID> 提問` — sent mid-execution by
      § Questions For Tower, not at closeout. The Tower-side regex is `../control-tower/references/yolo-mode.md` § 斷點 A.
-     On the BAT channel (v5.7.0+) the same message is sent by `bat-notify.mjs --ask` itself; do not send it again.
+     On the BAT channel (v5.7.0+) the same message is sent by `bat-notify.mjs --ask` itself; do not send it again. Within a batch only the
+     last `--ask` (the one with `--submit`) wakes Tower; the earlier ones use `--no-pty-write` (v5.15.0, § Questions For Tower).
    Before every send — closeout notify, `--ask`, or the manual fallback message — compare the id you are about to use with the
    frontmatter `id` and use the frontmatter value if they differ (v5.13.1; steps and the report line in the authority above).
 2. If `CT_MODE=on`, run `bat-notify.mjs` without `--submit`.

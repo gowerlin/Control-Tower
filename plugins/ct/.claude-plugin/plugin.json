@@ -1,6 +1,6 @@
 {
   "name": "ct",
-  "version": "5.14.4",
+  "version": "5.15.0",
   "description": "BMad Control Tower: file-driven work order orchestration for Tower and Worker sessions (control-tower, ct-exec, ct-done, ct-status, ct-evolve, ct-fieldguide, ct-help, ct-insights).",
   "author": {
     "name": "BMad Control Tower"

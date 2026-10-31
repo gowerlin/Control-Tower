@@ -84,8 +84,8 @@ const towerRows = [
 - **參數**：一個工單編號或路徑。同一個編號在 `_ct-workorders/` 下找到多張時，Worker 停下來請你指定。
 - **執行環境**：由塔台派工時傳入，Worker 不讀設定檔決定模式。`CT_MODE`：`yolo`／`ask`／`off`／`on`（沒有或不合法時當成 `ask`）；`CT_INTERACTIVE`：`1` 允許研究型互動、`0` 禁止；`CT_HOME`：在 BAT 的 worktree 隔離分頁裡才有，指向主 checkout。
 - **在哪用**：Worker session（一張工單一個新的 session）。
-- **做什麼**：執行一張工單的完整生命週期——讀專案規則與整張工單 → **落點檢查**（任何寫入之前；`repo` 不符就停）→ 標 `IN_PROGRESS` → 只在範圍內執行 → 跑驗收、證據分道記錄 → **反序收尾**（產品 commit → 回報區 → 最終狀態 → 工單 commit）→ 通知塔台。通知與提問用收到的**完整工單 ID**：`/ct-exec CP-T0113` 回的是 `CP-T0113 完成`，不會截成 `T0113`；送出前先和工單 frontmatter 的 `id` 比對，不一致就改用 `id`（v5.13.1 起）。工單原本就是 `IN_PROGRESS` 時記成接續執行。`CT_MODE=yolo` 時不問你，有問題寫進工單問塔台。
-- **起始版本**：v2.1.1（獨立 skill：v3.1.0；`$` 入口：v5.0.3；落點檢查：v5.0.4；yolo 向塔台提問：v5.5.0；完整工單 ID 通知：v5.13.1）
+- **做什麼**：執行一張工單的完整生命週期——讀專案規則與整張工單 → **落點檢查**（任何寫入之前；`repo` 不符就停）→ 標 `IN_PROGRESS` → 只在範圍內執行 → 跑驗收、證據分道記錄 → **反序收尾**（產品 commit → 回報區 → 最終狀態 → 工單 commit）→ 通知塔台。通知與提問用收到的**完整工單 ID**：`/ct-exec CP-T0113` 回的是 `CP-T0113 完成`，不會截成 `T0113`；送出前先和工單 frontmatter 的 `id` 比對，不一致就改用 `id`（v5.13.1 起）。工單原本就是 `IN_PROGRESS` 時記成接續執行。`CT_MODE=yolo` 時不問你，有問題寫進工單問塔台；一次問多題時只有最後一題叫醒塔台（v5.15.0 起）。
+- **起始版本**：v2.1.1（獨立 skill：v3.1.0；`$` 入口：v5.0.3；落點檢查：v5.0.4；yolo 向塔台提問：v5.5.0；完整工單 ID 通知：v5.13.1；一批提問只叫醒塔台一次：v5.15.0）
 - **權威出處**：`ct-exec/SKILL.md`（§ Startup、§ Mode And Environment、§ Landing Zone Check、§ Phase 1～4、§ Questions For Tower (`CT_MODE=yolo`, v5.5.0+)、§ BAT Notify And Fallback）；`control-tower/references/work-order-system.md` § 回報與通知用的工單 ID
 - **相關**：[一張工單的一生](/lifecycle#worker)、[落點檢查](/deep/features/landing-check)、[Worker 向塔台提問](/deep/features/worker-questions)
 
@@ -432,7 +432,7 @@ Worker 收尾時送回塔台的是固定的一行，前面是工單的**完整 I
 | `T#### 需要協助` | `BLOCKED` 或 `FAILED` |
 | `T#### 提問` | 只在 yolo：工單仍是 `IN_PROGRESS`，Worker 有問題在等塔台答覆，**不是收尾** |
 
-yolo 下塔台另外也接受 `T#### 失敗`。不是這些格式的訊息，會觸發斷點 A。
+yolo 下塔台另外也接受 `T#### 失敗`。不是這些格式的訊息，會觸發斷點 A。v5.15.0 起塔台看字串的結尾：前一則沒送出、和下一則黏在一起（例 `T0042 提問T0042 提問`）時，只要整串都是完整的通知，就照結尾那一則處理。
 
 漏了前綴的回報（例 `T0113 完成`，熱區只有 `CP-T0113`）格式仍然合法，不算斷點 A：塔台在熱區恰好找到一張「前綴＋同號」的工單時，就當成那一張收單，並記一行「回報 ID 缺前綴」；同號的有好幾張或找不到，才停下來問你。這只保住塔台收單，BAT 能不能把 Worker 分頁標成 Done，仍看 Worker 送的 ID。
 
@@ -454,7 +454,7 @@ yolo 下塔台另外也接受 `T#### 失敗`。不是這些格式的訊息，會
 - `control-tower/SKILL.md` § Built-In Commands
 - `ct-help/SKILL.md` § Command Families
 - 各 skill 的 `SKILL.md`（`ct-exec`、`ct-done`、`ct-status`、`ct-evolve`、`ct-insights`、`ct-fieldguide`、`control-tower-guide`）
-- CT 安裝與使用指南 § 13. Config 速查表（v5.14.4）、§ 14. 命令速查表（v5.14.4）
+- CT 安裝與使用指南 § 13. Config 速查表（v5.15.0）、§ 14. 命令速查表（v5.15.0）
 - `control-tower/references/tower-config.md` § `*config` 命令、§ 可用選項（表下註明 `gp-prefix` 不是選項）
 - `control-tower/references/multi-tower-protocol.md` § `gp-prefix` 設定（唯一權威定義）
 - `control-tower/references/fieldguide-commands.md`

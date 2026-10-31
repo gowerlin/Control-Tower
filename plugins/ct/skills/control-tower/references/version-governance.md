@@ -12,7 +12,7 @@ Skill YAML frontmatter 僅放 runtime 需要的欄位，至少包含 `name` 與 
 版本事實來源改用 body 內第一個註解：
 
 ```markdown
-<!-- control-tower-version: 5.14.4 -->
+<!-- control-tower-version: 5.15.0 -->
 ```
 
 同步點：
@@ -294,6 +294,7 @@ codex plugin list --json         # ct@control-tower 的 version
 | v5.14.2 | 2026-10-30 | PATCH（依 § SemVer：文件修正，沒有新命令、新設定或不相容變更）：Codex 搭配 BAT 派工也支援 plugin 安裝——`auto-session.md` § 依安裝方式的 skill 呼叫字串（唯一權威）改成依 BAT 版本：BAT `>= 0.7.2-pre.1` 依 Codex 端實際的安裝方式送 `$ct-exec`（手動）或 `$ct:ct-exec`（plugin），兩種都裝時用手動那份；更舊的 BAT 一律送 `$ct-exec`，Codex 端只支援手動安裝。同檔 § 依賴的 BAT 基礎設施 加最低 BAT `0.7.2-pre.1` 一列；本檔〈Codex 搭配 BAT 派工：依 BAT 版本〉、`ct-help`、安裝指南同步引用權威。Codex＋BAT＋plugin 端到端派工未實機驗證。D453／D454／T0362。BAT 介面、派工命令的參數與順序、斷點 A 正則不變 |
 | v5.14.3 | 2026-10-30 | PATCH（依 § SemVer：文件修正，沒有新命令、新設定或不相容變更）：「一個塔台、多個巢狀的獨立 repo」配置——`mono-repo-patterns.md` 新增 § 巢狀的獨立 repo（唯一權威）：上層 `git init`＋`.gitignore` 排除子 repo、工單集中在上層、`repo` 填上層目錄名、`project` 填子 repo、`affects_files` 從上層寫、Worker 在上層執行、產品用 `git -C <子 repo> commit --only <去掉前綴的路徑>`、回報區各記子 repo SHA；限制（不能 `isolation: worktree`、C-0 只驗上層、路徑前綴轉換、新目錄第一次派工的資料夾信任確認）、何時改用每個 repo 一個塔台、已寫在子 repo 的舊工單怎麼處理，附實機驗證結果（CT 5.14.2＋BAT 0.7.2-pre.1）；執行紀錄不預設推到團隊共用 remote（建議）、`parent_workorder` 不是 CT 欄位。`multi-tower-protocol.md` 判斷表加一列、`work-order-template.md`（目標子專案、`affects_files`、`repo`、`isolation` 不能用）、`onboarding.md`、`control-tower/SKILL.md` 路由指回新節。T0368／T0369／D466／D468。落點檢查、commit 規則、BAT 介面、派工命令的參數與順序、斷點 A 正則不變；面板一鍵派工未實機驗證 |
 | v5.14.4 | 2026-10-30 | PATCH（依 § SemVer：規則修正，沒有新命令、新設定或不相容變更）：bmad-guide 偵測依 runtime 分開、Claude plugin 位置只有一處——`enhancement-integration.md` § Level 2 › 偵測（唯一權威）的搜尋順序改成 ① 本 runtime 的手動安裝 → ② 本 runtime 的 plugin → ③ 另一個 runtime 的手動安裝與 plugin（只當讀檔來源，第一次用到時註明一次）；Claude 手動 `${CLAUDE_CONFIG_DIR:-~/.claude}/skills/`，Codex 手動 `${CODEX_HOME:-~/.codex}/skills/` 再 `~/.agents/skills/`（Codex 文件列的使用者層位置）；「手動優先」改成同一個 runtime 內；Claude plugin 根目錄改成單一路徑 `${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}`，刪掉「也查 `${CLAUDE_CONFIG_DIR}/plugins/`（尚未驗證）」（T0374 實測：只設 `CLAUDE_CONFIG_DIR` 時 plugin 目錄跟著搬）。`data-layer-architecture.md` § 寫入規則的 Layer 1 plugin 路徑、安裝指南 § 4.1 安裝路徑表同步成這個寫法。T0374／T0375／D478／D479。BAT 介面、派工命令、斷點 A 正則不變 |
+| v5.15.0 | 2026-11-01 | MINOR（依 § SemVer：Worker 與塔台的提問處理行為改變，向下相容；沒有新命令、新設定或新欄位）：yolo Worker 一批多題只叫醒塔台一次——`yolo-mode.md` § Worker 向塔台提問（唯一權威）§ Worker 端 3-A 第 1、2 步：N ≥ 2 時第 1～N-1 題 `--ask --no-pty-write`（不帶 `--submit`，兩者互斥）、有退回的題加 `通道` 標記並 commit，最後送第 N 題 `--ask --submit`；第 N 題退回才加標記、commit、送一則一般 `提問`；N = 1 與晚退回（第 6 步）不變；F-1 說明改寫成逐步推演，含兩個邊界（第 N 題預填後送 Enter 失敗、Worker 在第 N 題前當掉）。§ BAT 通道 寫明依賴「`--ask --no-pty-write` 只做 UI 通知、不寫塔台 PTY」，BAT 已確認（BAT D190），BAT `>= 0.7.2-pre.4` 起列為正式契約（`>= 0.7.0-pre.7` 起就是這個行為），並註明與 `--submit` 並用 → exit `1`、`ask: USAGE`，以及 `notified: yes` 只代表 BAT 接受了通知事件。第 2 步 d：第 N 題退回後的標記、commit、一般 `提問` 緊接著做。既有問題一併修正：3-A 第 3 步多題等待寫明租約逐題計算（每次逾時 `min(45, floor(90 / K))` 秒、優先同時等，最多 8 個）；§ 斷點 A 改以通知字串結尾判讀（預填殘留黏在一起時不再誤觸斷點 A，原本合法的仍合法），題數一律以列表與工單標記為準。§ 塔台端 第 1 點：重複通知以 `bat_list_questions` 一次＋工單 grep 一次判斷，沒有新題就一行結束；第 2 點：已升級給使用者、還在等回答的題在 YOLO 歷程寫等待條目，之後的通知不再重出 `⏸ YOLO PAUSED`。§ BAT / Worker 版本相容 加一列、§ 迴歸測試 T9 加情境；`ct-exec/SKILL.md` § Questions For Tower 與 `control-tower/SKILL.md` 摘要同步。T0383～T0385／D492～D496。BAT 介面、派工命令不變 |
 
 > v4.x ~ v5.0.2 各列以 `docs/CHANGELOG.md` 對應版本段為準。
 >

@@ -1,6 +1,6 @@
 {
   "_note": "相容版本對照（/versions/compatibility 的資料）。每列 feature、ct（CT 起始版本）、bat／codex（最低版本，不需要就省略）、note、source（權威出處：檔案 § 章節）。CT 發版時相容性有變才改（CT 每次發版都要同步更新 Portal）。",
-  "ctVersion": "5.14.4",
+  "ctVersion": "5.15.0",
   "rows": [
     {
       "feature": "帶前綴的工單 ID 走結構化派工（--workorder 帶前綴）",
@@ -158,6 +158,13 @@
       "ct": "v5.14.4",
       "note": "規則修正，沒有新門檻：BAT 介面、派工命令、最低 BAT 版本都不變。順序是本 runtime 的手動安裝 → 本 runtime 的 plugin → 另一個 runtime 的安裝（只拿來讀檔，第一次用到時註明一次）；手動優先只在同一個 runtime 內成立。Claude Code 的 plugin 預設在 ~/.claude/plugins/，設了 CLAUDE_CONFIG_DIR 或 CLAUDE_CODE_PLUGIN_CACHE_DIR 時跟著搬，只查一處。新的搜尋順序是依規則推得，還沒有實機跑過。",
       "source": "CHANGELOG.md [5.14.4]；enhancement-integration.md § Level 2：外部 bmad-guide › 偵測；data-layer-architecture.md § 寫入規則"
+    },
+    {
+      "feature": "yolo 一次問多題只叫醒塔台一次（前幾題 --ask --no-pty-write、最後一題 --ask --submit）；重複通知只做最少的檢查，已升級給你的題不重複提醒",
+      "ct": "v5.15.0",
+      "bat": ">= 0.7.0-pre.7",
+      "note": "最低 BAT 版本不變（同 --ask）。--ask --no-pty-write 只做畫面上的通知、不寫塔台的輸入框：BAT 0.7.0-pre.7 起就是這個行為，0.7.2-pre.4 起列為 BAT 的正式契約。helper 不認 --ask 或 --no-pty-write 時，那一題改走工單檔往返，一批仍只叫醒一次。同一版一併修正兩個原本就有的問題：多題等待的租約逐題計算；斷點 A 改看通知字串的結尾。Worker 與塔台都更新才完全生效，只更新一邊也相容。",
+      "source": "CHANGELOG.md [5.15.0]；yolo-mode.md § Worker 向塔台提問 › BAT 通道、§ Worker 端 3-A、§ 塔台端；yolo-mode.md § 斷點 A；yolo-mode.md § 相容性 › BAT / Worker 版本相容"
     },
     {
       "feature": "Level 2：外部 bmad-guide 的 BMad workflow 路由",

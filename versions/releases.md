@@ -1,19 +1,56 @@
 ---
 title: 更版紀錄
-description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.14.4），更早的版本見演進史。
+description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.15.0），更早的版本見演進史。
 ---
 
 <!-- 本頁由 scripts/sync-ct-release.mjs 從 CT CHANGELOG 產生，請勿手改；要改內容請改來源後重跑。 -->
 
 # 更版紀錄
 
-目前版本 **v5.14.4**（2026-10-30）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 60 版（v2.1.1 ～ v5.12.5）請看[演進史](./evolution)。
+目前版本 **v5.15.0**（2026-11-01）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 61 版（v2.1.1 ～ v5.12.6）請看[演進史](./evolution)。
 
 ::: tip 摘要不具權威
 本頁照錄 CT 的 CHANGELOG，只拿掉工單、決策、驗收回函等內部編號與出處註記。規則的權威定義在 CT 各 skill 與 references，兩者有出入時以 CT 本體為準。
 :::
 
 ::: v-pre
+
+## 5.15.0 <small>2026-11-01</small> {#v5-15-0}
+
+
+> **MINOR：yolo 模式下 Worker 一次問多題時，塔台只會被叫醒一次；同一批題目的重複通知不再重複提醒你。**
+> 原本 Worker 一次問 3 題，塔台會收到 3 則 `T#### 提問`，每則都重新讀工單、查題目、判斷一次；需要你決定的題目還會重複跳出暫停提醒。實測每多一則約多花 10 萬等效 token，一批 3 題約有一半以上是重複處理。
+> 另外一併修正兩個原本就有的問題：一次問多題時先問的題可能還沒等到答覆就過期；兩則通知黏在一起時塔台誤判為非預期回報而暫停。
+> 沒有新命令、新設定、新欄位；BAT 最低版本、CT 派工命令、exit code 不變。Worker（`ct-exec`）與塔台（`control-tower`）都更新才完全生效（見安裝指南 § 2.61）。
+
+### Changed
+
+- **一次問多題時塔台只會被叫醒一次**：Worker 前面幾題只登記題目、在塔台分頁顯示提示，不讓塔台開始新的一輪；最後一題送出時才叫醒塔台，塔台一次就看到整批題目。有題目送不上 BAT 時，Worker 照舊在工單標記、commit，仍只叫醒塔台一次。規則在 `yolo-mode.md` § Worker 向塔台提問 › § Worker 端 3-A 第 1、2 步（前 N-1 題 `--ask --no-pty-write`、第 N 題 `--ask --submit`；`--submit` 與 `--no-pty-write` 互斥）
+- **重複通知不再重複提醒你**：塔台收到同一批的重複通知（例如舊版 Worker 送來的）時，只查一次 BAT 題目列表、一次工單的題號與標記，沒有新題就回一行結束；已經請你決定、還在等你回答的題，之後的通知不會再跳 `⏸ YOLO PAUSED`。等待狀態記在 `_tower-state.md` 的 YOLO 歷程，塔台 context 被壓縮後也判斷得出來（同節 § 塔台端 第 1、2 點）
+- 最後一題送不上 BAT 時，Worker 加標記、commit、改送一般通知這三件事要緊接著做，中間不做其他事：前面幾題已在 BAT 等答覆，塔台卻還沒被叫醒，拖久了會過期（同節第 2 步 d）
+- 同節的說明改寫成逐步推演，並寫明兩個邊界：最後一題預填後送 Enter 失敗、Worker 在最後一題送出前當掉（都是原本就有的情況）
+- `ct-exec/SKILL.md` § Questions For Tower、§ BAT Notify And Fallback 與 `control-tower/SKILL.md` 的摘要同步；權威仍是 `yolo-mode.md`
+- 安裝指南：§ 1 加一列；新增 § 2.61
+- 版號：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表；安裝指南 § 1、§ 4.1 版號範例與發行物檔名同步（`OLD=5.14.4`、`VER=5.15.0`）
+
+### Fixed
+
+- **一次問多題時，先問的題可能還沒等到答覆就過期**（原本就有的問題，這版一併修正）：BAT 為每一題各自計 120 秒的等待租約，等其中一題不會替其他題續約。原本的規格只寫「兩次等待的間隔不超過 120 秒」，沒說多題時怎麼讓每一題都被等到；一題一題輪流、每次等 45 秒，4 題以上（或呼叫之間的延遲較長）時先問的題就會過期，Worker 只能走備援。現在每次等待的逾時依還在等的題數縮短（`min(45, floor(90 / K))` 秒），能同時等就同時等（最多 8 個），每一題從送出起 120 秒內都會被等到（`yolo-mode.md` § Worker 端 3-A 第 3 步、§ BAT 通道 › 限制）
+- **兩則通知黏在一起時，塔台誤判為非預期回報而暫停**（原本就有的問題，這版一併修正）：Worker 的通知是在塔台輸入框預填字串再按 Enter；Enter 沒送出時字串會留在輸入框，BAT 無法可靠清掉，下一則會直接接在後面，原本要求整個字串只有一則，於是跳出 `⏸ YOLO PAUSED — 斷點 A 觸發`。現在塔台看字串結尾最後一則 `<工單 ID> <關鍵字>`，前面只能是其他完整的通知；原本合法的字串仍合法，其他原本會暫停的仍會暫停。有幾題一律以 BAT 題目列表與工單標記為準，不看通知字串（`yolo-mode.md` § 斷點 A）
+
+### Notes
+
+- 前幾題用的 `--ask --no-pty-write` 只做 UI 通知、不寫塔台 PTY：BAT 已確認這是支援的組合，BAT `>= 0.7.2-pre.4` 起列為正式契約（`>= 0.7.0-pre.7` 起就是這個行為），最低版本同 `--ask`；BAT 的介面文件與守門測試從這一版起涵蓋它。最後一題送不上時 BAT `>= 0.7.2-pre.4` 另印一行 `ask: NOTIFY_STEP`，可選用、不得依賴。規格一併註明兩點：它和 `--submit` 一起帶會直接失敗（exit `1`、`ask: USAGE`，題目不登記）；`notified: yes` 只代表 BAT 收下了通知，不代表畫面上真的跳出提示（`yolo-mode.md` § BAT 通道）
+- 只更新塔台時，舊版 Worker 仍每題叫醒塔台一次，由塔台端的最少檢查兜底；只更新 Worker 時，塔台只收到一則，照舊處理（同節 § BAT / Worker 版本相容）
+- 塔台端的最少檢查與等待條目要在安裝新版塔台之後才有實機紀錄；本版只在 BAT 上手動驗證過 Worker 的送出順序
+
+### Unchanged
+
+- 一次只問一題、題目內容與格式、`tower_question`、`worker_question_timeout`、3-B 工單檔等待、晚退回（第 6 步）、備援不變
+- BAT 最低版本（`>= 0.7.0-pre.7`）、BAT 介面、CT 派工命令、exit code、設定、工單欄位、狀態值不變；斷點 A 的關鍵字與工單 ID 格式不變（只改成看字串結尾）
+- 非 yolo 的 Worker／塔台行為不變
+- zip 手動安裝流程、發行物版面（全量 zip、8 個單一 skill zip、Guide zip）、plugin 名稱與內容組成不變
+- 歷史段落（本檔舊段落、版號表舊列、安裝指南舊章節）不改
 
 ## 5.14.4 <small>2026-10-30</small> {#v5-14-4}
 
@@ -275,36 +312,12 @@ description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.14.4），
 - BAT 介面不變、CT 最低 BAT 版本不變；設定的值域與預設、工單 metadata 不變。
 - 歷史段落（本檔舊段落、版號表舊列、安裝指南舊章節）不改。
 
-## 5.12.6 <small>2026-10-25</small> {#v5-12-6}
-
-
-> **PATCH：發行內容去識別（只改說明文字，規則與行為不變）。**
-> 範例與由來說明裡可識別的名稱換成中性說法或範例值，以便公開發行；指令、旗標、exit code、步驟順序、檔名、設定的值域與預設、工單 metadata、BAT 介面都不變。
-
-### Changed
-
-- 去識別改寫（只列檔案與類別，不列原文；「由來」類句子保留事件與日期，只換名稱）：
-  - 私人專案 repo 名與專案代稱 → 「專案 A／B／C」、`project-a`／`project-b`／`project-c`：`ct-exec/SKILL.md` § Landing Zone Check、`ct-fieldguide/references/global-fieldguide.md`（範例表）、
-    `ct-insights/references/analysis-rules.md`，`control-tower/references/` 的 `archive-system.md`、`auto-session.md`、`cross-project-coordination.md`、`multi-tower-protocol.md`、`playbook-engine.md`、`work-order-template.md`；本檔歷史段落
-  - 本機絕對路徑 → `~/repos/…`、`~/Projects/…` 占位：`global-fieldguide.md`（範例表）、`work-order-template.md` § `repo`；`docs/Control Tower 自助擴充指南：教塔台學新技能 v4.md`（`*import --from` 範例路徑）
-  - 私有詞（人名、帳號、主機名、組織名）→ 中性說法：`auto-session.md`、`cross-project-coordination.md`、`work-order-template.md`、`yolo-mode.md`；本檔歷史段落
-  - 內網主機位址 → RFC 5737 範例位址：`enhancement-integration.md`、`self-learning-core.md`
-  - 私人規則名 → 中性說法：`yolo-mode.md`；本檔歷史段落
-  - 分頁短 id 範例 → 占位：`memory-protocol.md`
-- 版號：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表；安裝指南新增 § 2.51，§ 4.1 版號範例同步（`OLD=5.12.5`、`VER=5.12.6`、發行物檔名）。
-
-### Unchanged
-
-- 規則與行為：指令、旗標、exit code、步驟順序、檔名、設定的值域與預設、工單 metadata 不變；BAT 介面不變、CT 最低 BAT 版本不變。
-- 保留的公開值：BAT 預設安裝路徑（`Program Files` 下的 `BetterAgentTerminal`）、`auto-session.md` § A.1 偵測變數完整表 SSH 列的文件範例位址。
-- 歷史段落只換可識別的名稱，記載的事件、日期與版本內容不改。
-
 :::
 
 ## 延伸閱讀 {#further-reading}
 
-- CT `CHANGELOG.md`（共 70 個版本；本頁列最近 10 版）
+- CT `CHANGELOG.md`（共 71 個版本；本頁列最近 10 版）
 - CT `version-governance.md` § 歷史版號表
-- [演進史](./evolution)：更早的 60 版與八個世代
+- [演進史](./evolution)：更早的 61 版與八個世代
 
 Portal 是摘要，不具權威；與 CT reference 有出入時，以 reference 為準。
