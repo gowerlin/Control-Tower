@@ -129,7 +129,7 @@ const nav: DefaultTheme.NavItem[] = [
   {
     text: 'Beta',
     activeMatch: '^/preview/',
-    items: [{ text: '方法論轉接（v6.0.0-beta.9，與穩定版並行）', link: '/preview/methodology-adapters' }]
+    items: [{ text: '方法論轉接（v6.0.0-beta.10，與穩定版並行）', link: '/preview/methodology-adapters' }]
   },
   {
     text: '案例與課程',
@@ -210,7 +210,7 @@ const sidebar: DefaultTheme.SidebarItem[] = [
   },
   {
     text: 'Beta（與穩定版並行）',
-    items: [{ text: '方法論轉接（v6.0.0-beta.9）', link: '/preview/methodology-adapters' }]
+    items: [{ text: '方法論轉接（v6.0.0-beta.10）', link: '/preview/methodology-adapters' }]
   },
   {
     text: '案例與課程',
