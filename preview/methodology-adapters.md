@@ -1,6 +1,6 @@
 ---
-title: Beta：方法論轉接（v6.0.0-beta.10）
-description: CT v6.0.0-beta.10 Beta 的方法論轉接：把「只認 BMad」換成可以抽換、分層疊加的 adapter，用實測決定怎麼防住其他方法論的 SessionStart 注入，並逐家說清楚哪些方法論值得引入、哪些只要共存；beta.3 另加狀態衛生與 BAT 塔台面板讀取契約（穩定版 v5.13.0 起也有），beta.4 讓 Worker 回報一律帶完整工單 ID、面板契約對齊新版 BAT（穩定版 v5.13.1 也有），beta.5 移植 plugin 安裝就緒的規則（穩定版 v5.14.0 也有；Beta 本身不提供 plugin），beta.6 移植穩定版 v5.14.1、v5.14.2 的規則，並讓方法論 adapter 偵測得到 plugin 安裝的 bmad-guide，beta.7 移植穩定版 v5.14.3 的「一個塔台、多個巢狀的獨立 repo」配置文件（穩定版也有），beta.8 移植穩定版 v5.14.4 的「找方法論 skill 依 runtime 分開、Claude plugin 位置只有一處」（穩定版也有），並讓 adapter 的 probe 可以標選填的 `runtime`，beta.9 移植穩定版 v5.15.0 的「一次問多題時塔台只被叫醒一次」（穩定版也有），beta.10 加上每張工單、每次塔台對話的 token 用量統計，讓 session 證據接進學習流程，並把外部外掛收斂成一套治理原則（ECC Level 1 退場、mem0 Level 3 要有例外紀錄才啟用），這些是 v6 才有、穩定版 v5.15.0 沒有的。Beta 在 GitHub 預發行 Release 提供 zip 下載，與穩定版並行、不取代。
+title: Beta：方法論轉接（v6.0.0-beta.11）
+description: CT v6.0.0-beta.11 Beta 的方法論轉接：把「只認 BMad」換成可以抽換、分層疊加的 adapter，用實測決定怎麼防住其他方法論的 SessionStart 注入，並逐家說清楚哪些方法論值得引入、哪些只要共存；beta.3 另加狀態衛生與 BAT 塔台面板讀取契約（穩定版 v5.13.0 起也有），beta.4 讓 Worker 回報一律帶完整工單 ID、面板契約對齊新版 BAT（穩定版 v5.13.1 也有），beta.5 移植 plugin 安裝就緒的規則（穩定版 v5.14.0 也有；Beta 本身不提供 plugin），beta.6 移植穩定版 v5.14.1、v5.14.2 的規則，並讓方法論 adapter 偵測得到 plugin 安裝的 bmad-guide，beta.7 移植穩定版 v5.14.3 的「一個塔台、多個巢狀的獨立 repo」配置文件（穩定版也有），beta.8 移植穩定版 v5.14.4 的「找方法論 skill 依 runtime 分開、Claude plugin 位置只有一處」（穩定版也有），並讓 adapter 的 probe 可以標選填的 `runtime`，beta.9 移植穩定版 v5.15.0 的「一次問多題時塔台只被叫醒一次」（穩定版也有），beta.10 加上每張工單、每次塔台對話的 token 用量統計，讓 session 證據接進學習流程，並把外部外掛收斂成一套治理原則（ECC Level 1 退場、mem0 Level 3 要有例外紀錄才啟用），beta.11 讓塔台能在 Worker 還在跑的時候補充或修正工單（Worker 在驗證前、產品 commit 前、寫回報前自己讀到新段落），beta.10、beta.11 的改動都是 v6 才有、穩定版 v5.15.0 沒有的。Beta 在 GitHub 預發行 Release 提供 zip 下載，與穩定版並行、不取代。
 ---
 
 <script setup>
@@ -9,17 +9,17 @@ import { useData } from 'vitepress'
 const { theme } = useData()
 const stableVersion = theme.value.ctRelease.ctVersion
 // Beta 的預發行 Release：tag 與附件名固定，網址用 releasesUrl 組，內文不手寫網址
-const betaVersion = '6.0.0-beta.10'
+const betaVersion = '6.0.0-beta.11'
 const betaTag = `ct-v${betaVersion}`
 const betaPage = `${theme.value.releasesUrl}tag/${betaTag}`
 const betaAsset = (name) => `${theme.value.releasesUrl}download/${betaTag}/${name}`
 const betaFiles = [
-  { name: `BMad-Control-Tower-v${betaVersion}.zip`, size: '487 KB', note: '全量：根層直接是 8 個 skill 目錄' },
-  { name: `control-tower-guide-v${betaVersion}.zip`, size: '211 KB', note: 'CT Guide（教學 skill），Beta 內容在「Beta：方法論轉接」一章' },
+  { name: `BMad-Control-Tower-v${betaVersion}.zip`, size: '496 KB', note: '全量：根層直接是 8 個 skill 目錄' },
+  { name: `control-tower-guide-v${betaVersion}.zip`, size: '217 KB', note: 'CT Guide（教學 skill），Beta 內容在「Beta：方法論轉接」一章' },
   { name: `ct-adapter-pstack-v${betaVersion}.zip`, size: '18 KB', note: 'pstack 的 adapter（adapter_version 0.2.6）；選用，已經在用 pstack 才需要' },
-  { name: `control-tower-v${betaVersion}.zip`, size: '355 KB', note: '單一 skill（claude.ai 上傳用，下同）' },
-  { name: `ct-exec-v${betaVersion}.zip`, size: '25 KB', note: '' },
-  { name: `ct-done-v${betaVersion}.zip`, size: '4 KB', note: '' },
+  { name: `control-tower-v${betaVersion}.zip`, size: '361 KB', note: '單一 skill（claude.ai 上傳用，下同）' },
+  { name: `ct-exec-v${betaVersion}.zip`, size: '27 KB', note: '' },
+  { name: `ct-done-v${betaVersion}.zip`, size: '5 KB', note: '' },
   { name: `ct-status-v${betaVersion}.zip`, size: '3 KB', note: '' },
   { name: `ct-evolve-v${betaVersion}.zip`, size: '5 KB', note: '' },
   { name: `ct-fieldguide-v${betaVersion}.zip`, size: '32 KB', note: '' },
@@ -28,14 +28,14 @@ const betaFiles = [
 ]
 </script>
 
-# Beta：方法論轉接（v6.0.0-beta.10）
+# Beta：方法論轉接（v6.0.0-beta.11）
 
 ::: warning Beta，與穩定版並行、不取代
-本頁介紹的是 **CT v6.0.0-beta.10（Beta）**。Beta 放在 GitHub 的**預發行 Release**，不是最新正式版；規則在正式版 6.0.0 前還可能調整。
+本頁介紹的是 **CT v6.0.0-beta.11（Beta）**。Beta 放在 GitHub 的**預發行 Release**，不是最新正式版；規則在正式版 6.0.0 前還可能調整。
 目前的穩定版仍是 **v{{ stableVersion }}**，首頁、安裝說明與下載連結都以穩定版為準。Beta 只提供 zip、**沒有 CT plugin**，不要用 plugin marketplace 裝 Beta（見 [beta.5 改了什麼](#beta5)）；BMad Guide 例外，beta.6 起可以從 marketplace 只裝 `bmad-guide`（見 [beta.6 改了什麼](#beta6)）；Beta 不會取代你已經裝好的穩定版，想試用，建議裝在隔離的設定目錄（見[下載與試用](#download)）。
 :::
 
-<p class="ct-lead">一句話：CT 原本只認得 BMad-Method 這一種開發方法論；v6 把它換成一層「方法論轉接」，BMad 變成第一個、也是預設的 adapter，其他方法論只要寫一份描述檔就能接上，而且每一層（規劃、執行、審查、驗證、交付）可以各用不同的方法論。但「能接」不等於「該接」：beta.2 逐家說清楚哪些方法論值得引入、哪些只要在機器上共存就好。v6.0.0-pre.1 預覽版定下設計，兩輪隔離試用修補後成為 beta.1，再一輪試用與逐家定位後成為 beta.2；beta.3 再補上狀態衛生與 BAT 塔台面板讀取契約，這批規則穩定版 v5.13.0 起也有（見 [beta.3 改了什麼](#beta3)）；beta.4 讓 Worker 的回報一律帶完整工單 ID、面板讀取契約對齊新版 BAT，這批規則穩定版 v5.13.1 也有（見 [beta.4 改了什麼](#beta4)）；beta.5 把穩定版 v5.14.0 的 plugin 安裝就緒規則移植進 v6，這批規則穩定版 v5.14.0 也有，但 Beta 本身不提供 plugin（見 [beta.5 改了什麼](#beta5)）；beta.6 移植穩定版 v5.14.1、v5.14.2 的規則（穩定版也有），並讓方法論 adapter 偵測得到 plugin 安裝的 bmad-guide（見 [beta.6 改了什麼](#beta6)）；beta.7 移植穩定版 v5.14.3 的「一個塔台、多個巢狀的獨立 repo」配置文件，這是寫法與配置、不是新規則，穩定版也有（見 [beta.7 改了什麼](#beta7)）；beta.8 移植穩定版 v5.14.4 的「找方法論 skill 依 runtime 分開、Claude plugin 位置只有一處」，這批規則穩定版也有，v6 另讓 adapter 的 probe 可以標選填的 `runtime`（見 [beta.8 改了什麼](#beta8)）；beta.9 移植穩定版 v5.15.0 的「一次問多題時塔台只被叫醒一次」與「斷點 A 看通知字串的結尾」，這批規則穩定版也有，方法論部分沒有改（見 [beta.9 改了什麼](#beta9)）；beta.10 的改動都是 v6 才有、穩定版 v5.15.0 沒有的：每張工單、每次塔台對話的 token 用量統計，讓這份 session 證據接進 CT 既有的學習流程，並把外部外掛收斂成一套治理原則（ECC Level 1 退場、mem0 Level 3 要有例外紀錄才啟用），方法論部分同樣沒有改（見 [beta.10 改了什麼](#beta10)）。</p>
+<p class="ct-lead">一句話：CT 原本只認得 BMad-Method 這一種開發方法論；v6 把它換成一層「方法論轉接」，BMad 變成第一個、也是預設的 adapter，其他方法論只要寫一份描述檔就能接上，而且每一層（規劃、執行、審查、驗證、交付）可以各用不同的方法論。但「能接」不等於「該接」：beta.2 逐家說清楚哪些方法論值得引入、哪些只要在機器上共存就好。v6.0.0-pre.1 預覽版定下設計，兩輪隔離試用修補後成為 beta.1，再一輪試用與逐家定位後成為 beta.2；beta.3 再補上狀態衛生與 BAT 塔台面板讀取契約，這批規則穩定版 v5.13.0 起也有（見 [beta.3 改了什麼](#beta3)）；beta.4 讓 Worker 的回報一律帶完整工單 ID、面板讀取契約對齊新版 BAT，這批規則穩定版 v5.13.1 也有（見 [beta.4 改了什麼](#beta4)）；beta.5 把穩定版 v5.14.0 的 plugin 安裝就緒規則移植進 v6，這批規則穩定版 v5.14.0 也有，但 Beta 本身不提供 plugin（見 [beta.5 改了什麼](#beta5)）；beta.6 移植穩定版 v5.14.1、v5.14.2 的規則（穩定版也有），並讓方法論 adapter 偵測得到 plugin 安裝的 bmad-guide（見 [beta.6 改了什麼](#beta6)）；beta.7 移植穩定版 v5.14.3 的「一個塔台、多個巢狀的獨立 repo」配置文件，這是寫法與配置、不是新規則，穩定版也有（見 [beta.7 改了什麼](#beta7)）；beta.8 移植穩定版 v5.14.4 的「找方法論 skill 依 runtime 分開、Claude plugin 位置只有一處」，這批規則穩定版也有，v6 另讓 adapter 的 probe 可以標選填的 `runtime`（見 [beta.8 改了什麼](#beta8)）；beta.9 移植穩定版 v5.15.0 的「一次問多題時塔台只被叫醒一次」與「斷點 A 看通知字串的結尾」，這批規則穩定版也有，方法論部分沒有改（見 [beta.9 改了什麼](#beta9)）；beta.10 的改動都是 v6 才有、穩定版 v5.15.0 沒有的：每張工單、每次塔台對話的 token 用量統計，讓這份 session 證據接進 CT 既有的學習流程，並把外部外掛收斂成一套治理原則（ECC Level 1 退場、mem0 Level 3 要有例外紀錄才啟用），方法論部分同樣沒有改（見 [beta.10 改了什麼](#beta10)）；beta.11 同樣是 v6 才有：塔台可以在 Worker 還在跑的時候在工單加一段補充，Worker 在驗證前、產品 commit 前、寫回報前各看一次段落標題、自己讀到，不需要 BAT 開放寫入 Worker 分頁，方法論部分仍沒有改（見 [beta.11 改了什麼](#beta11)）。</p>
 
 ## 下載與試用 {#download}
 
@@ -67,6 +67,7 @@ Beta 的發行檔都在預發行 Release <a :href="betaPage" target="_blank" rel
 - **從 beta.7 升到 beta.8 只換 skill 檔案**：沒有新命令、新設定，不需要改設定或工單；8 個 skill 照樣一起換。有用 pstack 的換 `ct-adapter-pstack` 0.2.6。自己寫的 adapter 不用改（probe 新增的 `runtime` 是選填）。BAT 不必升級。
 - **從 beta.8 升到 beta.9 只換 skill 檔案**：沒有新命令、新設定、新欄位，不需要改設定或工單；8 個 skill 照樣一起換，Worker（`ct-exec`）與塔台（`control-tower`）同一批換才完全生效。`ct-adapter-pstack` 內容沒變（仍是 0.2.6），不用換。BAT 不必升級。
 - **從 beta.9 升到 beta.10 只換 skill 檔案**：新命令 `*insights sessions`、新的選填工單欄位 `session_ids`，沒有新設定，不需要改設定或既有工單；8 個 skill 照樣一起換，Worker（`ct-exec`、`ct-done`）與塔台（`control-tower`、`ct-insights`、`ct-evolve`）同一批換才完整。`ct-adapter-pstack` 內容沒變（仍是 0.2.6），不用換。BAT 不必升級（塔台收單補記 session id 要 BAT `>= 0.7.1-pre.1` 與 BAT MCP，沒有就跳過）。用過 ECC Level 1 或 mem0 Level 3 的，先看 [beta.10 改了什麼](#beta10)。
+- **從 beta.10 升到 beta.11 只換 skill 檔案**：沒有新設定、新命令或新的 frontmatter 欄位，舊工單照常；8 個 skill 照樣一起換，Worker（`ct-exec`、`ct-done`）與塔台（`control-tower`）同一批換才完整：塔台會寫的執行中補充段，舊版 Worker 讀不到。`ct-adapter-pstack` 內容沒變（仍是 0.2.6），不用換。BAT 不必升級（跨 session 提醒要 BAT `>= 0.7.1-pre.1` 派出的 Claude Code Worker，沒有就靠節點檢查）。
 - **Beta 沒有 plugin。** 穩定版 v5.14.0 起可以用 plugin marketplace 安裝，但 marketplace 只上架穩定版；在 Beta 的環境執行 plugin 安裝指令，裝到的是穩定版 v{{ stableVersion }}，會和手動裝的 Beta 並存（見 [beta.5 改了什麼](#beta5)）。BMad Guide 例外：它不跟 CT 的版號，beta.6 起可以從 marketplace 只裝 `bmad-guide@control-tower`，塔台偵測得到；CT 本身照舊用 zip（見 [beta.6 改了什麼](#beta6)）。
 
 ## 方法論不是一定要引入：各家定位 {#adopt-or-not}
@@ -101,6 +102,41 @@ v6 讓 CT 能接任何方法論，但接一家的成本是確定的：每個 ses
 - 派工摘要的常駐 token 寫「未量測」，不填估值。
 - 「設計核准前不准實作」的硬閘門：沒有指名 Superpowers 的工單，Worker 在無人值守（yolo）下不會被它擋住（試用 2/2）。
 - 想省掉常駐注入，只能在 CT 管理的機器上停用它（上游沒有只關注入的開關）。這是使用者的安裝選擇，塔台只提示、不代做。
+
+## beta.11 改了什麼 {#beta11}
+
+beta.11 的改動**都是 v6 才有、穩定版 v5.15.0 沒有的**：讓塔台能在 Worker 還在跑的時候補充或修正工單。以前 Worker 開工之後，塔台想補一句話，只能等它結束再 Renew，或請你到 Worker 分頁說「重讀工單」；現在塔台把補充寫進工單，Worker 在固定的節點自己讀到，不需要 BAT 開放寫入 Worker 分頁。方法論部分沒有改。
+
+| 主題 | 改了什麼 |
+|---|---|
+| 執行中補充工單 | Worker 還是 `IN_PROGRESS` 時，塔台在工單回報區之前加一段〈塔台補充（執行中 #N）〉（時間、補充內容、新指示、範圍與驗收、已完成部分）。這不是 Renew：不加 Renew 次數、不重派；範圍或驗收改了，同一次寫入一併改 frontmatter 與驗收段；要推翻已完成的工作，必須逐項寫明。Worker 讀的是工作目錄裡的檔案，塔台不 commit 也看得到 |
+| Worker 節點檢查 | `ct-exec` 在驗證前、產品 commit 前、寫回報前，各用一次會跳過程式碼區塊的 `awk` 看段落標題，只讀開工後新增的補充段並照做，讀到的在 `### 互動紀錄` 記一行；沒有新段落時不讀全文。補充段跟已完成的工作衝突、或要改 `affects_files` 以外的檔案時，照提問規則問塔台，不自己擴大範圍；隔離（worktree）工單讀主 checkout 的那一份。你說「重讀工單」也算一次節點。`ct-done` 補救收尾寫回報前跑同一個檢查 |
+| 收單時核對讀入紀錄 | 塔台收單時核對每一段補充都有讀入紀錄。Claude Code Worker 讀過的工單在磁碟上被改了，下一個回合會收到「檔案已變更」的提示，所以常會讀到過了寫回報前節點才寫的段落；有讀入紀錄就照常認定，沒有紀錄的才照原規則（Renew 或開接手單）。Codex Worker 沒有這個提示，只靠三個節點 |
+| 通知自己的 Worker 重讀工單（選用） | Claude Code 塔台可以用跨 session 訊息提醒自己派出的 Claude Code Worker 去讀新段落：訊息只放一行指引，不放要求、不放權杖、不要求回覆；找不到收件人就不送，靠節點檢查兜底。實測結果見下方 |
+| 其他 | `ct-help` 補上 session 命令（`*insights sessions`、`/ct-evolve --facts-from`）的說明；在 BAT 下啟動 Claude 不放 `--settings` 補了第二個理由（BAT 的「等待你回應」提示與待送通知會失效）；BAT 在塔台等你回應時延後送 Worker 通知的行為補上說明（見[相容版本對照的 Beta 一節](../versions/compatibility#preview)）；YOLO 歷程多一種 `[補充]` 條目 |
+
+### 實測結果 {#beta11-tests}
+
+節點檢查先用隔離的 `claude -p` 跑了 7 次：三個節點各自讀到開工後新增的段落並照做；開工前就有的段落算進基準，不會被當成新段落；補充段要求改範圍以外的檔案、frontmatter 沒改時，Worker 沒有改，完成原範圍後回報交給塔台；塔台不 commit 也讀得到；`ct-done` 寫回報前讀得到開工後才加的段落。
+
+beta.11 裝好之後，又用 BAT 實際派了 4 張小工單驗證：隔離（worktree）工單從主 checkout 讀到補充段；yolo 下補充段超出範圍時，Worker 改用提問通道問塔台、不自己擴大範圍；Codex Worker 沒有任何外部提示，也在驗證前的節點讀到補充段。跨 session 提醒的四種情況如下：
+
+| 情況 | 結果 |
+|---|---|
+| 塔台與 Worker 的權限模式相同 | 送達，Worker 當成一次額外的節點檢查讀入補充段 |
+| 權限模式不同 | 訊息擱在 Worker 分頁，等你按 Deliver；不擋 Worker，它照常在節點讀到補充段。所以塔台**已知模式不同時改成不送**、靠節點 |
+| Worker 正在跑工具 | 排到該工具結束後的下一輪才看到，不打斷工具 |
+| Codex Worker | 找不到收件人，就不送，靠節點檢查 |
+
+6 個情境加 Codex 的節點檢查都通過，這幾項沒有列進已知未驗。唯一沒做到的是「沒有新段落時不寫紀錄」：8 次有 7 次仍多寫一行，規則不變（[還沒驗證的事](#unverified)第 34 項）。
+
+只跟 Beta 有關的幾點：
+
+- **這些規則穩定版 v5.15.0 沒有。** 穩定版的 Worker 開工之後，塔台的補充照舊要 Renew，或請你在 Worker 分頁說「重讀工單」。
+- **方法論部分沒有改。** 方法論契約仍是 `ct-methodology-adapter/v1`；adapter 描述檔、probe 的搜尋順序與 `validate-adapter.py` 都不變，內建 bmad 只改版號註解（仍是 0.2.1），`ct-adapter-pstack` 內容沒改（仍是 0.2.6）。
+- **BAT 沒有新的版本門檻。** 執行中補充只靠 Worker 讀工單檔；跨 session 提醒只限 Claude Code 塔台與 BAT `>= 0.7.1-pre.1` 派出的 Claude Code Worker，沒有就靠節點檢查（見[相容版本對照的 Beta 一節](../versions/compatibility#preview)）。
+- **從 beta.10 升級只換 skill 檔案**（見[下載與試用](#download)）。沒有新設定、新命令或新的 frontmatter 欄位，舊工單照常；Worker（`ct-exec`、`ct-done`）與塔台（`control-tower`）要同一批換才完整：塔台會寫的新段落，舊版 Worker 讀不到。Beta 仍不提供 CT plugin，照舊用 zip。
+- 本版新增的已知未驗是[還沒驗證的事](#unverified)第 34～36 項；第 1～33 項與 beta.10 相同。
 
 ## beta.10 改了什麼 {#beta10}
 
@@ -529,10 +565,11 @@ BAT 端在 `0.7.1-pre.7`（預覽版）加上這個總覽：沒有摘要的專�
 - beta.7 升 beta.8 只換 skill 檔案：沒有新命令、新設定，不需要改設定或工單；有用 pstack 的換 `ct-adapter-pstack` 0.2.6。方法論契約仍是 `ct-methodology-adapter/v1`，probe 新增的 `runtime` 是選填欄位，舊 adapter 不用改。
 - beta.8 升 beta.9 只換 skill 檔案：沒有新命令、新設定、新欄位，不需要改設定或工單；Worker 與塔台同一批換才完全生效。方法論契約與 `ct-adapter-pstack`（0.2.6）都沒改。
 - beta.9 升 beta.10 只換 skill 檔案：新命令 `*insights sessions`、新的選填工單欄位 `session_ids`，沒有新設定，不需要改設定或既有工單；Worker 與塔台同一批換才完整。方法論契約與 `ct-adapter-pstack`（0.2.6）都沒改。用過 mem0 Level 3 的專案要先在本地規則補上例外紀錄，否則升級後塔台不啟用它。
+- beta.10 升 beta.11 只換 skill 檔案：沒有新設定、新命令或新的 frontmatter 欄位，舊工單照常；Worker 與塔台同一批換才完整（塔台寫的執行中補充段，舊版 Worker 讀不到）。方法論契約與 `ct-adapter-pstack`（0.2.6）都沒改。
 
 ## 還沒驗證的事 {#unverified}
 
-beta.10 把下列 33 項明確標成「已知未驗」，正式版前可能因實測結果調整（第 10～13 項是 beta.3 新增、第 14、15 項是 beta.4 新增、第 16、17 項是 beta.6 新增、第 18 項是 beta.7 新增、第 19 項是 beta.8 新增、第 20 項是 beta.9 新增、第 21～33 項是 beta.10 新增；穩定版 v5.13.0、v5.13.1 的同一批規則也一樣還沒實機跑過，第 17 項的流程在穩定版 v5.14.2、第 18 項在穩定版 v5.14.3、第 19 項在穩定版 v5.14.4、第 20 項在穩定版 v5.15.0 也還沒實機驗證；第 21～33 項只在 v6）。beta.10 時，beta.9 的第 20、22、23 項已實機驗證、從清單移除（一批 4 題只叫醒塔台 1 次；4 題同時等、塔台晚了約 174 秒才答，4 題都答到、0 題過期；兩則黏在一起的通知當成一則），第 21 項只剩「塔台 context 壓縮後仍不重複提醒」，改編為第 20 項；第 1～19 項與 beta.9 相同。beta.8 時，beta.7 的第 16 項（`CLAUDE_CONFIG_DIR` 會不會搬移 Claude Code 的 plugin 目錄）與第 17 項（adapter 的 plugin probe）已實機驗證，從清單移除，後面的項目往前編號（見 [beta.8 改了什麼](#beta8)）：
+beta.11 把下列 36 項明確標成「已知未驗」，正式版前可能因實測結果調整（第 10～13 項是 beta.3 新增、第 14、15 項是 beta.4 新增、第 16、17 項是 beta.6 新增、第 18 項是 beta.7 新增、第 19 項是 beta.8 新增、第 20 項是 beta.9 新增、第 21～33 項是 beta.10 新增、第 34～36 項是 beta.11 新增；穩定版 v5.13.0、v5.13.1 的同一批規則也一樣還沒實機跑過，第 17 項的流程在穩定版 v5.14.2、第 18 項在穩定版 v5.14.3、第 19 項在穩定版 v5.14.4、第 20 項在穩定版 v5.15.0 也還沒實機驗證；第 21～36 項只在 v6）。第 1～33 項與 beta.10 相同。beta.10 時，beta.9 的第 20、22、23 項已實機驗證、從清單移除（一批 4 題只叫醒塔台 1 次；4 題同時等、塔台晚了約 174 秒才答，4 題都答到、0 題過期；兩則黏在一起的通知當成一則），第 21 項只剩「塔台 context 壓縮後仍不重複提醒」，改編為第 20 項；第 1～19 項與 beta.9 相同。beta.8 時，beta.7 的第 16 項（`CLAUDE_CONFIG_DIR` 會不會搬移 Claude Code 的 plugin 目錄）與第 17 項（adapter 的 plugin probe）已實機驗證，從清單移除，後面的項目往前編號（見 [beta.8 改了什麼](#beta8)）：
 
 1. Codex 互動分頁的「Hooks need review」畫面，以及 Codex 設定裡 hook 的啟用狀態（`hooks.state.<key>.enabled`）：目前是依程式內字串與既有文件推論。
 2. Codex 在 resume、compact 後是否重新注入。
@@ -567,6 +604,9 @@ beta.10 把下列 33 項明確標成「已知未驗」，正式版前可能因�
 31. `ct-done` 寫 `session_ids`，還沒在實際的補救收尾跑過。
 32. 在 BAT 下放 `--settings` 的症狀描述（`blockedDetection: none`、`started: unknown`、`claudeSessionId: null` 同時出現）來自 BAT 的回覆，CT 這邊沒有實機重現。
 33. mem0 Level 3 的啟用條件：沒有例外紀錄時不啟用並提示一次、有紀錄時照常啟用，都是文件規則，還沒實際觸發（發版時本機沒有安裝 memsync）。
+34. 沒有新段落時不記錄：Worker 不讀全文、檢查次數正確都已驗證；但「不在 `### 互動紀錄` 寫『沒有新段落』這類的行」，在隔離 `claude -p` 驗證與實際 BAT 派工合計 8 次中，有 7 次仍寫了一行（含 Codex），規則加了例子之後，實際派工的 4 張也都寫了；規則不改。
+35. 收單時核對的「沒有讀入紀錄」：Claude Code Worker 透過「檔案已變更」的提示，常會讀到過了寫回報前節點才寫的段落（觀察到 2/2）；「沒有讀入紀錄」只會在 Worker 最後一個回合之後才寫入時出現（例如工單已 commit、session 已結束），這條路徑還沒實機跑過。
+36. 在 BAT 下放 `--settings` 的第二個理由（工作區的「等待你回應」⚠️ 不出現、通知保留失效）與 BAT `>= 0.7.3-pre.8` 的待送通知（塔台縮圖顯示「待送通知 N」、每個塔台最多 8 筆），都是依 BAT 的通知寫成，CT 這邊沒有實機重現。
 
 ## 出處與名稱 {#notices}
 
@@ -604,8 +644,9 @@ beta.10 把下列 33 項明確標成「已知未驗」，正式版前可能因�
 - beta.8 的移植與 probe `runtime`（移植的規則穩定版 v5.14.4 也有）：`methodology-adapters.md` § 描述檔格式 › probe 怎麼解析 skill 根目錄（第 1 點依 runtime、第 3 點 Claude plugin 單一路徑）、§ 新 adapter 的最小檢查、`adapters/bmad.yaml` 的 `detection.probes`、`data-layer-architecture.md` § 路徑解析、§ 寫入規則（都在 `control-tower/references/`）；`control-tower/scripts/validate-adapter.py` M8；`ct-adapter-pstack/`（0.2.6）；安裝指南 § 2.59；beta.8 與 beta.7 的差異見本頁 [beta.8 改了什麼](#beta8) 與預發行 Release `ct-v6.0.0-beta.8` 的說明（出處是 CT `docs/CHANGELOG.md` `[6.0.0-beta.8]`，不在 zip 裡）
 - beta.9 的移植（穩定版 v5.15.0 也有）：`yolo-mode.md` § Worker 向塔台提問（§ BAT 通道、§ Worker 端 3-A、§ 塔台端）、§ 斷點 A、§ BAT / Worker 版本相容（都在 `control-tower/references/`）；`ct-exec/SKILL.md` § Questions For Tower；安裝指南 § 2.60；beta.9 與 beta.8 的差異見本頁 [beta.9 改了什麼](#beta9) 與預發行 Release `ct-v6.0.0-beta.9` 的說明（出處是 CT `docs/CHANGELOG.md` `[6.0.0-beta.9]`，不在 zip 裡）
 - beta.10 的 token 用量統計、session 證據與外部增強外掛治理（v6 才有，穩定版 v5.15.0 沒有）：`enhancement-integration.md` § 外部增強外掛治理、§ ECC Level 1 退場、§ Level 3 › 啟用條件、`work-order-system.md` § 收單補記 session id、§ 收單快照、`memory-protocol.md` § 塔台 session id、`auto-session.md` § Claude 啟動參數不得放 `--settings`（都在 `control-tower/references/`）；`ct-insights/references/analysis-rules.md` § Session 用量統計、`ct-insights/scripts/ct-session-stats.py` 與 `pricing.json`；`ct-evolve/SKILL.md` § Session Evidence；`ct-exec/SKILL.md` § Phase 4 › Session id、`ct-done/SKILL.md` § Report Repair › Session id；安裝指南 § 2.61（〈從 ECC 升級〉、〈mem0 Level 3〉）；beta.10 與 beta.9 的差異見本頁 [beta.10 改了什麼](#beta10) 與預發行 Release `ct-v6.0.0-beta.10` 的說明（出處是 CT `docs/CHANGELOG.md` `[6.0.0-beta.10]`，不在 zip 裡）
+- beta.11 的執行中補充工單（v6 才有，穩定版 v5.15.0 沒有）：`work-order-system.md` § 執行中補充工單、`cross-project-coordination.md` § 通知自己的 Worker 重讀工單、`yolo-mode.md` § `_tower-state.md` 新增 `## YOLO 歷程` 區段 › 寫入時機（`[補充]` 條目）、`auto-session.md` § Claude 啟動參數不得放 `--settings`（都在 `control-tower/references/`）；`ct-exec/SKILL.md` § Tower Addenda Check；`ct-done/SKILL.md` § Workflow 第 6 步；`ct-help/SKILL.md` § Session Usage And Evidence；安裝指南 § 2.62；beta.11 與 beta.10 的差異見本頁 [beta.11 改了什麼](#beta11) 與預發行 Release `ct-v6.0.0-beta.11` 的說明（出處是 CT `docs/CHANGELOG.md` `[6.0.0-beta.11]`，不在 zip 裡）
 - `ct-exec/SKILL.md` § Methodology：Worker 端的帶入、注入自查與紀錄規則（含「方法論 skill」的範圍）
-- CT Guide `references/preview-methodology.md`「Beta：方法論轉接」：§ beta.10：session 用量統計、§ beta.10：session 證據怎麼進學習流程、§ beta.10：ECC Level 1 退場、§ beta.9：移植 5.15.0（一批提問只叫醒塔台一次）、§ beta.8：移植 5.14.4、probe 依 runtime（含〈只在 v6 的部分：probe 的 `runtime`〉）、§ beta.7：移植 5.14.3（巢狀的獨立 repo）、§ beta.6：移植 5.14.1／5.14.2、adapter 偵測 plugin、§ beta.5：plugin 安裝就緒、§ beta.4：通知用完整工單 ID 與 BAT 塔台面板讀取契約、§ beta.3：狀態衛生與 BAT 塔台面板讀取契約、§ 方法論不是一定要引入：各家定位、§ 在 CT 專案使用 mattpocock/skills、§ 實測（③ 部分參考與 HARD-GATE，beta.2）、§ 引入方式（附三種引入方式的圖）、§ 隔離試用、§ BUG／PLAN／EXP 預設開啟、§ 環境偵測只列名稱、§ 全域路徑、§ 已知未驗；主教材 `references/advanced-patterns.md` § 巢狀的獨立 repo：一個塔台管多個共用 repo、`references/integration.md` § 偵測與降級（〈5.14.4 改成依 runtime 分開〉）、`references/three-layer-arch.md` § plugin 安裝路徑也是 Layer 1、`references/work-order-lifecycle.md`〈一批只叫醒塔台一次〉、`references/runtime-dispatch.md` § 斷點（結尾判讀）、`references/bat-integration.md` § 版本對照表；beta.10 另見 `references/integration.md` § Level 3 › 啟用條件、`references/advanced-patterns.md` 的 Session 用量統計與 Session 證據與 `--facts-from`
+- CT Guide `references/preview-methodology.md`「Beta：方法論轉接」：§ beta.11：Worker 執行中接收塔台補充、§ beta.10：session 用量統計、§ beta.10：session 證據怎麼進學習流程、§ beta.10：ECC Level 1 退場、§ beta.9：移植 5.15.0（一批提問只叫醒塔台一次）、§ beta.8：移植 5.14.4、probe 依 runtime（含〈只在 v6 的部分：probe 的 `runtime`〉）、§ beta.7：移植 5.14.3（巢狀的獨立 repo）、§ beta.6：移植 5.14.1／5.14.2、adapter 偵測 plugin、§ beta.5：plugin 安裝就緒、§ beta.4：通知用完整工單 ID 與 BAT 塔台面板讀取契約、§ beta.3：狀態衛生與 BAT 塔台面板讀取契約、§ 方法論不是一定要引入：各家定位、§ 在 CT 專案使用 mattpocock/skills、§ 實測（③ 部分參考與 HARD-GATE，beta.2）、§ 引入方式（附三種引入方式的圖）、§ 隔離試用、§ BUG／PLAN／EXP 預設開啟、§ 環境偵測只列名稱、§ 全域路徑、§ 已知未驗；主教材 `references/advanced-patterns.md` § 巢狀的獨立 repo：一個塔台管多個共用 repo、`references/integration.md` § 偵測與降級（〈5.14.4 改成依 runtime 分開〉）、`references/three-layer-arch.md` § plugin 安裝路徑也是 Layer 1、`references/work-order-lifecycle.md`〈一批只叫醒塔台一次〉、`references/runtime-dispatch.md` § 斷點（結尾判讀）、`references/bat-integration.md` § 版本對照表；beta.10 另見 `references/integration.md` § Level 3 › 啟用條件、`references/advanced-patterns.md` 的 Session 用量統計與 Session 證據與 `--facts-from`；beta.11 另見 `references/work-order-lifecycle.md` § Worker Renew 機制〈Worker 還在跑時的補充〉、`references/advanced-patterns.md` § 跨 session 通知對方塔台〈對自己的 Worker〉、`references/bat-integration.md` § Worker 執行與通知（〈塔台在等你時，通知會先排隊〉、〈為什麼不能在 BAT 的 Claude 啟動參數放 `--settings`〉）與 § 版本對照表
 
 ::: warning 摘要不具權威
 Portal 是摘要，不具權威，與 reference 有出入時以 reference 為準。本頁介紹的是 Beta，正式版的規則以正式發布的 CT 為準。
