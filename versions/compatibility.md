@@ -52,16 +52,16 @@ BAT 站也有一張相容表，是從 BAT 的角度列（<BatLink path="compatib
 
 ## Beta {#preview}
 
-上面的表格只列**穩定版**。CT v6.0.0-beta.11 是 Beta，放在 GitHub 預發行 Release、與穩定版並行，不列入表格；它的內容與下載見[Beta：方法論轉接](../preview/methodology-adapters)。
+上面的表格只列**穩定版**。CT v6.0.0-beta.12 是 Beta，放在 GitHub 預發行 Release、與穩定版並行，不列入表格；它的內容與下載見[Beta：方法論轉接](../preview/methodology-adapters)。
 
 BAT 指揮塔總覽讀塔台狀態摘要的版本需求如下；v5.13.0 起穩定版也寫同一份摘要（上表也列了這一項）：
 
 | 功能 | BAT | CT |
 |---|---|---|
 | 總覽顯示最後更新與進行中工單 | `>= 0.7.1-pre.7`（預覽版） | 不限版本（BAT 直接讀工單檔） |
-| 總覽顯示下一個編號與待辦 | `>= 0.7.1-pre.7`（預覽版） | 穩定版 `>= v5.13.0`；v6 預覽版 `>= v6.0.0-pre.1`（含 Beta v6.0.0-beta.1～v6.0.0-beta.11）。塔台寫出 `_tower-state.md` 的機器可讀摘要 |
+| 總覽顯示下一個編號與待辦 | `>= 0.7.1-pre.7`（預覽版） | 穩定版 `>= v5.13.0`；v6 預覽版 `>= v6.0.0-pre.1`（含 Beta v6.0.0-beta.1～v6.0.0-beta.12）。塔台寫出 `_tower-state.md` 的機器可讀摘要 |
 
-CT 版本不夠時，總覽只是少了這兩項，其他照常顯示。方法論轉接本身沒有改變 BAT 介面，也沒有提高 CT 要求的最低 BAT 版本；beta.1～beta.11 的 BAT 介面與最低 BAT 版本都和 v6.0.0-pre.1 相同；beta.2 改的環境偵測寫法（bash 用 `compgen -e` 只列名稱）是 CT 這一側的指令寫法，不需要新的 BAT 版本。
+CT 版本不夠時，總覽只是少了這兩項，其他照常顯示。方法論轉接本身沒有改變 BAT 介面，也沒有提高 CT 要求的最低 BAT 版本；beta.1～beta.12 的 BAT 介面與最低 BAT 版本都和 v6.0.0-pre.1 相同；beta.2 改的環境偵測寫法（bash 用 `compgen -e` 只列名稱）是 CT 這一側的指令寫法，不需要新的 BAT 版本。
 
 beta.3 新增 BAT 塔台面板讀取契約：CT 寫的決策日誌、BUG／PLAN 索引、塔台狀態等檔案要長什麼樣、多大以內，BAT 指揮塔面板才讀得到（見 [BAT 塔台面板為什麼會空](../deep/features/observability#bat-panel)）。契約對照 BAT `0.7.1-pre.8`（預覽版）寫成，規範的是 CT 寫檔的格式與大小，不是新的最低 BAT 版本；穩定版 v5.13.0 起也有同一份契約，v5.13.1 把穩定版契約的對照版本改成 BAT `0.7.1-pre.9`（讀不到時顯示「無法讀取」），一樣沒有提高最低 BAT 版本。
 
@@ -80,6 +80,8 @@ beta.9 的 BAT 介面同 beta.8：移植的是穩定版 v5.15.0 的「一次問�
 beta.10 的 BAT 介面同 beta.9：新增的 token 用量統計讀的是 Claude Code 留在本機的 session 紀錄，派工命令、斷點 A 的判定格式與 CT 要求的最低 BAT 版本都不變，沒有新的版本門檻。塔台收單時補記 Worker 的 session id，用的是 BAT MCP `bat_get_state` 回傳的 `claudeSessionId`，需要 BAT `>= 0.7.1-pre.1` 並接上 BAT MCP；沒有就跳過補記，收單照常。另一條是寫法規則：在 BAT 下啟動 Claude 時，啟動參數不得放 `--settings`，否則 BAT 不注入 hooks，blocked 偵測、`--wait-started` 與 session id 回報會同時失效；要換 skill 組合改用專案的 `.claude/settings*.json`。helper 輸出 `question:` 等行的行首兩個空白是 BAT 既有的輸出，CT 只是寫明解析要容許，不需要新的 BAT 版本。這些都只在 v6，穩定版 v5.15.0 沒有。
 
 beta.11 的 BAT 介面同 beta.10：執行中補充工單只靠 Worker 讀工單檔，不要求 BAT 開放寫入 Worker 分頁；派工命令、斷點 A 的判定格式與 CT 要求的最低 BAT 版本都不變，沒有新的版本門檻。選用的跨 session 提醒只限 Claude Code 塔台＋BAT 派出的 Claude Code Worker（BAT `>= 0.7.1-pre.1`）：塔台用 ListAgents 與 BAT MCP `bat_list_terminals`（`scope: mine`）的 `claudeSessionName` 找自己的 Worker，找不到（例如 Codex Worker）就不送，靠 Worker 的節點檢查。BAT `>= 0.7.3-pre.8` 起，塔台停在權限對話框或等你回答問題時，Worker 的通知會延後送進塔台輸入框，塔台縮圖顯示「待送通知 N」，不會替你按 Enter；CT 的判讀規則不變。帶 `--settings` 啟動的分頁不保留這類通知（BAT `>= 0.7.2-pre.8` 起這類分頁也不會出現工作區的「等待你回應」⚠️，這是在 BAT 下不放 `--settings` 的第二個理由）；每個塔台最多 8 筆，第 9 筆照現有的通知失敗處理；遠端 bat-server 也要升到同版。這些都是文件補註，不升 BAT 照舊可用；只在 v6，穩定版 v5.15.0 沒有。
+
+beta.12 的 BAT 介面同 beta.11：新增的工具清單建議 `*insights tools` 只讀 Claude Code 留在本機的 session 紀錄與設定檔，不經過 BAT；派工命令、斷點 A 的判定格式與 CT 要求的最低 BAT 版本都不變，沒有新的版本門檻。報告給的套用建議照舊不在 BAT 的 Claude 啟動參數放 `--settings`，改用專案的 `.claude/settings*.json`；套用與否由你決定，改完開新 session 才生效。只在 v6，穩定版 v5.15.0 沒有。
 
 beta.1 改成 BUG／PLAN／EXP 預設開啟，啟用時立即產生 `_bug-tracker.md`、`_backlog.md`，BAT 指揮塔面板的「臭蟲」與「待辦池」因此不必等第一次 `*sync` 就有檔可讀；這不需要新的 BAT 版本。
 
