@@ -1,13 +1,14 @@
 ---
 title: RC：方法論轉接（v6.0.0-rc.1）
-description: CT v6.0.0-rc.1 RC（正式版候選）的方法論轉接：把「只認 BMad」換成可以抽換、分層疊加的 adapter，用實測決定怎麼防住其他方法論的 SessionStart 注入，並逐家說清楚哪些方法論值得引入、哪些只要共存；beta.3 另加狀態衛生與 BAT 塔台面板讀取契約（穩定版 v5.13.0 起也有），beta.4 讓 Worker 回報一律帶完整工單 ID、面板契約對齊新版 BAT（穩定版 v5.13.1 也有），beta.5 移植 plugin 安裝就緒的規則（穩定版 v5.14.0 也有；Beta 本身不提供 plugin），beta.6 移植穩定版 v5.14.1、v5.14.2 的規則，並讓方法論 adapter 偵測得到 plugin 安裝的 bmad-guide，beta.7 移植穩定版 v5.14.3 的「一個塔台、多個巢狀的獨立 repo」配置文件（穩定版也有），beta.8 移植穩定版 v5.14.4 的「找方法論 skill 依 runtime 分開、Claude plugin 位置只有一處」（穩定版也有），並讓 adapter 的 probe 可以標選填的 `runtime`，beta.9 移植穩定版 v5.15.0 的「一次問多題時塔台只被叫醒一次」（穩定版也有），beta.10 加上每張工單、每次塔台對話的 token 用量統計，讓 session 證據接進學習流程，並把外部外掛收斂成一套治理原則（ECC Level 1 退場、mem0 Level 3 要有例外紀錄才啟用），beta.11 讓塔台能在 Worker 還在跑的時候補充或修正工單（Worker 在驗證前、產品 commit 前、寫回報前自己讀到新段落），beta.12 加上工具清單建議 `*insights tools`（用本機的 Claude Code session 紀錄找出一直載入、卻很少或從來沒用到的 skill、plugin、MCP server 與工具，只出建議、不改設定），beta.10～beta.12 的改動都是 v6 才有、穩定版 v5.15.0 沒有的；rc.1 是正式版候選：beta 回饋期結束、功能凍結、只修錯，相對 beta.12 只有修正。v6 的 Beta 與 RC 都是預發行，在 GitHub 預發行 Release 提供 zip 下載，與穩定版並行、不取代。
+description: 本章內容已納入正式版 6.0.0，保留作為預發行期間的歷史參考。CT v6.0.0-rc.1 RC（正式版候選）的方法論轉接：把「只認 BMad」換成可以抽換、分層疊加的 adapter，用實測決定怎麼防住其他方法論的 SessionStart 注入，並逐家說清楚哪些方法論值得引入、哪些只要共存；beta.3 另加狀態衛生與 BAT 塔台面板讀取契約（穩定版 v5.13.0 起也有），beta.4 讓 Worker 回報一律帶完整工單 ID、面板契約對齊新版 BAT（穩定版 v5.13.1 也有），beta.5 移植 plugin 安裝就緒的規則（穩定版 v5.14.0 也有；Beta 本身不提供 plugin），beta.6 移植穩定版 v5.14.1、v5.14.2 的規則，並讓方法論 adapter 偵測得到 plugin 安裝的 bmad-guide，beta.7 移植穩定版 v5.14.3 的「一個塔台、多個巢狀的獨立 repo」配置文件（穩定版也有），beta.8 移植穩定版 v5.14.4 的「找方法論 skill 依 runtime 分開、Claude plugin 位置只有一處」（穩定版也有），並讓 adapter 的 probe 可以標選填的 `runtime`，beta.9 移植穩定版 v5.15.0 的「一次問多題時塔台只被叫醒一次」（穩定版也有），beta.10 加上每張工單、每次塔台對話的 token 用量統計，讓 session 證據接進學習流程，並把外部外掛收斂成一套治理原則（ECC Level 1 退場、mem0 Level 3 要有例外紀錄才啟用），beta.11 讓塔台能在 Worker 還在跑的時候補充或修正工單（Worker 在驗證前、產品 commit 前、寫回報前自己讀到新段落），beta.12 加上工具清單建議 `*insights tools`（用本機的 Claude Code session 紀錄找出一直載入、卻很少或從來沒用到的 skill、plugin、MCP server 與工具，只出建議、不改設定），beta.10～beta.12 的改動都是 v6 才有、穩定版 v5.15.0 沒有的；rc.1 是正式版候選：beta 回饋期結束、功能凍結、只修錯，相對 beta.12 只有修正。v6 的 Beta 與 RC 都是預發行，在 GitHub 預發行 Release 提供 zip 下載，與穩定版並行、不取代。
 ---
 
 <script setup>
 import { useData } from 'vitepress'
 
 const { theme } = useData()
-const stableVersion = theme.value.ctRelease.ctVersion
+// 預發行期間（Beta、RC）並行的穩定版。本章保留作為歷史參考，這個值不跟著 ct-release.json 變成正式版
+const stableVersion = '5.15.0'
 // v6 預發行（Beta、RC）的 Release：tag 與附件名固定，網址用 releasesUrl 組，內文不手寫網址
 const betaVersion = '6.0.0-rc.1'
 const betaTag = `ct-v${betaVersion}`
@@ -29,6 +30,10 @@ const betaFiles = [
 </script>
 
 # RC：方法論轉接（v6.0.0-rc.1）
+
+::: tip 已納入正式版 6.0.0
+本章內容已納入正式版 6.0.0，保留作為預發行期間的歷史參考。現行的說明見[功能總覽 › 方法論轉接](../features#methodology)，下載與升級見[安裝](../install)（從 5.15.0 升級見[升級到 6.0.0](../install#upgrade-600)），6.0.0 改了什麼見[更版紀錄](../versions/releases#v6-0-0)。下面的 Beta／RC 標示、「穩定版 v5.15.0」、下載連結與已知未驗清單，都是預發行期間的狀態。
+:::
 
 ::: warning RC（正式版候選），與穩定版並行、不取代
 本頁介紹的是 **CT v6.0.0-rc.1（RC，正式版候選）**。v6 的 Beta 與 RC 都是預發行，放在 GitHub 的**預發行 Release**，不是最新正式版。RC 表示 beta 回饋期結束、功能凍結、只修錯：RC 期間沒有發現要修的問題就發正式版 6.0.0，有問題就修好再出下一個 RC（見 [rc.1 改了什麼](#rc1)）。

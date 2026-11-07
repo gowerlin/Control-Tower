@@ -64,6 +64,11 @@ CT 這邊的規則是三步，命中就停：
 > 選收件人的順序、名稱格式與例外以 CT 的 `cross-project-coordination.md` § 跨 session 選收件人 為準；
 > `scope: towers` 與兩個新欄位的設計理由見 `bat-integration.md` § 查詢通道。本節只講為什麼。
 
+**對自己的 Worker（v6.0.0-beta.11+）**：同一套找法（ListAgents `<工作區> · Worker · <工單 ID>` → `bat_list_terminals scope=mine` 的 `claudeSessionName`）也可以用來提醒**自己派出的 Worker**
+去讀工單新加的〈塔台補充（執行中 #N）〉。這條是選用的：訊息只放「重讀工單 T#### 該段」一行、不放任何要求，找不到就不送——Worker 本來就會在驗證前、commit 前、寫回報前自己檢查。
+「` · Worker · ` 一律不是塔台」不變：這是另一種收件人，不是把 Worker 當塔台。實際 BAT 派工驗過：權限模式相同時送達；權限模式不同時訊息擱在 Worker 分頁、要使用者按 Deliver（所以塔台已知模式不同就不送，靠節點）；Worker 正在跑工具時排到工具結束後才看到；Codex Worker 找不到、不送。
+見 `preview-methodology.md` § beta.11：Worker 執行中接收塔台補充；權威：CT `cross-project-coordination.md` § 通知自己的 Worker 重讀工單。
+
 ### 回覆稿的異議段落
 
 接收方的回覆稿**允許並鼓勵**「更正來源塔台前提」。理由只有一句：**接受錯誤的根因描述，會導致錯誤的修法。**
@@ -102,7 +107,7 @@ Step 6  所有子任務的 DELEGATE 皆 DONE → 統籌工單 DONE
 
 所以**沒設 `project-prefix` 的專案，一樣可能出現前綴 ID**。任何「本專案沒設前綴，所以只會看到 `T####`」的假設都是錯的，
 處理工單 ID 的任何地方（`*sync`、`*archive`、派工參數、YOLO 回報比對）都必須接受帶前綴的 ID。
-反過來也一樣：Worker **送出**的 ID（通知、提問、`--source`）必須是含前綴的完整 ID，否則 BAT 對不上 Worker 分頁（v5.13.1，見 `work-order-lifecycle.md` § 回報與通知用完整工單 ID）。
+反過來也一樣：Worker **送出**的 ID（通知、提問、`--source`）必須是含前綴的完整 ID，否則 BAT 對不上 Worker 分頁（v5.13.1／v6.0.0-beta.4，見 `work-order-lifecycle.md` § 回報與通知用完整工單 ID）。
 ID 的合法格式只有一處權威定義（`work-order-system.md` § 工單 ID 格式）；為何要收斂成一處，見 `governance.md` § 單一權威定義。
 
 ---
@@ -178,7 +183,7 @@ D62 **不溯及既往**：舊的無前綴編號凍結、不改名、舊引用照
 規則不同              → 各自獨立派發，互不相依
 ```
 
-### 巢狀的獨立 repo：一個塔台管多個共用 repo（v5.14.3）
+### 巢狀的獨立 repo：一個塔台管多個共用 repo（v5.14.3；v6 條文自 v6.0.0-beta.7 起相同）
 
 上面講的是子專案都在**同一個** git repo 裡的情況。另一種常見的配置是：上層目錄底下有好幾個**各自獨立的 git repo**，
 各有自己的 remote，通常是跟團隊共用的，隊友不一定用 CT。
@@ -191,7 +196,7 @@ D62 **不溯及既往**：舊的無前綴編號凍結、不改名、舊引用照
 **反過來想：讓 Worker 在上層執行。** 上層自己 `git init` 當個人的塔台 repo，`.gitignore` 排除子 repo，工單全放在上層；
 工單寫 `repo: <上層目錄名>`、`project: <子 repo>`，`affects_files` 從上層寫起；Worker 在上層執行，產品用 `git -C <子 repo> commit` 交到子 repo，
 工單在上層 commit。這樣 C-0、C-1 都自然通過，面板看得到全部工單，執行紀錄也不會推到團隊共用的 remote。
-這不是新規則，只是把現有規則用對：CT 5.14.2 就能這樣用，5.14.3 補上文件並附實機結果（落點檢查全過、兩個子 repo 各自 commit 成功）。
+這不是新規則，只是把現有規則用對：CT 5.14.2（v6：beta.6）就能這樣用，5.14.3（v6：beta.7）補上文件並附實機結果（落點檢查全過、兩個子 repo 各自 commit 成功；實機用的是穩定版 CT 5.14.2，beta 的規則相同）。
 
 為什麼不乾脆放寬落點檢查、讓 Worker 在子 repo 跑、工單留在上層？因為 C-0 防的正是「對的工單在錯的 repo 執行」。
 要放寬就得把「工單在哪個 repo」和「Worker 在哪個 repo」拆成兩個身分各自比對，還要改 worktree 規則與面板派工的 cwd；
@@ -213,7 +218,7 @@ D62 **不溯及既往**：舊的無前綴編號凍結、不改名、舊引用照
 
 已經寫在子 repo 的舊工單，可以搬到上層、也可以留著當歷史，CT 不替使用者決定。
 
-權威：CT `control-tower/references/mono-repo-patterns.md` § 巢狀的獨立 repo（一個塔台、多個共用 repo）；
+權威：CT `control-tower/references/mono-repo-patterns.md` § 巢狀的獨立 repo（一個塔台、多個共用 repo；穩定版 5.14.3、v6.0.0-beta.7 起同一節）；
 判斷表在 `multi-tower-protocol.md` § 決策：一個塔台還是多個。
 
 ---
@@ -371,6 +376,19 @@ Worker 遇到問題時，塔台依序建議三層防線：
 
 **預篩腳本：守門與按需提示（v5.11.0+）**：同一套規則也寫成腳本 `ct-insights/scripts/ct-workflow-prefilter.py`，隨 skill 發行（Python 3 標準函式庫、不呼叫 LLM、0 token）。它只有兩個角色：① **排除守門**——命中 X2（執行中要人即時回答）、X3（跨 session）、X5（序列重複，改提示 Playbook）的工單，塔台不必考慮 Workflow；② **按需提示**——塔台主動打 `*insights workflow` 或 `*insights workflow T0123` 時，列出候選與證據行號。它**不自動標記、不修改工單**，也不在派工流程裡自己跑。為什麼只拿 X2／X3／X5 守門？因為跨專案校準時，腳本對 X2 的召回與誤判和 T0177 定案結果相同，而 X1、X4 這類要看語意的條件召回只有 15–25%；「該用 Workflow」的正向判斷更不準（抽讀 9 張候選只有 2 張成立）。準的拿來擋、不準的只在被問時才說——這是 CT 一貫的「會誤報的守門員沒人理」。v5.11.0 也修了三種誤判：決策型工單（`decision-requiring`、DP 裁定紀錄）沒被 X2 擋下、逐項語氣只寫在標題、「逐一複製／雜湊／計數」這類機械批次。權威：同檔 § 預篩腳本：排除守門與按需提示。
 
+**Session 用量統計（v6.0.0-beta.10+）**：`*insights sessions [T#### …]` 回答「每張工單、每個塔台 session 花了多少 token」。
+腳本 `ct-insights/scripts/ct-session-stats.py` 讀 Claude Code 留在本機的 session 紀錄（只做 Claude Code），和預篩腳本同一套做法：標準函式庫、只讀、不呼叫模型。
+它把同一則訊息拆成的多筆紀錄去重（不去重 token 會灌大一倍多），依「工單 frontmatter `session_ids` → 第一則 `/ct-exec T####` → 分頁標題 → BAT log（可選）」歸到工單，
+子代理另列；**塔台用量另列、不攤分**——塔台大部分用量發生在沒有 Worker 執行的時候，硬攤只會量到並行度。成本是依價目表換算的等價 API 成本，標「估」；
+「卡住」看連續 10 次工具結果裡的失敗數（≥ 3 只是 🔵 觀察），不看 turn 數。session 紀錄 30 天後會被清掉，所以塔台收單時對該工單寫一筆只有數字的快照
+（`_ct-workorders/_insights/session-stats/<YYYY-MM>.json`），之後的跨期比較與給 ct-evolve 的候選事實（見下方 § ct-evolve › Session 證據）都從快照來。每次輸出前腳本自己跑隱私自檢，
+命中路徑、指令片段、信箱或權杖就不輸出。設計理由與一張資料流圖見 `preview-methodology.md` § beta.10：session 用量統計；權威：CT `ct-insights/references/analysis-rules.md` § Session 用量統計。
+
+**工具清單建議（v6.0.0-beta.12+）**：`*insights tools [--all-projects] [--keep …]` 用同一支腳本（`--tools`）回答「哪些 skill、plugin、MCP server、agent 類型與內建工具一直載入、卻很少或從來沒用到」。
+「已載入」以 session 紀錄的附件為準，依工單類型分組（任一類型有 3 個以上 session 在用就不建議），每一項寫明在哪一層（專案、使用者、claude.ai 帳號）改哪個設定鍵或介面；
+**只建議、不改設定**，改完開新 session 才生效；核心內建工具（`Skill`、`Bash` 等）一律保留，`Artifact`、`Workflow` 這類內建工具另列「需使用者裁示」。不寫快照。
+設計理由見 `preview-methodology.md` § beta.12：工具清單建議；權威：CT `ct-insights/references/analysis-rules.md` § 工具清單建議。
+
 ## ct-evolve：學習萃取
 
 `ct-evolve` 回答「我學到了什麼」，把執行歷史蒸餾成可複用知識，而不是把原始事件堆進長期記憶。
@@ -389,6 +407,15 @@ Tactical／Strategic／Episodic 三類的定義與寫到哪一層，見 `three-l
 
 蒸餾出的候選若與 coding 標準、UI 慣例、命名、API 格式、驗證、錯誤處理或設計 token 有關，`ct-evolve` 會加上 `[FG-CANDIDATE]` 標記與主題，
 之後由 `ct-fieldguide` 晉升進 FIELDGUIDE 或 DESIGN.md。學習管線與 FIELDGUIDE 因此是同一條流水線的兩段。
+
+### Session 證據與 `--facts-from`（v6.0.0-beta.10+）
+
+session 統計產生的**候選事實**（`ct-session-fact/0.1`，例：某工具在 2 張工單、2 天裡都出現「連續 10 次工具結果失敗 ≥ 3」）由
+`/ct-evolve --facts-from <快照或事實檔>` 接進學習流程。它**不另訂門檻**，直接用既有置信度表：機器證據進場只能 🔵，
+≥ 2 張工單且分在 ≥ 2 天才到 🟡；🟢 要過上面的 Distillation Gate，⭐ 要使用者認可。計數單位是**工單**，不是 session（Renew 不重算）。
+之後 ≥ 2 張工單出現反證 → `⏸ 撤回候選`（可恢復），`❌ 廢棄` 只由使用者決定。卡住訊號寫成 Episodic；通過閘門的環境事實才進 Tactical
+（相關主題照樣加 `[FG-CANDIDATE]`）；Strategic 不由統計產生。只有被呼叫時才讀，不背景執行、不自動標記工單。
+設計理由見 `preview-methodology.md` § beta.10：session 證據怎麼進學習流程；權威：CT `ct-evolve/SKILL.md` § Session Evidence。
 
 ### Workflow 橋接與 `--workflow`（v5.10.0+）
 

@@ -2,9 +2,9 @@
 name: control-tower
 description: "BMad Control Tower project orchestrator for Tower sessions. Use when the user invokes $control-tower or /control-tower, says control tower, 塔台, 指揮塔, 工單管理, or asks to create, dispatch, sync, recover, archive, report, or coordinate file-driven work orders, BUG/PLAN/EXP records, sprint state, BAT/YOLO dispatch, or multi-agent project work. For worker execution commands such as $ct-exec, $ct-done, $ct-status, $ct-evolve, or $ct-insights, route to those dedicated skills instead of loading tower mode."
 ---
-<!-- control-tower-version: 5.15.0 -->
+<!-- control-tower-version: 6.0.0 -->
 
-# BMad Control Tower v5.15.0
+# BMad Control Tower v6.0.0
 
 $ARGUMENTS
 
@@ -12,7 +12,7 @@ $ARGUMENTS
 
 Operate as the Tower session for a file-driven development workflow. Hold state, decisions, routing, and work order coordination. Keep implementation work in Worker sessions unless the change is explicitly small, non-logic, and safe for Tower direct handling.
 
-Use Traditional Chinese for conversation by default. Keep commands, paths, IDs, commit hashes, enum values, API names, and error text in their original form when exact wording matters.
+Use Traditional Chinese for conversation by default. A methodology injection (SessionStart hook text, usually in English) does not change the conversation language; Tower sessions receive it too (`references/methodology-adapters.md` C1, C8). Keep commands, paths, IDs, commit hashes, enum values, API names, and error text in their original form when exact wording matters.
 
 ## Hard Boundaries
 
@@ -30,12 +30,12 @@ On `$control-tower`, `/control-tower`, or equivalent Tower startup:
 1. Read project-local instructions first when present: `AGENTS.md`, `_ct-workorders/_local-rules.md`, and product-level guidance such as `CLAUDE.md`.
 2. Read `_ct-workorders/_tower-state.md` before product files. If it exists and has a fresh `環境快照` section, use Fast Path recovery.
 3. Read `_ct-workorders/_tower-config.yaml` and global Control Tower config if present. Layering is session > project > global > defaults.
-4. Count hot-zone work orders with `_ct-workorders/T*.md`, plus BUG/PLAN/EXP files only when enabled.
+4. Count hot-zone work orders with `_ct-workorders/T*.md`, plus BUG/PLAN/EXP files only when enabled (v6: enabled by default; a project or global `false` still turns one off). When BUG or PLAN tracking is enabled and `_bug-tracker.md` / `_backlog.md` is missing, create the empty index now; the rule and the format live only in `references/bug-plan-system.md` § 啟用與索引檔, § 索引格式.
 5. In BAT, declare this tab as the Tower once (`bat-terminal.mjs --set-role tower --mode <effective auto-session>`); conditions, command, and exit-code handling live only in `references/auto-session.md` § 塔台分頁角色宣告. Non-zero exit or non-BAT never blocks startup.
 6. Show a concrete Tower status panel before dispatching or editing anything, including the `分頁標題` line from step 5. Fields and template are defined only in `references/memory-protocol.md` § 塔台狀態面板; unknown values are shown as 「未知」, never filled by an extra scan. v5.9.0+ (BAT `>= 0.7.1-pre.1`): one `bat_whoami` call may add a one-line hint suggesting BAT「以塔台開啟 Claude」 when `claudeSessionName` exists and does not end with ` · Tower`; a missing key, MCP unavailable, or non-BAT shows nothing. Conditions live only in that section.
 7. Run Full Scan only when `_tower-state.md` is missing, the environment snapshot is empty or older than 7 days, or the user runs `*rescan`.
-8. v5.13.0+: every time the Tower writes `_tower-state.md` (startup, dispatch, closeout, decision, `*pause`/`*resume`, …), it also updates the machine-readable summary frontmatter in the same write; the fields and rules live only in `references/memory-protocol.md` § 機器可讀摘要（YAML frontmatter）.
-9. v5.13.0+: measure the hot files against the size budget (bytes only, no reading) and print one line per file over budget; the budget, BAT's 512 KiB limit, and the line format live only in `references/memory-protocol.md` § BAT 塔台面板讀取契約 › 大小預算. It never blocks startup.
+8. v6.0.0+: every time the Tower writes `_tower-state.md` (startup, dispatch, closeout, decision, `*pause`/`*resume`, …), it also updates the machine-readable summary frontmatter in the same write; the fields and rules live only in `references/memory-protocol.md` § 機器可讀摘要（YAML frontmatter）. v6.0.0-beta.10+: the first write of a session adds its startup entry with this Tower's own session id (or 「session id 未知」; never blocks startup, never a frontmatter field); format and value rules live only in `references/memory-protocol.md` § 塔台 session id.
+9. v6.0.0-beta.3+: measure the hot files against the size budget (bytes only, no reading) and print one line per file over budget; the budget, BAT's 512 KiB limit, and the line format live only in `references/memory-protocol.md` § BAT 塔台面板讀取契約 › 大小預算. It never blocks startup.
 
 For state format and recovery rules, read `references/memory-protocol.md`. For config layering, read `references/tower-config.md`.
 
@@ -53,11 +53,34 @@ Classify each user request before creating work:
 
 Before dispatching a work order, run the `affects_files` overlap check from `references/work-order-system.md`. Unknown or missing `affects_files` is conservative and should warn.
 
+## Methodology Adapters
+
+v6.0.0+ (stable: 6.0.0 replaces 5.15.0 as the stable line; methodology adapters were a pre-release from 6.0.0-pre.1 through 6.0.0-rc.1). Non-authoritative summary; the contract, config keys, layering, resolution steps, degradation, and conflict
+guards are defined once in `references/methodology-adapters.md`, and Level 2 detection lives in `references/enhancement-integration.md` § Level 2.
+The `*config` side of the `methodology*` keys (validation, display, persistence, worked resolution example) is in `references/tower-config.md` § 方法論設定鍵.
+
+- Control Tower orchestrates; a methodology only governs how a Worker does the work inside one work order. CT lifecycle rules always win.
+- A methodology is plugged in through an adapter description file (`schema: ct-methodology-adapter/v1`). BMAD is the built-in default adapter,
+  `references/adapters/bmad.yaml`; its routing, `### Autonomous Contract`, and retired-name replacements live there, not in this file.
+- Five layers (`planning`, `execution`, `review`, `verification`, `delivery`), one owning adapter per layer; `delivery` defaults to `none`.
+- `methodology` missing means `auto`: the bmad adapter when the external `bmad-guide` skill is available, otherwise `none`. This is the v5.12.6 behavior.
+  Where to look for `bmad-guide` (by runtime since v6.0.0-beta.8: this runtime's manual `skills/` install, then this runtime's plugin; the other
+  runtime's install only as a file source) is defined only in `references/adapters/bmad.yaml` `detection.probes`; the probe order and how a probe
+  resolves the skill root are in `references/methodology-adapters.md` (v6.0.0-beta.6+).
+- Unavailable, stale, or broken adapter: keep Tower usable, fall back to free-text workflow fields, never invent methodology behavior, and replace
+  retired names only from the adapter's `retired_names` or explicit project context.
+- Old work orders with a `### BMad 工作流程` section are read as bmad and never rewritten.
+
 ## External BMad Guide Integration
 
-Control Tower does not bundle BMad-Guide-Skill or BMad-Method content. When BMad workflow routing is needed, detect the external `bmad-guide` skill and read its references through `references/enhancement-integration.md` (§ Level 2 › 偵測 is the only definition of where to look: manual `skills/` install first, then Claude plugin, then Codex plugin).
+Control Tower does not bundle BMad-Guide-Skill or BMad-Method content. Since v6.0.0-pre.1 the external `bmad-guide` skill is reached through the
+built-in bmad adapter; see `## Methodology Adapters` above.
 
-If `bmad-guide` is unavailable or stale, keep Tower usable: mark BMad workflow fields as manually specified, avoid inventing BMad behavior, and route retired/deprecated names only when the external guide or explicit project context confirms the replacement.
+External enhancements (v6.0.0-beta.10+): CT keeps one learning mechanism (三區學習, FIELDGUIDE promotion, and the session evidence read by
+`ct-evolve --facts-from`); memory, token-saving and context-compression plugins are not paired with CT by default (the install rule itself is the
+user's global instructions, not CT); ECC Level 1 is retired; mem0 Level 3 stays but is enabled only when the project's local rules record an
+exception under that user-level rule. Non-authoritative summary; see `references/enhancement-integration.md`
+§ 外部增強外掛治理, § ECC Level 1 退場 and § Level 3 › 啟用條件.
 
 ## Alignment And Work Orders
 
@@ -88,7 +111,8 @@ When `auto-session` is `on`, `ask`, or `yolo`, use `references/auto-session.md` 
 
 BAT rules:
 
-- Detect BAT with the real owning shell. If a bash-backed helper reports empty `BAT_*`, verify again with native PowerShell on Windows, listing names only: `Get-ChildItem Env:BAT* | Select-Object -ExpandProperty Name | Sort-Object`. Detection lists variable names only and never prints values; `BAT_REMOTE_TOKEN` is recorded only as "set" (single authoritative rule: `control-tower/references/auto-session.md` § 偵測條件).
+- Detect BAT with the real owning shell. If a bash-backed helper reports empty `BAT_*`, verify again with native PowerShell on Windows, listing names only: `Get-ChildItem Env:BAT* | Select-Object -ExpandProperty Name | Sort-Object` (bash: `compgen -e | grep -E '^(BAT|CT)_' | sort`).
+- Detection checks presence only: never use a command that lists a whole group of variables with their values; `BAT_REMOTE_TOKEN` is always recorded only as 「已設定」. Read each named exception with its own command, one variable per command. Named single-variable exceptions and the single authoritative rule: `references/auto-session.md` § BAT 內部終端路由 › 偵測條件 (BUG-001, D377).
 - Treat a bash-empty but PowerShell-visible BAT environment as `shell env visibility mismatch`; do not downgrade to clipboard just because one shell cannot see the variables.
 - Tower dispatch requires `BAT_SESSION=1`, `BAT_REMOTE_PORT`, `BAT_REMOTE_TOKEN`, `BAT_TERMINAL_ID`, and `BAT_WORKSPACE_ID`.
 - Tower dispatch does not require `BAT_TOWER_TERMINAL_ID`; that variable is Worker notify state injected after dispatch. Its presence marks a Worker tab, where BAT `>= 0.7.0-pre.1` rejects Tower dispatch.
@@ -118,6 +142,7 @@ BAT rules:
 - Worker launch confirmation (v5.6.0+, BAT `>= 0.7.0-pre.6`): append `--wait-started 30000` last, unless this Tower session has already found it unsupported. Exit `0` + `started: <time>` = Worker started; exit `0` + `started: unknown` = cannot tell, not a failure — carry on as before and judge by the Worker report; exit `8` (`started: unconfirmed`) = the tab exists but launch is unconfirmed — never redispatch, look with `bat_read_output` when MCP is available, otherwise point the user to the Worker tab title. v5.8.0+: codex `>= 0.163.0` Workers report a start too on BAT `>= 0.7.0-pre.9` (BAT adds `-c check_for_update_on_startup=false` itself; the CT dispatch command is unchanged); older codex, an unconfirmed codex version, or an older BAT → `started: unknown`, as before. Exit `1` with stderr `Unknown option '--wait-started'` (no tab created) = old BAT: redispatch once without it and stop adding it for this session. This line is a non-authoritative summary; see `references/auto-session.md` § Worker 啟動確認.
 - BAT MCP (v5.3.0+): read-only `mcp__bat__*` tools are an optional query channel (MCP → helper CLI → files); no CT rule requires them. v5.9.0+ (BAT `>= 0.7.1-pre.1`): `bat_whoami` / `bat_list_terminals` / `bat_get_state` add `claudeSessionName` / `claudeSessionId` (a missing key means an old BAT, not `null`), and `bat_list_terminals` adds `scope: towers` (declared Towers only; old BAT → `INVALID_ARGS`). Non-authoritative summary; see `references/auto-session.md` § BAT MCP 唯讀 tool.
 - Cross-session messages to another project's Tower (v5.9.0+, Claude Code Towers only): pick the recipient by ListAgents `<workspace> · Tower`, then `bat_list_terminals scope=towers` (`claudeSessionName`), else write the `_reply-*.md` in your own repo for the user to forward; a session named `… · Worker · T####` is never a Tower, and never guess from directory-style names or idle/busy state. The file stays the formal record. Non-authoritative summary; see `references/cross-project-coordination.md` § 跨 session 選收件人.
+- Mid-flight addenda (v6.0.0-beta.11+): while a Worker is still `IN_PROGRESS`, add `## 塔台補充（執行中 #N）` before the report `---` (not a Renew: no `Renew 次數`, no re-dispatch); visibility does not depend on a commit, and a changed scope or acceptance is also written into frontmatter and the acceptance section. The Worker reads new sections before its validation gates, its product commit and its report. A Claude Code Tower may also send its own Worker a one-line cross-session pointer to re-read that section; it is optional, carries no instructions, and is not sent when the Worker cannot be found. Non-authoritative summary; see `references/work-order-system.md` § 執行中補充工單 and `references/cross-project-coordination.md` § 通知自己的 Worker 重讀工單.
 
 - `--workspace` is required, not optional. When omitted, `bat-terminal.mjs` places the new PTY in the **currently active workspace**, which is a deliberate design behavior (BUG-031 / T0137), not a bug. With several projects open in parallel, the Worker terminal lands in whichever workspace tab the user happens to be viewing, while `cwd` still looks correct — a failure that is easy to miss.
 - `--cwd` defaults to the calling process cwd, which is usually correct. Pass it explicitly to defend against caller cwd drift.
@@ -125,9 +150,10 @@ BAT rules:
 - Tower only (v5.2.0+, BAT `>= 0.6.1-pre.6`): declare the Tower tab with `--set-role tower --mode <m>` at startup and again whenever the effective `auto-session` value changes; any non-zero exit means unsupported — no retry, no fallback. Worker skills never call it. This line is a non-authoritative summary; see `references/auto-session.md` § 塔台分頁角色宣告.
 - Scoped token (v5.2.4+, BAT `>= 0.7.0-pre.1`): `BAT_REMOTE_TOKEN` is a per-tab token — never copy it across tabs or write its value anywhere (logs, work orders, reports, clipboard); record only 「已設定」. Start the Tower in a non-Worker tab (no `BAT_TOWER_TERMINAL_ID`); in a Worker tab, dispatch, `--close-worker`, and `--set-role` exit `1`. Decide by exit code only and keep each existing fallback; stderr containing `Forbidden` only adds a one-line reason hint. Dispatch may also exit `1` with `RECOVERY_PENDING` (BAT's Recovery prompt unanswered): same exit-code rule, never auto-redispatch. This line is a non-authoritative summary; see `references/auto-session.md` § BAT 內部終端路由 › 範圍權杖與分頁角色.
 - Use `bat-notify.mjs --submit` only for YOLO automatic submission. Non-YOLO modes may prefill but must not auto-submit.
-- YOLO questions and breakpoint D (v5.5.0+): a yolo Worker asks Tower (`T#### 提問`) — Tower answers in the work order within scope and escalates scope/irreversible/publishing/preference choices to the user (v5.6.1: when the work order has `worker_question_timeout: 0` or is already `BLOCKED`, do not answer under the question; wait for `需要協助` and answer only in the Renew section); breakpoint D only tells the user (by tab title) that a Worker is `blocked` waiting for them (hook reasons; v5.8.0+ also codex `blockedReason: input` on `blockedDetection: osc`), never answers for it or sends keys. v5.7.0+ (BAT `>= 0.7.0-pre.7`): on `T#### 提問` also check `bat_list_questions`; a `pending` question found there is answered with `bat-terminal.mjs --answer` (answer text on stdin) and gets no answer line in the work order; v5.7.1: judge each unanswered Q-n only by its list status (`status: all`) plus the work order's `- **通道**：工單` marker (marked → answer in the work order), and a question neither listed nor marked is still on its way, so leave it for that Worker's next notification — never infer from an empty pending list that the Worker has sent everything; `blockedReason: tower` means the Worker waits for Tower, so it is not breakpoint D. v5.15.0: a new Worker wakes Tower once per batch; for every `提問` first check only `bat_list_questions` once plus one grep of the work order's question headings, answer lines and markers (and the YOLO history `[提問]` entries when a question is still open) — no new question → reply one line and stop; a question already escalated to the user and still waiting (its latest `[提問]` entry in `_tower-state.md` is the waiting entry) is never shown as `⏸ YOLO PAUSED` again. Read a Worker notification by its tail (v5.15.0): the last `<工單 ID> <keyword>` at the end, with only complete notifications glued in front (a pre-fill left in the Tower input); count questions only from `bat_list_questions` and the work order markers, never from the string. Never poll `bat_list_questions` in the background. Non-authoritative summary; see `references/yolo-mode.md` § Worker 向塔台提問 (§ BAT 通道, § 塔台端) and § 斷點 D.
+- YOLO questions and breakpoint D (v5.5.0+): a yolo Worker asks Tower (`T#### 提問`) — Tower answers in the work order within scope and escalates scope/irreversible/publishing/preference choices to the user (v5.6.1: when the work order has `worker_question_timeout: 0` or is already `BLOCKED`, do not answer under the question; wait for `需要協助` and answer only in the Renew section); breakpoint D only tells the user (by tab title) that a Worker is `blocked` waiting for them (hook reasons; v5.8.0+ also codex `blockedReason: input` on `blockedDetection: osc`), never answers for it or sends keys. v5.7.0+ (BAT `>= 0.7.0-pre.7`): on `T#### 提問` also check `bat_list_questions`; a `pending` question found there is answered with `bat-terminal.mjs --answer` (answer text on stdin) and gets no answer line in the work order; v5.7.1: judge each unanswered Q-n only by its list status (`status: all`) plus the work order's `- **通道**：工單` marker (marked → answer in the work order), and a question neither listed nor marked is still on its way, so leave it for that Worker's next notification — never infer from an empty pending list that the Worker has sent everything; `blockedReason: tower` means the Worker waits for Tower, so it is not breakpoint D. v6.0.0-beta.9: a new Worker wakes Tower once per batch; for every `提問` first check only `bat_list_questions` once plus one grep of the work order's question headings, answer lines and markers (and the YOLO history `[提問]` entries when a question is still open) — no new question → reply one line and stop; a question already escalated to the user and still waiting (its latest `[提問]` entry in `_tower-state.md` is the waiting entry) is never shown as `⏸ YOLO PAUSED` again. Read a Worker notification by its tail (v6.0.0-beta.9): the last `<工單 ID> <keyword>` at the end, with only complete notifications glued in front (a pre-fill left in the Tower input); count questions only from `bat_list_questions` and the work order markers, never from the string. Never poll `bat_list_questions` in the background. Non-authoritative summary; see `references/yolo-mode.md` § Worker 向塔台提問 (§ BAT 通道, § 塔台端) and § 斷點 D.
 - Trust BAT dispatch success from process exit code `0` (primary rule), or the `bat-scripts.log` NDJSON record `"script":"bat-terminal","event":"terminal-created"` with `"result":"ok"`; do not parse cosmetic stdout such as `Terminal created: null`. The only stdout line parsed is the `started:` line, and only when `--wait-started` was passed (v5.6.0+). See `references/auto-session.md` § BAT 派發成功判讀規則.
 - Do not use plaintext `curl http://127.0.0.1:<port>/health` against BAT RemoteServer; it is a TLS/WSS endpoint.
+- Claude launch arguments under BAT (v6.0.0-beta.10+): never put `--settings` in them (BAT then injects no hooks, so blocked detection, `--wait-started`, and session id reporting fail); switch skill sets with the project's `.claude/settings*.json` `skillOverrides` / `enabledPlugins`. Non-authoritative summary; see `references/auto-session.md` § Claude 啟動參數不得放 `--settings`.
 
 ## Built-In Commands
 
@@ -144,8 +170,10 @@ Handle these commands inside Tower mode:
 | `*archive` | `references/archive-system.md` |
 | `*evolve` / `*evolve --playbook` / `*evolve --skill` | `references/self-learning-core.md`, `references/playbook-engine.md`, `references/skill-writing-conventions.md` |
 | `*evolve --workflow [name]` | v5.11.0+: hand off to `/ct-evolve --workflow [name]` (brief and 🔵 card only); the row lives in `references/playbook-engine.md` § `*evolve` 擴展子命令. |
-| `*insights` | Use session and work order history; keep output evidence-based. v5.13.0+: include the open-BUG review line when its conditions hold (`references/bug-plan-system.md` § BUG 單據 › 未結 BUG 清理提示). |
+| `*insights` | Use session and work order history; keep output evidence-based. v6.0.0-beta.3+: include the open-BUG review line when its conditions hold (`references/bug-plan-system.md` § BUG 單據 › 未結 BUG 清理提示). |
 | `*insights workflow [T#### …]` | v5.11.0+: run the `ct-insights` prefilter script for exclusion gating (X2 / X3 / X5) and on-demand hints with evidence locations; never marks or edits work orders. Role, command, and fallback live only in `ct-insights/references/analysis-rules.md` § 預篩腳本：排除守門與按需提示. Before writing any Workflow authorization into a work order, apply `workflow_integration` (`references/workflow-engine.md` § `workflow_integration` 的行為; values and default in `references/tower-config.md` § 可用選項). |
+| `*insights sessions [T#### …] [--since … --until …]` | v6.0.0-beta.10+: run the `ct-insights` session usage script on the local Claude Code session JSONL (Claude Code only; Tower usage listed separately, never allocated; cost and the decision split are estimates) and backfill missing snapshots. Command, privacy rules, degradation and output reading live only in `ct-insights/references/analysis-rules.md` § Session 用量統計. v6.0.0-beta.12+: `skills_invoked` also counts slash commands, and `agents_invoked` counts agent types. |
+| `*insights tools [--all-projects] [--keep …] [--since … --until …]` | v6.0.0-beta.12+: run the same script with `--tools` for a tool-list suggestion report (loaded × used, grouped by work order type; each item with its layer and the key or interface; only suggests, never edits settings; takes effect in a new session). Criteria, levers and privacy checks live only in `ct-insights/references/analysis-rules.md` § 工具清單建議. |
 | `*fieldguide` | `references/fieldguide-commands.md` |
 | `*import` | `references/safe-import.md` |
 | `*onboard` | `references/onboarding.md` |
@@ -169,7 +197,7 @@ When a Worker reports completion:
 4. Run or recommend `*sync` when indexes or active tracking can drift.
 5. Decide the next work order, Renew, closure, verify lane, or escalation.
 
-After the closeout confirmation, `worker_auto_close` may ask BAT to close the Worker tab; conditions, command, and exit-code handling live in `references/work-order-system.md` § 回報處理流程 (with `off`, closeout is unchanged; values and default in `references/tower-config.md` § 可用選項). For an isolated work order (v5.3.0+) that section adds `--worktree keep`, and merging back to `main` follows `references/merge-workorder.md`. Before re-dispatching a Worker for the same work order (Renew after `BLOCKED`/`FAILED`, the yolo question fallback, a user-requested re-dispatch), Tower first closes the old Worker tab with `--close-worker … --delay-ms 0` (isolated: plus `--worktree keep`), also when `worker_auto_close: off`, and dispatches whatever the exit code (v5.12.0+); scope and exit codes live in `references/work-order-system.md` § 重派前回收舊 Worker 分頁.
+After the closeout confirmation and before any `--close-worker` (v6.0.0-beta.10+), Tower reads the Worker tab's `claudeSessionId` once through BAT MCP and appends it to the work order's `session_ids` when missing, then writes that work order's session-stats snapshot; both are skipped silently or with one note when unavailable and never change the closeout. Steps, skip conditions and exit codes live only in `references/work-order-system.md` § 收單補記 session id and § 收單快照. After the closeout confirmation, `worker_auto_close` may ask BAT to close the Worker tab; conditions, command, and exit-code handling live in `references/work-order-system.md` § 回報處理流程 (with `off`, closeout is unchanged; values and default in `references/tower-config.md` § 可用選項). For an isolated work order (v5.3.0+) that section adds `--worktree keep`, and merging back to `main` follows `references/merge-workorder.md`. Before re-dispatching a Worker for the same work order (Renew after `BLOCKED`/`FAILED`, the yolo question fallback, a user-requested re-dispatch), Tower first closes the old Worker tab with `--close-worker … --delay-ms 0` (isolated: plus `--worktree keep`), also when `worker_auto_close: off`, and dispatches whatever the exit code (v5.12.0+); scope and exit codes live in `references/work-order-system.md` § 重派前回收舊 Worker 分頁.
 
 ## Reference Routing
 
@@ -186,9 +214,11 @@ version. See the summary-authority rule under `## BAT And Auto-Session`.
 - Config and help: `tower-config.md`, `beginner-tutorial.md`
 - Debug and interruption: `debug-strategies.md`, `interrupt-protocol.md`
 - Knowledge and evolution: `self-learning-core.md`, `playbook-engine.md`, `skill-writing-conventions.md`, `workflow-engine.md` (v5.10.0+: Claude Code Workflow inside one work order — positioning, Skill / Playbook / Workflow split, rules R1–R5, knowledge cards, maturity and downgrade; v5.11.0+: `workflow_integration` behavior, Worker authorization governance, G2 status; named-workflow dispatch waits until a card reaches 🟡)
-- Multi-project and repo shape: `multi-tower-protocol.md`, `cross-project-coordination.md`, `mono-repo-patterns.md` (v5.14.3+: § 巢狀的獨立 repo — one Tower for several nested independent repos, work orders in the parent repo)
+- Multi-project and repo shape: `multi-tower-protocol.md`, `cross-project-coordination.md`, `mono-repo-patterns.md` (v6.0.0-beta.7+: § 巢狀的獨立 repo — one Tower for several nested independent repos, work orders in the parent repo)
 - Commands and records: `bug-plan-system.md`, `decision-log-system.md`, `archive-system.md`, `fieldguide-commands.md`, `safe-import.md`, `onboarding.md`
-- Governance and design rationale: `version-governance.md`, `doctrine.md`, `enhancement-integration.md`, `migration-engine.md`
+- Governance and design rationale: `version-governance.md`, `doctrine.md`, `enhancement-integration.md` (v6.0.0-beta.10+: external enhancement governance; ECC Level 1 retired), `migration-engine.md`
+- Methodology adapters (v6.0.0+): `methodology-adapters.md`, `adapters/bmad.yaml`
+- `scripts/validate-adapter.py` (skill root, v6.0.0+): checks an adapter description file against `methodology-adapters.md` § 新 adapter 的最小檢查 (machine-checkable part); run it, do not load it into context.
 
 ## Output Style
 

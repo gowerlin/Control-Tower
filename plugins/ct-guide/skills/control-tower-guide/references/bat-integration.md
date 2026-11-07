@@ -110,7 +110,7 @@ CT-T021 方向反過來：需求由 CT 塔台先提給 BAT（D067，CT 不向 Cl
 ③ Worker 執行與通知      ct-exec 收尾後 bat-notify：on 預填、yolo 自動送出（--submit）
                          yolo 執行中有問題：送 T#### 提問，在工單裡等塔台答覆（v5.5.0）
                          BAT >= 0.7.0-pre.7：題目照樣寫工單，再以 --ask 問、bat_wait_question 等（v5.7.0）
-                         一次多題：前幾題 --ask --no-pty-write、最後一題 --submit，一批只叫醒塔台一次（v5.15.0）
+                         一次多題：前幾題 --ask --no-pty-write、最後一題 --submit，一批只叫醒塔台一次（v5.15.0／v6.0.0-beta.9）
         ↓
 ④ 收單回收              worker_auto_close: done 時 --close-worker（隔離工單加 --worktree keep）
                          同一張工單要重派時，先 --close-worker … --delay-ms 0 回收舊分頁再回到 ②（v5.12.0）
@@ -209,13 +209,14 @@ BAT `>= 0.7.1-pre.1` 啟動 claude 分頁時用 `--name` 給的名稱（例 `BMa
 Worker 該收到 `/ct-exec T0001`（Claude Code）還是 `$ct-exec T0001`（Codex），由 BAT 依實際啟動的 agent 組出來。
 這讓塔台 skill 不必知道對面是哪個 AI 工具。agent 的選擇見 `runtime-dispatch.md` § Agent 中立。
 
-**用 plugin 安裝的 Codex 與 BAT 派工（v5.14.0 → v5.14.2）。** 5.14.0 時 BAT 組出來的只有 `/ct-exec`、`$ct-exec` 兩種，不帶 plugin 前綴。Claude Code 的 plugin skill 不帶前綴也叫得到，所以 Claude 端不論手動或 plugin 安裝都能接派工；Codex 的 plugin skill 只能用 `$ct:ct-exec` 叫，`$ct-exec` 不會載入它——只裝 plugin 的 Codex Worker 收到指令，卻沒有 CT skill 可用，而且不會報錯。CT 當時寫明 Codex 搭配 BAT 派工用 zip 手動安裝，並把實測結果交給 BAT。
+**用 plugin 安裝的 Codex 與 BAT 派工（v5.14.0 → v5.14.2；v6 條文自 v6.0.0-beta.6 起相同）。** 5.14.0 時 BAT 組出來的只有 `/ct-exec`、`$ct-exec` 兩種，不帶 plugin 前綴。Claude Code 的 plugin skill 不帶前綴也叫得到，所以 Claude 端不論手動或 plugin 安裝都能接派工；Codex 的 plugin skill 只能用 `$ct:ct-exec` 叫，`$ct-exec` 不會載入它——只裝 plugin 的 Codex Worker 收到指令，卻沒有 CT skill 可用，而且不會報錯。CT 當時寫明 Codex 搭配 BAT 派工用 zip 手動安裝，並把實測結果交給 BAT。
 
 BAT `0.7.2-pre.1` 起由 BAT 這一端解決：派工給 Codex 時，BAT 先看 Codex 那邊 CT 是怎麼裝的——有手動安裝就送 `$ct-exec`，沒有手動安裝而有啟用中的 `ct` plugin 才送 `$ct:ct-exec`，看不出來就照舊送 `$ct-exec`。兩種都裝時送手動那份，和 Codex 自己會載入的一致。CT 5.14.2 把限制改成依 BAT 版本：**BAT `>= 0.7.2-pre.1` 兩種安裝都支援，更舊的 BAT 仍用 zip**。
 
 為什麼由 BAT 判斷，而不是塔台：安裝方式是 Worker 那個 Codex 環境的事實，只有開分頁的 BAT 看得到（遠端分頁要在遠端那台判斷）；塔台照舊只送 `--skill` + `--workorder`，派工命令一個字都不用改——這正是「BAT 定義、CT 呼叫」的分工。還沒實機跑過的是端到端：真的派一張工單給只裝 plugin 的 Codex Worker；BAT 驗證的是四種安裝狀態下的判斷結果與 Codex 一致。
 
 各情況的寫法以 CT `auto-session.md` § 依安裝方式的 skill 呼叫字串為準，最低 BAT 版本列在同檔 § 依賴的 BAT 基礎設施；plugin 是什麼、並存時誰生效見 `governance.md` § plugin marketplace：另一種安裝方式。
+v6 的預發行版（beta、rc）不提供 CT plugin（照舊 zip 手動安裝）；6.0.0 起 CT plugin 上架，用 plugin 安裝 v6、或同機另裝了 CT plugin 時就會遇到這段；v6.0.0-beta.5 的條文還是「Codex 搭配 BAT 派工用 zip」，beta.6 才移植 5.14.2 的依 BAT 版本。
 
 > 派工指令的完整參數表以 `auto-session.md` § BAT 內部終端路由為準；SKILL.md 裡的範例是摘要，不能拿來直接派工（見 `governance.md` § 摘要授權規則）。
 
@@ -266,7 +267,7 @@ BAT `>= 0.7.0-pre.6` 讓 claude 的 `SessionStart` hook 回報「已啟動」，
   --agent default --skill ct-exec --workorder <工單 ID> [--isolation worktree] --wait-started 30000
 ```
 
-（示意；完整參數表與條件以 CT `auto-session.md` 為準，不得照抄派工。`<工單 ID>` 是含前綴的完整 ID，v5.14.1 起塔台端範本也這樣寫，理由見 `work-order-lifecycle.md` § 回報與通知用完整工單 ID。）
+（示意；完整參數表與條件以 CT `auto-session.md` 為準，不得照抄派工。`<工單 ID>` 是含前綴的完整 ID，v5.14.1（v6：v6.0.0-beta.6）起塔台端範本也這樣寫，理由見 `work-order-lifecycle.md` § 回報與通知用完整工單 ID。）
 
 - **值固定、不開設定**：`30000` 是 BAT 的建議值，只影響派工那一次 helper 等多久，所以 CT 不為它新增 config。
 - **一定帶 `--notify-id`**：BAT 只讓塔台查自己派出的 Worker，`--wait-started` 少了它就是用法錯誤——這和〈範圍權杖與分頁角色〉是同一套最小權限。
@@ -339,13 +340,19 @@ Worker 收尾的順序是**先寫最終狀態與回報區、commit 工單，最�
 通知走 `bat-notify.mjs`，目標是派工時注入的 `BAT_TOWER_TERMINAL_ID`；訊息是固定格式（`T#### 完成`／`部分完成`／`需要協助`；yolo 另有執行中的 `T#### 提問`，v5.5.0，見 `work-order-lifecycle.md` § yolo 提問通道）。
 `CT_MODE=on` 只預填到塔台輸入列，`yolo` 預填並自動送出（`--submit`）；`ask`／`off`（含缺值）不加 `--submit`，顯示要手動帶回塔台的確切訊息。
 
-**訊息與 `--source` 一律用工單完整 ID（v5.13.1）**：上面的 `T####` 是訊息種類的名稱。BAT 用 `--source` 比對 Worker 分頁登記的工單——
+**訊息與 `--source` 一律用工單完整 ID（v5.13.1／v6.0.0-beta.4）**：上面的 `T####` 是訊息種類的名稱。BAT 用 `--source` 比對 Worker 分頁登記的工單——
 塔台派 `--workorder LB-T0184`，分頁登記的就是 `LB-T0184`；Worker 若送 `--source T0184`，BAT 對不上，那個分頁標不了 Done，
 使用者一次關掉已完成的 Worker 分頁時也就漏了它。CT 判定這是自己範本的缺陷（範本原本只寫 `T####`），修在 CT 這邊，不請 BAT 另加備援比對。
 三層修法（範本、Worker 送出前比對、塔台缺前綴容錯）與塔台容錯為什麼保不住 BAT 標 Done，見 `work-order-lifecycle.md` § 回報與通知用完整工單 ID。
 
 通知只是「叫塔台來讀檔」：回報內容一律在工單檔裡，訊息本身不帶細節。所以 notify 失敗時工單已是最終狀態，
 使用者把 Worker 顯示的固定訊息帶回塔台即可收單（`runtime-dispatch.md` § Worker 端的回報降級）。
+
+**塔台在等你時，通知會先排隊（BAT `>= 0.7.3-pre.8`；CT v6.0.0-beta.11 Beta 補註）。** 塔台停在權限對話框、AskUserQuestion 或 elicitation 時，
+Worker 通知會延後送進塔台輸入框，塔台分頁縮圖顯示「待送通知 N」，塔台離開等待後才依序送出。更舊的 BAT 會直接送出，
+yolo 的 `--submit` 帶的 Enter 就可能替你回答塔台正在問的題目（BAT BUG-196）。CT 的判讀不變：晚到的 `完成` 照常收單、晚到的 `提問` 照提問規則處理。
+限制：沒有 BAT hooks 的分頁（`blockedDetection: none`，例如啟動參數帶 `--settings`）判斷不出等待、照舊直接送；每個塔台最多排 8 筆，第 9 筆 helper exit `1`，
+走一般的通知失敗備援；遠端分頁要遠端 bat-server 也升級。權威：CT `yolo-mode.md` § Worker 向塔台提問 › 塔台端、§ BAT / Worker 版本相容，`auto-session.md` § Worker 完成自動通知。
 
 ---
 
@@ -506,6 +513,13 @@ yolo 下這是**異常偵測**：yolo Worker 有問題應該問塔台（`work-or
 永遠不會回 hook 的三種原因（`permission`／`question`／`elicitation`），也不會回 codex 的 `input`。所以它的 `idle` **不能**解讀成「沒有在等人」——只是看不到而已。
 v5.6.1 以前這裡寫成「永遠不會回 `blocked`」；BAT `0.7.0-pre.7` 多了下面的 `tower`，它不靠 hook，所以 v5.7.0 改成現在的說法；v5.8.0 再補上 `input`。
 
+**為什麼不能在 BAT 的 Claude 啟動參數放 `--settings`（v6.0.0-beta.10 Beta 條文）。** 帶了它，BAT 就不注入自己的 hooks：
+上面說的 blocked 偵測變成 `none`，`--wait-started` 只會回 `started: unknown`，`claudeSessionId` 也一直是 `null`（收單補記 session id 補不到）。
+要換 skill 組合，改用專案 `.claude/settings*.json` 的 `skillOverrides`／`enabledPlugins`；同一工作區的塔台與 Worker 共用啟動參數，
+所以「塔台、Worker 各帶一份 `--settings`」在 BAT 下不成立（BAT D197）。權威：CT `auto-session.md` § Claude 啟動參數不得放 `--settings`。
+v6.0.0-beta.11 Beta 補了第二個理由：BAT `>= 0.7.2-pre.8` 起工作區列表的「等待你回應」⚠️ 用的也是這些 hooks，帶 `--settings` 的分頁不會出現 ⚠️；
+BAT `>= 0.7.3-pre.8` 起塔台等使用者時保留 Worker 通知（見 § Worker 執行與通知）也會因此失效。兩項都是 BAT 的畫面與送出時機，不影響 CT 判讀。
+
 **codex 也看得到了（v5.8.0，BAT `>= 0.7.0-pre.9`）。** codex `>= 0.163.0` 會自己在終端送一段 OSC 7501（`state=idle|working|blocked`），
 BAT 只讀、不改輸出，據此把分頁記成 `blockedDetection: osc`；`state=blocked` 就回 `blocked`、`blockedReason: input`、`source: 'osc'`。
 CT 把 `input` 和 hook 的三種原因並列為「等使用者的原因」，處理完全相同：只以分頁標題告知、不代答、不送按鍵、不暫停流程、同一次等待只告知一次。
@@ -544,7 +558,7 @@ BAT 重開或 headless server 重啟後，之前的 `blocked` 狀態會遺失，
 
 ---
 
-## BAT 塔台面板讀取契約（v5.13.0；v5.13.1 對齊 BAT `0.7.1-pre.9`）
+## BAT 塔台面板讀取契約（v5.13.0／v6.0.0-beta.3；v5.13.1／v6.0.0-beta.4 對齊 BAT `0.7.1-pre.9`）
 
 BAT 視窗裡的指揮塔面板（總覽、決策、臭蟲、待辦池、工單各頁）直接讀 CT 寫的檔：`_tower-state.md`、`_decision-log.md`、
 `_bug-tracker.md`、`_backlog.md`、每張工單。這是分工原則的另一個方向——前面各節是 CT 呼叫 BAT 的介面，由 BAT 定；
@@ -553,7 +567,7 @@ BAT 視窗裡的指揮塔面板（總覽、決策、臭蟲、待辦池、工單�
 ### 為什麼頁面會空
 
 最常見的原因不是格式錯，是**檔太大**。BAT 讀這些檔共用同一個讀檔函式，上限 512 KiB（524,288 bytes），超過就整檔不讀。
-BAT `0.7.1-pre.9` 以前，麻煩在於大部分頁面**不報錯**；pre.9 起改成明說讀不到（v5.13.1 把契約對齊這一版）：
+BAT `0.7.1-pre.9` 以前，麻煩在於大部分頁面**不報錯**；pre.9 起改成明說讀不到（v5.13.1／v6.0.0-beta.4 把契約對齊這一版）：
 
 | BAT 頁 | 檔超過上限時：BAT `>= 0.7.1-pre.9` | 更舊的 BAT |
 |---|---|---|
@@ -575,7 +589,7 @@ CT 自己訂的預算是 400 KB（409,600 bytes），比 BAT 的上限低約 100
   BUG／PLAN 索引靠 `*archive` 把終態單據移出熱區，下次 `*sync` 重建就變小；單張工單把長篇證據移到另一個檔、工單裡留連結。
   塔台不自動收斂——搬什麼、何時搬由使用者決定
 
-**BAT 會報錯了，預算為什麼還留著（v5.13.1）**：兩個理由。第一，塔台不知道使用者裝的是哪一版 BAT，更舊的 BAT 超過上限仍會靜默變空，
+**BAT 會報錯了，預算為什麼還留著（v5.13.1／v6.0.0-beta.4）**：兩個理由。第一，塔台不知道使用者裝的是哪一版 BAT，更舊的 BAT 超過上限仍會靜默變空，
 提示不能只靠 BAT 那邊。第二，pre.9 的「無法讀取」只是讓問題**看得見**，那一頁照樣沒有內容；400 KB 預算的用處是在走到那一步之前先提醒。
 所以檢查時機與輸出不分 BAT 版本照做，數字也沒動。
 
@@ -634,6 +648,21 @@ CT 從不預先判斷 BAT 版本：一律先照常呼叫，失敗才依 exit cod
 | v5.14.3 | 「一個塔台、多個巢狀的獨立 repo」配置（文件）：Worker 在上層執行，派工 `--cwd` 與面板一鍵派工的 cwd 都是上層＝BAT workspace 根；這種工單不能 `isolation: worktree`（不涉 BAT 介面；面板一鍵派工未實機驗證） | 無新門檻（BAT 介面、參數與順序不變） | — |
 | v5.14.4 | Level 2 找 bmad-guide 依 runtime 分開（本 runtime 手動 → 本 runtime plugin → 另一個 runtime 只當讀檔來源）、Claude plugin 位置只有一處 `${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}`（不涉 BAT 介面） | 無新門檻（BAT 介面、參數與順序不變） | — |
 | v5.15.0 | yolo 一次問多題只叫醒塔台一次：前 N-1 題 `--ask --no-pty-write`、最後一題 `--ask --submit`；塔台收到重複通知時只做最少的檢查，已升級給使用者的題不重複提醒（CT 端改動；`--no-pty-write` 只做 UI 通知，BAT 已確認是支援的組合，BAT `>= 0.7.2-pre.4` 起列為正式契約（`>= 0.7.0-pre.7` 起就是這個行為））；一併修正：多題等待的租約逐題計算、斷點 A 改看通知字串結尾 | 無新門檻（`--ask` 仍需 `>= 0.7.0-pre.7`） | helper 不認 `--ask` 或 `--no-pty-write` → 該題加標記、改走工單檔往返，一批仍只叫醒一次 |
+| v6.0.0-pre.1（預覽，未發布） | `_tower-state.md` 機器可讀摘要（BAT 總覽顯示下一個編號、待辦前 5 則）；方法論轉接本身不涉 BAT 介面 | 總覽改版 `>= 0.7.1-pre.7`（預覽版） | 舊 BAT 不讀摘要，塔台照常寫入、行為不變；見 `preview-methodology.md` § `_tower-state.md` 機器可讀摘要 |
+| v6.0.0-beta.1（Beta，與穩定版 5.12.7 並行） | BAT 介面同 v6.0.0-pre.1；BUG／PLAN 預設開啟、啟用即產生空的 `_bug-tracker.md`／`_backlog.md`（BAT 指揮塔面板的「臭蟲」「待辦池」讀這兩檔）；環境偵測只列名稱（同 v5.12.7） | 無新門檻 | 舊 BAT 不讀這兩檔也不受影響；見 `preview-methodology.md` § BUG／PLAN／EXP 預設開啟 |
+| v6.0.0-beta.2（Beta，與穩定版 5.12.8 並行） | BAT 介面同 v6.0.0-pre.1；方法論引入的結論版（各家定位、③ 已實測）不涉 BAT 介面；環境偵測的 bash 寫法改 `compgen -e`（只列名稱、不需要放行 `env`），明列例外一個變數一個指令讀 | 無新門檻 | 見 `preview-methodology.md` § 環境偵測只列名稱 |
+| v6.0.0-beta.3（Beta，與穩定版 5.13.0 並行） | BAT 介面同 v6.0.0-pre.1；BAT 塔台面板讀取契約與各索引的格式（同批規則穩定版 5.13.0 也有，見上方 v5.13.0 列與 § BAT 塔台面板讀取契約）；`_tower-state.md` 機器可讀摘要仍 v1（v6 自 pre.1 起）；方法論部分不涉 BAT 介面 | 無新門檻（格式對照 BAT `0.7.1-pre.8` 的解析器） | 見 `preview-methodology.md` § beta.3：狀態衛生與 BAT 塔台面板讀取契約 |
+| v6.0.0-beta.4（Beta，與穩定版 5.13.1 並行） | BAT 介面同 v6.0.0-pre.1；通知與提問用完整工單 ID、BAT 塔台面板讀取契約對齊 BAT `0.7.1-pre.9`（同批規則穩定版 5.13.1 也有，見上方 v5.13.1 列、§ Worker 執行與通知、§ BAT 塔台面板讀取契約）；方法論部分不涉 BAT 介面 | 無新門檻（讀取契約對照 BAT `0.7.1-pre.9`；解析器仍以 pre.8 對照） | 見 `preview-methodology.md` § beta.4：通知用完整工單 ID 與 BAT 塔台面板讀取契約 |
+| v6.0.0-beta.5（Beta，與穩定版 5.14.0 並行） | BAT 介面同 v6.0.0-pre.1；plugin 安裝就緒的條文（同批規則穩定版 5.14.0 也有，見上方 v5.14.0 列與 § 誰負責 `/` 還是 `$`）；beta 不提供 plugin，照舊 zip 手動安裝；方法論部分不涉 BAT 介面 | 無新門檻 | 與 BAT 版本無關；v6 正式版上架 plugin 後，Codex 搭配 BAT 派工同樣用 zip；見 `preview-methodology.md` § beta.5：plugin 安裝就緒 |
+| v6.0.0-beta.6（Beta，與穩定版 5.14.2 並行） | BAT 介面同 v6.0.0-pre.1；移植 5.14.1／5.14.2（塔台端範本 `<工單 ID>`、Codex＋BAT 依 BAT 版本；同批規則穩定版 5.14.1／5.14.2 也有，見上方兩列與 § 誰負責 `/` 還是 `$`）；adapter 偵測 plugin 安裝的方法論不涉 BAT 介面；beta 不提供 CT plugin | Codex 用 plugin 又要接 BAT 派工：`>= 0.7.2-pre.1`（beta 本身只有 zip，同機另裝穩定版 CT plugin 時才相關） | 更舊的 BAT 對 Codex 一律送 `$ct-exec`，只裝 plugin 的 Codex Worker 叫不到 CT skill；Claude Code 不受影響；見 `preview-methodology.md` § beta.6：移植 5.14.1／5.14.2、adapter 偵測 plugin |
+| v6.0.0-beta.7（Beta，與穩定版 5.14.3 並行） | BAT 介面同 v6.0.0-pre.1；移植 5.14.3 的「一個塔台、多個巢狀的獨立 repo」配置（文件；同一份文件穩定版 5.14.3 也有，見上方 v5.14.3 列）：派工 `--cwd` 與面板一鍵派工的 cwd 都是上層＝BAT workspace 根，這種工單不能 `isolation: worktree`；不涉 BAT 介面；beta 不提供 CT plugin | 無新門檻（BAT 介面、參數與順序不變） | 面板一鍵派工對這個配置未實機驗證；見 `advanced-patterns.md` § 巢狀的獨立 repo、`preview-methodology.md` § beta.7：移植 5.14.3（巢狀的獨立 repo） |
+| v6.0.0-beta.8（Beta，與穩定版 5.14.4 並行） | BAT 介面同 v6.0.0-pre.1；移植 5.14.4（方法論 skill 依 runtime 找、Claude plugin 位置只有一處；同批規則穩定版 5.14.4 也有，見上方 v5.14.4 列），adapter 的 probe 加選填 `runtime`；不涉 BAT 介面；beta 不提供 CT plugin | 無新門檻（BAT 介面、參數與順序不變） | 見 `integration.md` § 偵測與降級、`preview-methodology.md` § beta.8：移植 5.14.4、probe 依 runtime |
+| v6.0.0-beta.9（Beta，與穩定版 5.15.0 並行） | BAT 介面同 v6.0.0-pre.1；移植 5.15.0（yolo 一次問多題只叫醒塔台一次、重複通知最少檢查、多題等待的租約逐題計算、斷點 A 看通知字串結尾；同批規則穩定版 5.15.0 也有，見上方 v5.15.0 列）；`--ask --no-pty-write` 只做 UI 通知，BAT `>= 0.7.2-pre.4` 起列為正式契約（`>= 0.7.0-pre.7` 起就是這個行為）；方法論部分不涉 BAT 介面；beta 不提供 CT plugin | 無新門檻（`--ask` 仍需 `>= 0.7.0-pre.7`） | helper 不認 `--ask` 或 `--no-pty-write` → 該題加標記、改走工單檔往返，一批仍只叫醒一次；見 `work-order-lifecycle.md`〈一批只叫醒塔台一次〉、`preview-methodology.md` § beta.9：移植 5.15.0（一批提問只叫醒塔台一次） |
+| v6.0.0-beta.10（Beta，與穩定版 5.15.0 並行） | BAT 介面同 v6.0.0-pre.1；收單時塔台用 BAT MCP `bat_get_state` 的 `claudeSessionId` 補記 Worker 的 session id（`--close-worker` 之前）；BAT 下 Claude 啟動參數不得放 `--settings`（BAT 會因此不注入 hooks，見上方〈為什麼不能在 BAT 的 Claude 啟動參數放 `--settings`〉）；helper 輸出的 `question:`／`status:` 行有兩個前導空白，解析要容許（CT 端寫明，BAT 行為不變）；方法論與學習部分不涉 BAT 介面；beta 不提供 CT plugin | 無新門檻；收單補記要 `>= 0.7.1-pre.1`（`claudeSessionId`）＋BAT MCP | 沒有就跳過補記，只靠 Worker 寫的 `session_ids`；見 `preview-methodology.md` § beta.10：session 用量統計（PLAN-004 ⑥） |
+| v6.0.0-beta.11（Beta，與穩定版 5.15.0 並行） | BAT 介面同 v6.0.0-pre.1；執行中補充工單只靠 Worker 讀工單檔（不要求 BAT 開放寫入 Worker 分頁）；選用的跨 session 提醒用 ListAgents＋`bat_list_terminals scope: mine` 的 `claudeSessionName` 找自己的 Worker；補註 `--settings` 的第二個理由（工作區 ⚠️）與 BAT 塔台等使用者時保留 Worker 通知（見上方〈塔台在等你時，通知會先排隊〉）；方法論部分不涉 BAT 介面；beta 不提供 CT plugin | 無新門檻（通知排隊是 BAT `>= 0.7.3-pre.8` 的行為，不升 BAT 照舊可用） | 跨 session 提醒找不到收件人就不送，靠節點檢查兜底；見 `preview-methodology.md` § beta.11：Worker 執行中接收塔台補充 |
+| v6.0.0-beta.12（Beta，與穩定版 5.15.0 並行） | BAT 介面同 v6.0.0-pre.1；本版改動（`*insights tools` 工具清單建議、`*insights sessions` 計數、打包檢查）只讀本機 Claude Code session 紀錄與設定檔，不經 BAT；套用建議時照舊不在 BAT 的 Claude 啟動參數放 `--settings`，改用專案 `.claude/settings*.json`；beta 不提供 CT plugin | 無新門檻 | 見 `preview-methodology.md` § beta.12：工具清單建議 |
+| v6.0.0-rc.1（RC，正式版候選，與穩定版 5.15.0 並行） | BAT 介面同 v6.0.0-pre.1；本版只有修正（Worker 塔台補充檢查的寫法、`analysis-rules.md` 的 JSON 欄位清單），都不經 BAT；預發行版（beta、rc）不提供 CT plugin | 無新門檻 | 見 `preview-methodology.md` § rc.1：正式版候選（只修錯） |
+| v6.0.0（正式版，取代 5.15.0 成為穩定版） | BAT 介面同 v6.0.0-pre.1；相對 rc.1 沒有功能或規則變更；CT plugin 6.0.0 起上架（Codex 用 plugin 又要接 BAT 派工需 BAT `>= 0.7.2-pre.1`，同 5.14.2） | 無新門檻（最低仍 `>= 0.7.0-pre.7`） | 見 `preview-methodology.md` § 6.0.0：納入正式版 |
 
 `BAT_HELPER_NODE`（v5.2.1）沒有版本門檻：本機沒有這個變數就用 `node`，只有遠端分頁會由 BAT 注入。
 版號以 CT 的 `version-governance.md` § 歷史版號表 與 `auto-session.md` § 依賴的 BAT 基礎設施 為準；v5.1.0 的 BAT 版本出自 CT `CHANGELOG.md` [5.12.3]：[5.1.0] 原寫 `0.6.1-pre.3`，v5.12.3 依 BAT 塔台回覆更正為 `>= 0.6.1-pre.4`（歷史段落不改）。

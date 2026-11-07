@@ -1,6 +1,6 @@
 <script setup lang="ts">
-// 演進史的八個世代：飛行進程條造型——左格是呼號（世代與版號範圍），右格是這一代的動作。
-// 版數合計 60，等於 CHANGELOG 的條目數；v1 未編號、不在 CHANGELOG 內。
+// 演進史的九個世代：飛行進程條造型——左格是呼號（世代與版號範圍），右格是這一代的動作。
+// 版數合計 72，等於 CHANGELOG 的正式版條目數（預發行版不計入）；v1 未編號、不在 CHANGELOG 內。
 // 演進史只維護在 Portal（原 EVO 文件已刪除）：之後的版本照 CT CHANGELOG 補進最後一代或新世代（CT 每次發版都要同步更新 Portal）。
 // 要改內容可傳 eras 覆蓋預設值。
 interface Era {
@@ -76,6 +76,14 @@ const ERAS: Era[] = [
     count: '19 版',
     theme: 'Workflow 規則層 · 重派前回收 · 狀態衛生 · plugin · 批次提問',
     what: '替 Workflow 工具在工單裡定位置：它是單張工單內的執行方式，要明文授權才能用；閘門 G2 沒過，範圍縮小。5.12 在重派前先回收舊 Worker 分頁。5.13 讓 BAT 指揮塔面板穩定讀得到 CT 寫的檔，並讓未結清單只留真的還要做的事；5.13.1 讓 Worker 的回報一律帶完整工單 ID，BAT 才對得上分頁。5.14 另提供 plugin marketplace 安裝，Claude Code 與 Codex 可以訂閱更新；5.14.1 讓塔台也偵測得到用 plugin 安裝的 bmad-guide；5.14.2 起，接 BAT 派工的 Codex 也能用 plugin 安裝（BAT 0.7.2-pre.1 起）；5.14.3 寫明一個塔台怎麼管多個巢狀的獨立 repo；5.14.4 讓塔台先找自己所在 agent 的 bmad-guide；5.15 讓 yolo Worker 一次問多題時只叫醒塔台一次。'
+  },
+  {
+    callsign: 'v6.0',
+    range: '6.0.0',
+    dates: '11-07',
+    count: '1 版',
+    theme: '方法論轉接',
+    what: '把「只認 BMad」換成可以抽換、分層疊加的方法論 adapter：工單的規劃、執行、審查、驗證、交付各層可以交給不同的方法論，BMad 是內建、預設的 adapter，什麼都不設時與 5.x 相同。同一版讓 BUG／PLAN／EXP 預設開啟、塔台看得到每張工單用了多少 token、找得出一直載入卻很少用到的工具，也能在 Worker 執行中補充工單。這些功能在 10-25 到 11-05 的 14 個預發行版裡逐版加入與修正。'
   }
 ]
 

@@ -49,7 +49,7 @@
 
 需要同時呈現兩組時，畫成**並列的獨立面板**，各自有軸與標題，面板之間不畫「Layer N ↔ LN」的對應線。
 
-## 17 種圖表類型
+## 20 種圖表類型
 
 ### 1. 生態系總覽圖
 **When**：「Control Tower 有哪些元件」「整體架構」「`/` 和 `$` 差在哪」
@@ -66,7 +66,7 @@
 
 ### 3. 三層架構圖（資料歸屬）
 **When**：「三層是什麼」「設定覆蓋」「為什麼不能在 skills 目錄放備份」
-**節點**：三個水平容器由下到上——Layer 1 Core `~/.claude/skills/`（整個路徑，附註 Codex 端 `~/.codex/skills/`；v5.14.0 起再附註 plugin 安裝路徑 `${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}/`、`$CODEX_HOME/plugins/`，同屬 Layer 1）、Layer 2 Global `~/.claude/control-tower-data/`、Layer 3 Project `_ct-workorders/`（`c-green`）。Layer 1 容器**外側**畫兄弟節點 `~/.claude/skill-backups/`（`c-gray`，附註 Codex 端 `~/.codex/skill-backups/`），與 `skills/` 同層、不在其內
+**節點**：三個水平容器由下到上——Layer 1 Core `~/.claude/skills/`（整個路徑，附註 Codex 端 `~/.codex/skills/`；v5.14.0／v6.0.0-beta.5 條文起再附註 plugin 安裝路徑 `${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}/`（v5.14.4／v6.0.0-beta.8 起只有這一處）、`$CODEX_HOME/plugins/`，同屬 Layer 1；畫 v6 時這條附註標「v6 自 6.0.0 起上架，預發行版不提供 plugin」）、Layer 2 Global `~/.claude/control-tower-data/`、Layer 3 Project `_ct-workorders/`（`c-green`）。Layer 1 容器**外側**畫兄弟節點 `~/.claude/skill-backups/`（`c-gray`，附註 Codex 端 `~/.codex/skill-backups/`），與 `skills/` 同層、不在其內
 **連線**：設定覆蓋箭頭 Default → Global → Project → Session（右側直排）；Layer 1 容器邊框標註「日常不寫入；唯一例外 = 工單明文授權的安裝（plugin 只能用 plugin 指令）」
 **變體（同構對照）**：被問到「三層與 memory hierarchy」時，改畫兩個並列面板（資料歸屬 vs 知識存取），遵守上方繪圖禁忌
 **Drill-down**：Layer 1 → `sendPrompt('介紹 Layer 1 寫入規則')` → `three-layer-arch.md` § Layer 1 寫入規則；`skill-backups` → `governance.md` § Layer 1 寫入機制；覆蓋箭頭 → `three-layer-arch.md` § 設定的四層覆蓋
@@ -126,14 +126,14 @@
 **不得畫成**：非 yolo 泳道裡 Worker 直接向塔台提問；yolo 泳道裡 Worker 向使用者提問；塔台對 Worker 分頁送按鍵代答；Worker 自己發起 Renew
 **Drill-down**：Renew → `sendPrompt('介紹 Worker Renew 機制')` → `work-order-lifecycle.md` § Worker Renew 機制；提問 → `work-order-lifecycle.md` § 互動由誰決定；yolo 提問往返 → `sendPrompt('介紹 yolo 提問通道')` → `work-order-lifecycle.md` § yolo 提問通道
 
-### 12. BAT／YOLO 派工迴圈圖（v5 新增；v5.2.0 補塔台分頁宣告、收單後回收；v5.2.4 補 Worker 分頁 → `Forbidden` 分支；v5.3.0 加隔離工單註記；v5.5.0 補提問往返與斷點 D；v5.6.0 補 Worker 啟動確認；v5.7.0 補 BAT 問答通道分支；v5.8.0 補 codex 信號註記；v5.15.0 補一批只叫醒一次）
+### 12. BAT／YOLO 派工迴圈圖（v5 新增；v5.2.0 補塔台分頁宣告、收單後回收；v5.2.4 補 Worker 分頁 → `Forbidden` 分支；v5.3.0 加隔離工單註記；v5.5.0 補提問往返與斷點 D；v5.6.0 補 Worker 啟動確認；v5.7.0 補 BAT 問答通道分支；v5.8.0 補 codex 信號註記；v5.15.0／v6.0.0-beta.9 補一批只叫醒一次）
 **When**：「BAT 怎麼派工」「YOLO 怎麼跑」「Worker 怎麼通知塔台」「塔台分頁標題」「Worker 分頁會自己關嗎」「在 Worker 分頁開塔台會怎樣」「`Forbidden`」「斷點 D」「Worker 在等我回答」「Worker 有沒有真的起來」「exit `8`」「`--wait-started`」
 **節點**：塔台啟動 → 分頁角色宣告（`c-gold`，標 `--set-role tower --mode <m>`；結果節點 `c-gray`：`已設定`／`不支援（BAT 太舊）`／`略過（非 BAT）`，三者都往下走）→ 塔台（`auto-session`）→ 派工 helper（標 `--cwd`、`--workspace`、`--mode`、`--[no-]interactive`；yolo 一律 `--no-interactive`）→ BAT 開 Worker 終端（注入 `CT_MODE`、`CT_INTERACTIVE`、`BAT_TOWER_TERMINAL_ID`；由 BAT 組 `/` 或 `$`）→ Worker `ct-exec` → 收尾通知 → 塔台讀回報 → 回收 Worker 分頁（`c-gray`，註「`worker_auto_close: done`、`DONE`、不 Renew 才做；失敗不影響收單」）→ 斷點檢查菱形（`c-amber`：A／B-1／B-2／C）→ 挑下一張（拆單建議表）。
 提問往返（v5.5.0，只有 yolo）：Worker `ct-exec` 拉一條虛線小迴圈「`T#### 提問`」→ 塔台代決（`c-gold`）→ 工單檔「`塔台答覆 Q-n`」（`c-teal`）→ 回到 Worker，不經過讀回報、回收與斷點菱形（不是收尾）。BAT 通道（v5.7.0，BAT `>= 0.7.0-pre.7`）：同一個小迴圈旁並排一條實線分支——Worker「題目寫進工單檔並 commit」（`c-teal`）→「`--ask`」→ 塔台「`bat_list_questions` → `--answer`」（`c-gold`）→ Worker「`bat_wait_question` 收到答覆」，註「工單不寫答覆行；Worker 記互動紀錄」；分支上拉一條虛線「失效（BAT 太舊／`lost`／取消／答覆失敗）→ 回到工單檔往返」接到原本那條迴圈，另一條虛線「`expired` → `BLOCKED` + Renew」。v5.15.0：「`--ask`」節點註記「一次多題：前 N-1 題 `--no-pty-write`（只有提示）、第 N 題 `--submit`」，到塔台的箭頭只畫一條，不新增節點。斷點 D（v5.5.0）：塔台旁一個 `c-gray` 節點「查到 `blocked`（MCP）→ 以分頁標題告知使用者」，註「不暫停、不代答；只在本來就在看 Worker 時查」（v5.8.0 起註記加「hook 的三種原因或 codex 的 `input`」），畫在斷點菱形之外；v5.7.0 起這個節點旁加一條虛線「`blockedReason: tower` → 不是斷點 D，去讀題答覆」接到 BAT 通道分支的塔台節點。
 Worker 啟動確認（v5.6.0）：派工 helper 旁加註 `［--wait-started 30000］`；「BAT 開 Worker 終端」與「Worker `ct-exec`」之間插一個「等待啟動確認」菱形（`c-amber`，註「helper 最多等 30 秒」），分三條往下：`started: <時間>`（exit `0`，已啟動）與 `started: unknown`（exit `0`，無法判定、照現行流程）都接到 Worker `ct-exec`；exit `8`（`started: unconfirmed`）拉到一個 `c-gray` 節點「分頁在、未確認啟動 → MCP 看輸出或以分頁標題提醒使用者」，註「不重派」，再以虛線接回塔台等回報。派工 helper 另拉一條虛線「exit `1` + `Unknown option '--wait-started'`（舊 BAT，不建分頁）→ 去掉參數重派一次」回到派工 helper，註「本 session 不再帶」。v5.8.0：菱形註記加「codex `>= 0.163.0` 也有信號（BAT `>= 0.7.0-pre.9`）；較舊 codex 走 `unknown`」，exit `8` 節點註記加「codex 常見原因：Trust this folder? 啟動畫面」；不新增節點。
 隔離工單（v5.3.0）只在派工 helper 旁加註 `［--isolation worktree］`、回收節點加註 `--worktree keep`，並從讀回報拉一條虛線「合併（見圖 17，斷點 E）」；隔離與合併的細節不畫進本圖
 **連線**：通知分三條——`on`「預填，使用者送出」、YOLO「自動送出」、`ask`／`off`「手動帶回」；斷點命中或使用者喊停 → 「暫停，交還使用者」（使用者中斷另標「≠ 斷點」）；無斷點 → 回到「塔台（`auto-session`）」，形成迴圈；`*config auto-session <m>` 改模式 → 虛線回到分頁角色宣告（帶新 `--mode` 再宣告一次）；分頁角色宣告與派工 helper 各拉一條虛線分支「Worker 分頁（有 `BAT_TOWER_TERMINAL_ID`，BAT `>= 0.7.0-pre.1`）→ exit `1`」（`c-gray`，註「stderr 含 `Forbidden` 只多一句提示：請在一般分頁啟動塔台」）——宣告這條併入 `不支援（BAT 太舊）` 照常往下走，派工這條接到側欄降級鏈；派工另可標 `RECOVERY_PENDING`（BAT Recovery 提示未回答，不自動重派）
-**不得畫成**：迴圈每輪都回到分頁角色宣告（只在啟動與改模式時宣告）；宣告失敗擋住塔台啟動；Worker 呼叫 `--set-role`；回收失敗導致工單狀態改變或觸發斷點；`Forbidden`／`RECOVERY_PENDING` 分支觸發重試或自動重派、或由 stderr 決定是否降級；塔台因有 `BAT_TOWER_TERMINAL_ID` 而拒絕啟動或預先跳過呼叫；`T#### 提問` 畫成收單；BAT 通道分支跳過「題目寫進工單檔」；一批多題畫成多條叫醒塔台的箭頭（v5.15.0 起只有一條）；`blockedReason: tower` 畫成告知使用者；斷點 D 暫停迴圈；塔台對 Worker 分頁送按鍵代答或背景輪詢 `blocked`；exit `8` 接到降級鏈或重派；`started: unknown` 畫成失敗；舊 BAT 的去參數重派畫成迴圈（只一次）
+**不得畫成**：迴圈每輪都回到分頁角色宣告（只在啟動與改模式時宣告）；宣告失敗擋住塔台啟動；Worker 呼叫 `--set-role`；回收失敗導致工單狀態改變或觸發斷點；`Forbidden`／`RECOVERY_PENDING` 分支觸發重試或自動重派、或由 stderr 決定是否降級；塔台因有 `BAT_TOWER_TERMINAL_ID` 而拒絕啟動或預先跳過呼叫；`T#### 提問` 畫成收單；BAT 通道分支跳過「題目寫進工單檔」；一批多題畫成多條叫醒塔台的箭頭（v5.15.0／v6.0.0-beta.9 起只有一條）；`blockedReason: tower` 畫成告知使用者；斷點 D 暫停迴圈；塔台對 Worker 分頁送按鍵代答或背景輪詢 `blocked`；exit `8` 接到降級鏈或重派；`started: unknown` 畫成失敗；舊 BAT 的去參數重派畫成迴圈（只一次）
 **側欄**：降級鏈 BAT → 新分頁 → 剪貼簿 → 文字提示；成功判讀以 exit code 為主規則，`bat-scripts.log` 只供事後查證；helper 一律以 `${BAT_HELPER_NODE:-node}` 執行；圖中提到分頁一律用分頁標題（`<Agent 顯示名> · Tower`／`· Worker · T####`），不畫 terminal ID（v5.2.5）
 **Drill-down**：分頁角色宣告 → `sendPrompt('介紹塔台分頁角色宣告')` → `bat-integration.md` § 塔台分頁角色宣告（v5.2.0）；BAT 終端 → `sendPrompt('介紹 BAT 兩組環境變數')` → `bat-integration.md` § 兩組環境變數，兩個角色；回收 → `sendPrompt('介紹收單後回收 Worker 分頁')` → `bat-integration.md` § 收單後回收 Worker 分頁；斷點 → `runtime-dispatch.md` § YOLO 與斷點；`CT_MODE` → `runtime-dispatch.md` § Worker 無狀態；`Forbidden` 分支 → `sendPrompt('介紹 BAT 範圍權杖與分頁角色')` → `bat-integration.md` § 範圍權杖與分頁角色；提問往返 → `sendPrompt('介紹 yolo 提問通道')` → `work-order-lifecycle.md` § yolo 提問通道；斷點 D → `sendPrompt('介紹斷點 D')` → `bat-integration.md` § 斷點 D；等待啟動確認 → `sendPrompt('介紹 Worker 啟動確認')` → `runtime-dispatch.md` § Worker 啟動確認
 
@@ -205,6 +205,57 @@ SHA 比對任一步不成立 → 「暫停，交還使用者」；斷點 E 旁�
 三種模式 → `sendPrompt('介紹三種合併模式')` → `work-order-lifecycle.md` § 合併：為什麼交給工單，而不是 BAT；
 整合 worktree、`--no-ff`、`--ff-only` → `governance.md` § 合併護欄；斷點 E → `runtime-dispatch.md` § YOLO 與斷點；
 SHA 比對 → `work-order-lifecycle.md` § 收單 SHA 回報的用途；`--worktree-status` → `bat-integration.md` § 查詢通道
+
+### 18. 5 層 × adapter 疊加圖（v6.0.0-pre.1 新增；6.0.0 起正式版）
+**When**：「方法論轉接是什麼」「抽換和疊加差在哪」「規劃用 BMAD、執行用 pstack 怎麼設」「adapter 放哪」「邊界段是什麼」「`methodology_guard`」
+**節點**：頂部橫跨「CT 核心：編排（不可交給 adapter）」（`c-gold`）；其下一列 5 個層節點——規劃 `planning`、執行 `execution`、審查 `review`、驗證 `verification`、交付 `delivery`（`c-teal`）；
+每層下方一行設定值（`ts`，例：`inherit`／`pstack`／`inherit`／`inherit`／`none（預設）`），再下一列是該層的負責者節點：BMAD 用 `c-coral`、外部 adapter 借用 `c-amber`、
+交付層「不交給方法論」用 `c-gray`；底部虛線容器「adapter 描述檔（資料，不是程式）」內三個來源節點——CT 內建 `adapters/bmad.yaml`、外部 skill `ct-adapter-pstack`、專案本地 `_ct-workorders/_adapters/`；
+最下方兩個節點：「`### 方法論邊界`（warn 自動加）」（`c-teal`，副標「負責者【只允許】・其他注入【不使用】」）與「實測：邊界段 7/7 有效」（`c-gray`）
+**連線**：CT 核心 → 層列「派工時解析：每層選一個負責者」；每層 → 其負責者（實線）；規劃負責者 → 執行負責者虛線「交接：story-spec」
+**側欄／頁尾**：容器標題列搜尋順序「`methodology_adapters_path` ＞ 專案本地 ＞ 外部 skill ＞ 內建」；圖例（借用 `c-amber`）；一行「5 層 ≠ 三層架構的 Layer ≠ 能力等級 Level」
+**不得畫成**：「編排」畫成第六層或指定給 adapter；同一層畫兩個負責者；交付層跟著「整張覆寫」或 `inherit` 變成方法論負責；adapter 畫成會執行程式的元件（它是資料，呼叫 workflow 的是 Worker）；
+5 層標成 Layer 1～5，或與三層架構、L1/L2/L3 畫在同一軸（見上方繪圖禁忌）
+**現成 SVG**：`preview-methodology.md` § 圖：5 層 × adapter 疊加（範例設定 `methodology: bmad`、`methodology_execution: pstack`），可直接使用或依使用者的設定改值
+**Drill-down**：CT 核心 → `sendPrompt('介紹方法論轉接的分工：CT 管編排、方法論管工單內紀律')` → `preview-methodology.md` § 為什麼要方法論轉接；
+層 → `sendPrompt('介紹方法論的 5 層')` → § 5 層與需求類型；交付 → `sendPrompt('介紹為什麼交付層預設不交給方法論')` → § 抽換 vs 分層疊加；
+交接虛線 → `sendPrompt('介紹分層疊加的跨層交接與回寫')` → § 抽換 vs 分層疊加 › 分層疊加；來源節點 → `sendPrompt('介紹 ct-adapter-pstack')`／`sendPrompt('介紹內建 bmad adapter 與 bmad-guide 的關係')` → § adapter 是什麼；
+邊界段 → `sendPrompt('介紹方法論邊界段與 methodology_guard')` → § 注入防護；實測 → `sendPrompt('介紹方法論注入防護的 V1、V2a、V2b 實測')` → § 注入防護 › 為什麼預設 `warn` 而不是 `block`
+**回答時**：先說明 6.0.0 起這是正式版的功能（取代 5.15.0）；Beta 專章的標示是預發行期間的狀態
+
+### 19. 三種引入方式圖（v6.0.0-beta.1 新增；v6.0.0-beta.2 改各家列與實測列）
+**When**：「方法論一定要完整安裝嗎」「只想用 pstack 的一個 skill」「方法論一定要引入嗎」「Superpowers 要不要裝」「mattpocock/skills 怎麼用」「引入方式」「只引用 skill」「部分參考」「skills-only」
+**節點**：三欄，由左到右 ①②③（由重到輕）。每欄由上到下四個節點：方式（`c-teal`：① 完整安裝 plugin＋hook＋skill／② 只引用 skill skills-only・不裝 hook／③ 部分參考 本地副本・借鏡做法）→
+常駐注入（① `c-amber`「有」；②③ `c-green`「無」）→ 塔台（`c-gold`：① `warn` 自動加邊界段・雙注入提示／② 探測為關，不觸發【不使用】／③ 不偵測，guard 不觸發）→
+工單（`c-teal`：① 邊界段【只允許】＋【不使用】／② 【只允許】指名 skill 或路徑／③ 工單步驟指名副本或直接寫進步驟）；
+下方一列各家定位與建議的方式：bmad 引入 → ①（`c-coral`，內建・預設）、pstack 選用 → ①／②（`c-amber`，已在用 pstack 才裝）、mattpocock → ③（`c-gray`，做法範例・效益未實證，沒有 adapter）；
+其下一個橫跨節點「Superpowers：不建議引入（在 CT 下沒有實測效益）」（`c-gray`，副標「已裝的機器只留共存防護」）；最下方橫跨節點「實測：① 邊界段有效；③ 已實測（P3）；② 未實測」（`c-gray`）
+**連線**：每欄由上到下實線；各家節點以虛線指向建議的方式欄（bmad → ①；pstack → ①、②；mattpocock → ③）；**Superpowers 節點不連到任何方式**
+**側欄／頁尾**：頂端一行「由重到輕；裝到什麼程度是使用者的選擇，塔台依實際偵測派工」；各家列標題「只有值得引入的才有」；圖例（借用 `c-amber`、`c-green`）；一行「引入方式 ≠ 方法論的 5 層」
+**不得畫成**：塔台替使用者改安裝或依「建議」派工（塔台看 `hook_probe` 實際偵測）；② 標成已實測，或 ③ 標成未實測（beta.2 起 ③ 已實測）；③ 的本地副本畫成會被模型自己叫用（有 `disable-model-invocation: true`）；
+Superpowers 畫成指向任何引入方式，或任何方法論以推薦語氣呈現（beta.2：方法論不是一定要引入，Superpowers 不建議引入、只留共存防護）；mattpocock 標成品質已提升（效益未實證）；
+引入方式與 5 層畫在同一軸（前者是「裝多少」，後者是「誰負責哪一層」）；adapter 畫成有「建議的引入方式」欄位（刻意不加）
+**現成 SVG**：`preview-methodology.md` § 引入方式 › 圖：三種引入方式，可直接使用
+**Drill-down**：方式節點 → `sendPrompt('介紹方法論引入方式 ① 完整安裝')`（②、③ 同型）→ `preview-methodology.md` § 引入方式 › 三種方式；
+常駐注入：有 → `sendPrompt('介紹 SessionStart 注入為什麼要邊界段')` → § 注入防護；塔台節點 → `sendPrompt('介紹塔台怎麼用 hook_probe 判斷注入')` → § 引入方式 › 塔台不替你選；
+pstack → `sendPrompt('介紹 ct-adapter-pstack 的引入方式建議')` → § 方法論不是一定要引入 › 四家定位、§ 引入方式 › 各家建議；mattpocock → `sendPrompt('介紹在 CT 專案使用 mattpocock/skills')` → § 在 CT 專案使用 mattpocock/skills；
+Superpowers → `sendPrompt('介紹 Superpowers 為什麼不建議引入、已經裝了怎麼共存')` → § 方法論不是一定要引入 › 已經裝了 Superpowers 怎麼辦；
+實測 → `sendPrompt('介紹引入方式哪些已實測、哪些未實測')` → § 引入方式 › 實測狀態：③ 已實測、② 未實測、§ 實測 P3、§ 已知未驗（完整對照表在該 SVG 下方）
+**回答時**：先說明 6.0.0 起這是正式版的功能（取代 5.15.0）；Beta 專章的標示是預發行期間的狀態
+
+### 20. Session 用量資料流圖（v6.0.0-beta.10 新增）
+**When**：「工單有沒有記 token 用量」「`*insights sessions` 怎麼算」「session_ids 是什麼」「塔台用量怎麼算」「session 統計快照」
+**節點**：上排三個 session id 來源——Worker 收尾「寫 session_ids」（`c-blue`）、塔台啟動「開工條目記 id」（`c-gold`）、塔台收單「補記（備援）」（`c-gold`）；
+中排：本機 JSONL「30 天後清掉」（`c-gray`）→ 統計腳本「⓪①②③ 歸屬」（`c-purple`）→ 快照「_insights/ 只數字」（`c-green`）；
+下排：報表「工單／塔台另列」（`c-teal`）、候選事實「🔵 給 ⑦」（`c-purple`）
+**連線**：上排三個來源 → 統計腳本；JSONL → 統計腳本 → 快照；統計腳本 → 報表；快照 → 候選事實（虛線，⑦ 才接）
+**頁尾**：兩行「塔台用量另列、不攤分；成本與依決策切的欄位都標「估」」「bat-scripts.log 只當可選的交叉驗證，讀不到不影響」
+**不得畫成**：塔台用量攤進工單；`bat-scripts.log` 畫成必要來源；候選事實直接讀 JSONL（只讀快照）；快照含對話、指令或路徑；成本畫成實際帳單；Codex／Copilot 也被統計
+**現成 SVG**：`preview-methodology.md` § beta.10：session 用量統計 › 圖：session 用量資料流，可直接使用
+**Drill-down**：Worker 收尾 → `sendPrompt('介紹 Worker 收尾怎麼寫 session_ids')` → `work-order-lifecycle.md` § Phase 4（session id 段）；
+塔台啟動／收單 → `sendPrompt('介紹塔台收單時補記 session id')` → `preview-methodology.md` § beta.10 › 誰做什麼；統計腳本 → `sendPrompt('介紹 ct-session-stats.py 的歸屬優先序')` → `advanced-patterns.md` § ct-insights（Session 用量統計段）；
+快照、候選事實、報表 → 同上 § beta.10 › 為什麼這樣設計
+**回答時**：先說明 6.0.0 起這是正式版的功能（取代 5.15.0），而且只統計 Claude Code
 
 ## 排版規則
 

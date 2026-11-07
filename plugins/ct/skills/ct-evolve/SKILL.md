@@ -1,8 +1,8 @@
 ---
 name: ct-evolve
-description: "Control Tower learning extraction skill for distilling work order experience into reusable patterns, anti-patterns, playbooks, or skill candidates. Use when the user invokes $ct-evolve or /ct-evolve, asks what was learned, wants to promote learnings with --playbook, --skill, --workflow, or --status, or needs FIELDGUIDE candidate tagging from repeated execution evidence."
+description: "Control Tower learning extraction skill for distilling work order experience into reusable patterns, anti-patterns, playbooks, or skill candidates. Use when the user invokes $ct-evolve or /ct-evolve, asks what was learned, wants to promote learnings with --playbook, --skill, --workflow, or --status, wants to feed session-statistics candidate facts with --facts-from, or needs FIELDGUIDE candidate tagging from repeated execution evidence."
 ---
-<!-- ct-evolve-version: 5.15.0 -->
+<!-- ct-evolve-version: 6.0.0 -->
 
 # ct-evolve
 
@@ -19,6 +19,7 @@ Arguments: `$ARGUMENTS`
 | `--skill [name]` | skill candidate | draft a skill-promotion plan, then use `$skill-creator` in a separate authoring turn |
 | `--workflow [name]` | workflow brief (v5.10.0+) | draft a Workflow brief and write it as a 🔵 knowledge card; never writes `.claude/workflows/` |
 | `--status` | pipeline status | show maturity counts and stale candidates |
+| `--facts-from <path>` | session evidence (v6.0.0-beta.10+) | read `ct-session-fact/0.1` candidate facts and map them into the learning flow; § Session Evidence |
 
 ## Write Boundaries
 
@@ -77,6 +78,53 @@ If uncertain, default to Tactical or Episodic rather than overstating generality
 
 If a distilled candidate concerns coding standards, UI conventions, naming, API format, validation, error handling, typography, colors, spacing, responsive behavior, or design tokens, add a `[FG-CANDIDATE]` tag with a short topic. `ct-fieldguide` can later promote it into FIELDGUIDE or DESIGN.md.
 
+## Session Evidence (v6.0.0-beta.10+)
+
+Machine evidence from the session statistics joins the **existing** learning flow; it adds no second confidence scale and no new
+threshold. CT keeps one learning mechanism (三區學習, FIELDGUIDE promotion, and this evidence); the ECC Level 1 path is retired
+(`../control-tower/references/enhancement-integration.md` § ECC Level 1 退場). Source: T0389 R6, D507 ④, D521.
+
+**Trigger.** Only when the user invokes `--facts-from <path>`. ct-evolve never reads facts on its own, never runs in the background,
+and never tags or edits work orders from them.
+
+**Input.** `ct-session-fact/0.1` NDJSON, one fact per line. The format, its fields and the rule that produces it are defined only in
+`../ct-insights/references/analysis-rules.md` § Session 用量統計 › 候選事實; do not restate or reinterpret them here.
+
+- `<path>` is a facts file (the `--facts OUT` output of `*insights sessions … --facts OUT`): read it as is.
+- `<path>` is a snapshot file or directory (`_ct-workorders/_insights/session-stats/`): produce the facts with
+  `ct-session-stats.py --facts-from <path> --facts <temp file outside the repo>` (reads snapshots only, no JSONL), then read that file.
+  Invocation, interpreter and path conversion are the same as in that section; exit `3` or `4` → report "資料不可用", write nothing.
+- Skip a line whose `schema` is not `ct-session-fact/0.1`, whose `rule` is not defined in that section, or whose `confidence` is not
+  🔵 / 🟡; list it as skipped. Never guess a mapping for an unknown rule.
+
+**Confidence** (the scale is `../control-tower/references/self-learning-core.md` § 置信度系統, the single authority):
+
+| Fact | Learning entry |
+|---|---|
+| `confidence: 🔵` | enters at 🔵 (machine evidence always enters at 🔵) |
+| `confidence: 🟡` (`workorders` ≥ 2 and `days` ≥ 2) | may enter at 🟡 — the step before the table's 🟢 「同一模式在 2+ 工單重複出現」 |
+| — | 🟢 only after the candidate passes § Distillation Gate **and** meets the 🟢 row of the table; facts alone never reach 🟢 |
+| — | ⭐ only with user approval, as in the table |
+
+**Unit.** Count work orders (the fact's `workorders`), never sessions; a Renew or `/clear` of the same work order adds nothing.
+
+**Withdrawal.** A fact with `state: withdrawn-candidate` (counter-evidence in ≥ 2 later work orders) marks the entry it fed
+`⏸ 撤回候選`: keep the entry and its history, record the counter-evidence work orders, and restore the previous status when a later run
+shows the fact as `candidate` again. `❌ 廢棄` is set only by the user.
+
+**Destination** (§ Classification):
+
+- Stuck signals (`stuck.*`, the only rule in 0.1) → **Episodic** entry (`self-learning-core.md` § Episodic 條目格式). The fact's
+  🔵 / 🟡 is recorded as evidence only; Episodic entries do not count in the confidence system.
+- An environment fact (a tool, shell or repo behavior) that passes § Distillation Gate → **Tactical** at the level above; when it
+  concerns the topics of § FIELDGUIDE Bridge, add `[FG-CANDIDATE]` as usual.
+- **Strategic** entries never come from statistics.
+
+**Recording.** Each entry fed by a fact carries `[SESSION-EVIDENCE: <fact_id>]` and its `Source` names the fact's `source` (script
+version and date range) plus the evidence work orders. Re-running on the same snapshot yields the same facts, so an existing `fact_id`
+updates its entry instead of adding one. The scope question (project / global) is asked as usual; facts come from one project's
+sessions, so recommend project scope. Write only through § Extraction Flow steps 3–5 — never copy a fact line into `_learnings.md`.
+
 ## Workflow Bridge (v5.10.0+)
 
 If a candidate is a work shape that meets the 🔵 candidate grade of `ct-insights/references/analysis-rules.md` § Workflow 適配度 (conditions live only there), add a `[WF-CANDIDATE]` tag with the WFC id or shape name. Repetition *between* work orders is a Playbook candidate (X5), not `[WF-CANDIDATE]`. `--workflow` can later turn the tagged candidate into a brief.
@@ -105,6 +153,7 @@ For `--workflow` (v5.10.0+; what Workflow is in CT, rules R1–R5, card format a
 For `--status`:
 
 - Count candidate, validated, playbook, and skill-ready items, plus `[WF-CANDIDATE]` tags and Workflow knowledge cards by maturity (v5.10.0+).
+- Count `[SESSION-EVIDENCE]` entries and `⏸ 撤回候選` entries separately (v6.0.0-beta.10+, § Session Evidence).
 - Show stale or duplicate learnings.
 - Recommend the next promotion action.
 
@@ -118,11 +167,12 @@ Load only when needed:
 - `../ct-insights/references/analysis-rules.md` § Workflow 適配度 (for `[WF-CANDIDATE]` conditions)
 - `../control-tower/references/skill-writing-conventions.md`
 - `../control-tower/references/fieldguide-commands.md`
-- `../control-tower/references/enhancement-integration.md` § /ct-evolve Level 1 增強 (only when ECC is present)
+- `../ct-insights/references/analysis-rules.md` § Session 用量統計 › 候選事實 (for `--facts-from`, v6.0.0-beta.10+)
 
 ## Error Handling
 
 - Missing `_ct-workorders/`: explain that there is no project CT history.
 - No completed work orders: report insufficient evidence.
 - Ambiguous scope: write nothing and ask for project/global choice.
+- `--facts-from` path missing, unreadable, or yields no valid fact: report it and write nothing (§ Session Evidence).
 - Candidate fails distillation: put it in Episodic or report it as skipped.

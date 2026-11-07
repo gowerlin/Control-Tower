@@ -149,7 +149,7 @@ BAT 這一端的提問介面，見 <BatLink path="control-tower#questions">BAT �
 - `control-tower/references/yolo-mode.md` § Worker 向塔台提問（v5.5.0+）（含 § 適用範圍、§ BAT 通道（v5.7.0+）、§ Worker 端、§ 塔台端、§ 計數、§ `worker_question_timeout` 的取值）
 - `ct-exec/SKILL.md` § Questions For Tower (`CT_MODE=yolo`, v5.5.0+)
 - `control-tower-guide/references/work-order-lifecycle.md` § yolo 提問通道：Worker 改問塔台（v5.5.0）
-- CT 安裝與使用指南 § 2.33、§ 2.37、§ 2.38、§ 2.61
+- CT 安裝與使用指南 § 2.33、§ 2.37、§ 2.38、§ 2.60
 
 ::: warning 摘要不具權威
 Portal 是摘要，不具權威，與 reference 有出入時以 reference 為準。

@@ -10,7 +10,7 @@
 
 #### 機器可讀摘要（YAML frontmatter）
 
-> v5.13.0 新增。本小節是 `_tower-state.md` 機器可讀摘要的**唯一權威定義**，也是 CT 對外（BAT 等外部讀者）的契約；
+> v6.0.0 新增。本小節是 `_tower-state.md` 機器可讀摘要的**唯一權威定義**，也是 CT 對外（BAT 等外部讀者）的契約；
 > 其他文件提到「塔台狀態摘要」都指這裡。欄位依 BAT 契約 v1（BAT D184 回覆稿），**欄位名、型別與語意不得自行修改**，
 > 要改先通知 BAT（見下方相容規則）。
 
@@ -53,7 +53,7 @@
 schema_kind: tower-state
 summary_version: 1
 updated_at: "2026-10-25T19:21:43+0800"
-session: "2026-10-25 17:48 塔台 session（CT v5.13.0）"
+session: "2026-10-25 17:48 塔台 session（CT v6.0.0）"
 next_ids:
   workorder: "T0306"
   decision: "D341"
@@ -170,7 +170,27 @@ todo:
 |------|------|
 | 首次啟動（無 `_tower-state.md`） | 從標準模板建立，填入專案名稱和初始編號，並寫入機器可讀摘要 |
 | 恢復啟動（有 `_tower-state.md`） | 讀取並驗證 7 個必要區段完整性，缺少的區段提示補齊；狀態以本文為準，沒有摘要不提示（下次寫入時補上） |
+| 啟動後第一次寫入（首次或恢復都算，v6.0.0-beta.10+） | 在 § 🌅 起手式 寫本 session 的開工條目（時間、CT 版號），條目內記塔台 session id，見下方 § 塔台 session id |
 | Session 結束前 | 更新「起手式」（立即待辦 + 近期完成）和「進度快照」，並同步摘要 |
+
+### 塔台 session id（v6.0.0-beta.10+）
+
+> 本小節是塔台記錄自己 session id 的**唯一權威定義**（PLAN-004 ⑥ 第 1 點，D511／D520；之前各專案以本地規則過渡）。
+> Worker 端的寫法是 `ct-exec/SKILL.md` § Phase 4 › Session id；讀它的統計是 `ct-insights/references/analysis-rules.md` § Session 用量統計。
+
+塔台 session 沒有工單號，事後統計 token 用量時要靠 session id 找到它的 session 紀錄，並把它認成塔台（歸屬 ⓪）。
+
+- **何時寫**：塔台啟動後第一次寫 `_tower-state.md` 的開工條目時（上方 § 塔台行為）。之後同一個 session 不必重寫。
+- **取值**：只讀 `CLAUDE_CODE_SESSION_ID` 這一個變數（bash `printf '%s' "$CLAUDE_CODE_SESSION_ID"`；PowerShell `$env:CLAUDE_CODE_SESSION_ID`），
+  或 BAT MCP `bat_whoami` 的 `claudeSessionId`（BAT `>= 0.7.1-pre.1`；兩者相同）。寫入前以
+  `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$` 驗證。這是「環境變數只列名稱」唯一允許寫值的例外
+  （[auto-session.md](auto-session.md) § BAT 內部終端路由 › 偵測條件）；不得順帶列出其他變數，權杖一律不寫。
+- **格式**：開工條目文字裡寫「塔台 session」後接以反引號包住的 uuid，例：`` 塔台 session `<uuid>` ``（`<uuid>` 換成實際的 session id）。
+  統計腳本只認這個寫法（「塔台 session」、空白、反引號、uuid、反引號）。
+- **拿不到**（變數沒設、不是 UUID、Codex 或其他執行環境、MCP 不可用）：寫「session id 未知」，**不阻擋啟動**。
+- **不加進機器可讀摘要**：frontmatter 欄位不變（BAT 塔台面板契約 v1 不動）；`session` 欄位照舊是自由文字，不放 session id。
+- 開工條目日後被收斂或 `*rescan` 移除時，session id 跟著消失：不必另外保存。統計會退回用第一則訊息 `/control-tower` 與分頁標題判斷塔台；
+  已寫好的收單快照（只有數字）不受影響。
 
 ### 自動更新時機
 
@@ -186,7 +206,7 @@ todo:
 
 ## BAT 塔台面板讀取契約
 
-> v5.13.0 新增。本節是「CT 寫、BAT 指揮塔面板讀」的檔案格式的**唯一權威定義**：大小預算、各檔 BAT 依賴的格式、值域對照、共通規則。
+> v6.0.0-beta.3 新增。本節是「CT 寫、BAT 指揮塔面板讀」的檔案格式的**唯一權威定義**：大小預算、各檔 BAT 依賴的格式、值域對照、共通規則。
 > 各檔的完整格式仍在各自的權威段（下方 § 各檔要求 列出位置），本節只寫 BAT 依賴的部分；其他文件提到「BAT 讀得到」「大小預算」都引用這裡。
 > 對照版本：BAT `0.7.1-pre.9`（讀檔、塔台狀態、決策日誌、臭蟲索引與待辦池解析器以 `0.7.1-pre.8` 對照；pre.9 改的讀檔失敗提示與 `critical` 讀法依 BAT 通知，D420／D421）。BAT 改了解析規則，以 BAT 的通知為準再改本節。
 > 這裡的「BAT 塔台面板」是 BAT 視窗裡的指揮塔面板（總覽、決策、臭蟲、待辦池、工單各頁），不是上方 § 塔台狀態面板（塔台啟動時自己輸出的面板）。
@@ -212,7 +232,7 @@ todo:
   BAT `>= 0.7.1-pre.9` 的 Epics、Sprint 頁讀不到時同樣顯示「無法讀取 <檔名>」；檔案不存在照舊顯示空（不是錯誤）。512 KiB 上限沒變（BAT BUG-172）。
 - **400 KB 預算保留**：更舊的 BAT 超過上限仍會靜默變空，而塔台不知道使用者裝的 BAT 版本，所以下方的檢查時機與輸出不分 BAT 版本照做（D421）。
 
-**檢查時機**：Startup Protocol（[../SKILL.md](../SKILL.md)）與 `*sync`（[work-order-system.md](work-order-system.md) § sprint-status.yaml 同步 › 同步流程）
+**檢查時機**：Startup Protocol（[../SKILL.md](../SKILL.md)）與 `*sync`（[work-order-system.md](work-order-system.md) § 主方法論 tracker 同步 › 同步流程）
 量上列的 `_` 開頭熱檔；`*sync` 另量熱區單據檔。只量大小（`stat`），不為此讀內容。結果：
 
 | 大小 | 輸出（一檔一行） |
@@ -235,6 +255,9 @@ todo:
 | `_backlog.md` | `ID` 以 `PLAN-` 開頭；優先級格子含英文等級；Active 列的 `狀態` 欄蓋過區段；`## Dropped` 表頭 `ID`；只放 BUG 列的區段 BAT 會略過 | [bug-plan-system.md](bug-plan-system.md) § 索引格式 |
 | `T*.md`、`BUG-*.md`、`PLAN-*.md` | frontmatter `schema_version: 1`（整數）、`schema_kind`、`status`；沒有 frontmatter 才讀本文元資料 | [work-order-template.md](work-order-template.md) § PLAN-034 Sprint 2 transition、[bug-plan-system.md](bug-plan-system.md) § PLAN-034 Sprint 2 transition |
 | `tower-config.md` § 可用選項 | 表格標題 `### 可用選項` 與欄序 `選項 \| 有效值 \| 預設 \| 說明`（BAT 總覽的預設層讀它）。**可以新增列，不得改標題或欄序** | [tower-config.md](tower-config.md) § 可用選項 |
+
+`_ct-workorders/_insights/`（v6.0.0-beta.10+，例：`_insights/session-stats/<YYYY-MM>.json` 統計快照）**不在** BAT 塔台面板讀取範圍，也不受上方大小預算約束；
+它的歸屬見 [data-layer-architecture.md](data-layer-architecture.md) § `_ct-workorders/_insights/`。
 
 表格的共通讀法：BAT 逐列讀表格，trim 後**不是以 `|` 開頭且以 `|` 結尾**的一行就讓表格結束（之後的列被當成新表頭）；儲存格以 `|` 切開，
 所以格子裡的 `|`（含 `\|` 與行內 code 裡的 `|`）都會讓欄位錯位，一律改寫成 `／`。

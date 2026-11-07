@@ -9,7 +9,10 @@ CT 在 Level 0 零相依：只要能讀寫 `.md` 檔案的 AI 工具就能運作
 
 ---
 
-## Level 1：ECC continuous-learning-v2
+## Level 1：ECC continuous-learning-v2（v6.0.0-beta.10 起退場）
+
+> **v6.0.0-beta.10 起（v6），CT 規格不再整合 ECC**：不寫 observations、不讀 instinct、不換算置信度。下面是穩定版 5.15.0 仍保留的做法，
+> 退場理由與每項功能的去處見本節最後的〈v6 退場〉，以及 `preview-methodology.md` § beta.10：ECC Level 1 退場。
 
 ECC（Everything Claude Code）的 continuous-learning-v2 以 hook 觀察工具使用，自動形成 instinct。CT 以 `~/.claude/homunculus/` 是否存在判定它可用。
 
@@ -23,9 +26,18 @@ ECC（Everything Claude Code）的 continuous-learning-v2 以 hook 觀察工具�
 
 兩者是互補而非重疊：ECC 學的是工具使用層面的模式，CT 的 `*evolve`／`ct-evolve` 學的是專案協調層面的模式。
 
+**v6 退場（v6.0.0-beta.10）**：問題在於這是 CT 裡的**第二套採信規則**——ECC 的數值置信度和 CT 的置信度表並存；而且 ECC 已不在使用者的現行設定、
+近 30 天呼叫 0 次。使用者定的條件是「新機制完成、ECC 需要的相容功能已納入」才移除：beta.10 的 session 統計（`*insights sessions`）補上了
+「機器自動捕獲」那一塊，候選事實再由 `/ct-evolve --facts-from` 接進既有置信度表，其餘各項不是已有對應（`_learnings.md`、決策日誌、分流提問）
+就是不再需要（數值換算、instinct 同步、雙寫）。CT 從此只有一套學習機制；記憶、省 token、context 壓縮類外掛預設不搭配
+（安裝與否是使用者層的規範，CT 不複製）。權威：CT `enhancement-integration.md` § 外部增強外掛治理、§ ECC Level 1 退場。
+
 ---
 
 ## Level 2：外部 bmad-guide
+
+> **v6（6.0.0 起正式版）**：Level 2 改為方法論中立的「方法論轉接」，BMAD 成為內建 adapter，`bmad-guide` 仍是 BMAD 名稱與細路由的權威；簡述見本章 § 方法論轉接（v6.0.0+）。
+> 沒有任何 `methodology*` 設定時行為與本節相同。見 `preview-methodology.md` § 從 Level 2 到方法論轉接；哪些方法論值得引入見同章 § 方法論不是一定要引入：各家定位；要裝到什麼程度見同章 § 引入方式：完整安裝、只引用 skill、部分參考。
 
 ### 三者的關係
 
@@ -52,7 +64,7 @@ BMad 的知識就只有一個事實來源——外部 `bmad-guide`。這與 `gov
 塔台依序檢查：外部 `bmad-guide` 的 SKILL.md 是否可讀、它的版本是否滿足任務需要（太舊只提示升級、不阻斷）、
 它的 workflow 對照表是否讀得到。讀得到就是 Level 2 可用。
 
-**去哪裡找 SKILL.md（v5.14.1）。** bmad-guide 有兩種裝法：zip 手動安裝放在 `skills/bmad-guide/`，plugin 安裝
+**去哪裡找 SKILL.md（v5.14.1；v6 自 v6.0.0-beta.6 起改由 adapter probe 做，見下方）。** bmad-guide 有兩種裝法：zip 手動安裝放在 `skills/bmad-guide/`，plugin 安裝
 （同一個 marketplace 的 `bmad-guide@control-tower`，見 `governance.md` § plugin marketplace：另一種安裝方式）則放在 plugin 管理的目錄。
 5.14.0 只寫「讀取已安裝 skill」，塔台習慣去 `skills/` 找；用 plugin 裝的 bmad-guide 找不到，又不說一聲，就默默改成手動欄位——
 使用者明明裝了，卻以為 Level 2 沒作用。5.14.1 把搜尋順序寫成一張表：
@@ -63,7 +75,7 @@ BMad 的知識就只有一個事實來源——外部 `bmad-guide`。這與 `gov
 | 2 | Claude Code plugin | plugin 安裝清單裡 `bmad-guide@<任一 marketplace>` 指的安裝目錄 |
 | 3 | Codex plugin | Codex 設定裡啟用的 `bmad-guide@<任一 marketplace>`，到 plugin cache 取該版本 |
 
-**5.14.4 改成依 runtime 分開。** 上表的第 1 列把 Claude 與 Codex 的 `skills/` 一起查。Claude Code 只裝 plugin、Codex 用 zip 時，
+**5.14.4 改成依 runtime 分開（v6：v6.0.0-beta.8）。** 上表的第 1 列把 Claude 與 Codex 的 `skills/` 一起查。Claude Code 只裝 plugin、Codex 用 zip 時，
 Claude 塔台第 1 列就命中 Codex 那份——版本和 `references/` 都取自一份 Claude 根本沒載入的安裝（實機驗證時就推導出這個情況）。
 所以順序改成：
 
@@ -74,7 +86,7 @@ Claude 塔台第 1 列就命中 Codex 那份——版本和 `references/` 都取
 | ③ | 另一個 runtime 的手動安裝與 plugin——只當讀檔來源，第一次用到時註明一次「不是本 runtime 載入的」 |
 
 同一版也把 Claude plugin 的位置收成一處：`${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}`。原本「設了 `CLAUDE_CONFIG_DIR` 時也查
-`${CLAUDE_CONFIG_DIR}/plugins/`」標著尚未驗證；實測只設 `CLAUDE_CONFIG_DIR` 時，plugin 清單、cache、marketplace 全跟著搬過去，
+另一處」標著尚未驗證；實測只設 `CLAUDE_CONFIG_DIR` 時，plugin 清單、cache、marketplace 全跟著搬過去，
 `~/.claude/plugins/` 就成了另一份設定的東西，查它只會命中本 session 沒載入的 plugin。
 
 幾個設計上的選擇：
@@ -86,6 +98,13 @@ Claude 塔台第 1 列就命中 Codex 那份——版本和 `references/` 都取
 - **`references/` 相對於找到的 SKILL.md。** plugin 版的 reference 不在 `skills/` 底下，所以不另外假設路徑
 - **只讀。** plugin 目錄也是 Layer 1（`three-layer-arch.md` § plugin 安裝路徑也是 Layer 1），偵測只讀不寫
 
+**v6 的寫法：adapter probe＋`skill_root`（v6.0.0-beta.6）。** v6 的 Level 2 交給方法論轉接，偵測寫在內建 adapter `bmad.yaml` 的 `detection.probes`：手動安裝的 `guide-skill` 排第一，後面是 `guide-claude-plugin`、`guide-codex-plugin` 兩個 plugin probe——順序就是上表。
+plugin probe 多一個選填欄位 `skill_root`（bmad 是 `skills/bmad-guide`），寫明 skill 在 plugin 安裝目錄的哪裡：一個 plugin 可能帶好幾個 skill，plugin 名稱也不一定等於 skill 名稱，由 adapter 明寫比讓 CT 猜可靠，驗證腳本也檢查得到。`references/` 與 `required_files` 都相對於解析出來的 skill 根目錄。
+「已安裝卻讀不到」那一條也寫進契約的降級規則，所以對任何方法論都成立，不只 bmad-guide。plugin probe 已在 beta.7 上實機驗證（Claude Code 與 Codex 各一個隔離環境）。細節見 `preview-methodology.md` § beta.6：移植 5.14.1／5.14.2、adapter 偵測 plugin。
+v6.0.0-beta.8 把上面 5.14.4 的順序也套到 probe：probe 可以標 `runtime`，`guide-skill` 拆成 `guide-skill-claude`、`guide-skill-codex`，四個 probe 依 runtime 歸類，
+塔台先試本 runtime 的，另一個 runtime 的只當讀檔來源。為什麼是加一個選填欄位、而不是讓塔台照路徑去猜是哪個 runtime：路徑猜不準（`~/.agents/skills/` 從名字看不出歸誰），
+由 adapter 明寫才驗證得到。細節見 `preview-methodology.md` § beta.8：移植 5.14.4、probe 依 runtime。
+
 **已安裝卻讀不到：提示一次（v5.14.1）。** 可用 skill 清單裡有 `bmad-guide`（或 plugin 寫法 `bmad-guide:bmad-guide`），搜尋順序裡的每一處卻都讀不到檔案時，
 表示裝了但塔台找不到——這和「沒裝」不一樣，靜默降級會讓使用者誤會。所以塔台在本 session 提示一次（建議告訴塔台 SKILL.md 的位置或改用 zip），
 再照常改手動欄位、不阻斷。清單裡也沒有，才是真的沒裝，照舊靜默。
@@ -93,7 +112,7 @@ Claude 塔台第 1 列就命中 Codex 那份——版本和 `references/` 都取
 **不可用時**：塔台照常運作，工單的 BMad 工作流程欄位改為**手動指定**的自由文字，
 且**不自行編造** BMad 行為；已退役或改名的 workflow，也只在外部 guide 或專案明確確認替代者時才改路由。
 
-> 搜尋順序、路徑與提示條件以 CT `enhancement-integration.md` § Level 2 › 偵測為唯一權威；本節只講為什麼。
+> 穩定版：搜尋順序、路徑與提示條件以 CT `enhancement-integration.md` § Level 2 › 偵測為唯一權威。v6：路徑與順序只寫在 `adapters/bmad.yaml` 的 `detection.probes`，怎麼解析 skill 根目錄在 `methodology-adapters.md` § 描述檔格式 › probe 怎麼解析 skill 根目錄，提示條件在同檔 § 降級。本節只講為什麼。
 
 ### 有 bmad-guide 時增加什麼
 
@@ -114,6 +133,31 @@ Claude 塔台第 1 列就命中 Codex 那份——版本和 `references/` 都取
 替代清單由 CT 的 `enhancement-integration.md` 定義；**哪個名字在你的 BMad 版本裡還有效，以外部 bmad-guide 為準**。
 
 `sprint-status.yaml` 是 BMad 專案的進度檔，在 CT 的事實來源優先級中排在工單檔案之後（見 `work-order-lifecycle.md` § 事實來源優先級）。
+
+---
+
+## 方法論轉接（v6.0.0+）
+
+> v6 把 Level 2 從「外部 bmad-guide」改成方法論中立的**方法論轉接**（methodology adapter），6.0.0 起屬於正式版。本節是正式教材的簡述；
+> 設計理由、實測證據與各預發行版的變更在 `preview-methodology.md`（預發行期間的專章，6.0.0 起保留作為歷史參考，檔名與段落名不改）。
+> 規則以 CT `methodology-adapters.md`（唯一權威）為準，本節不複述。
+
+**一句話**：CT 管「編排」（工單、派工、驗收、收單），方法論管「一張工單裡怎麼做」；兩者用 adapter 描述檔接起來，換方法論不必改 CT 本體。
+BMAD 是內建、預設的 adapter；**什麼都不設，行為與 5.x 相同**（`methodology: auto`）。上面〈Level 2：外部 bmad-guide〉講的偵測、降級與 bmad-guide 的角色在 v6 照樣成立，只是改由 `bmad` adapter 承接。
+（`preview-methodology.md` § 一句話、§ 為什麼要方法論轉接、§ 從 Level 2 到方法論轉接）
+
+| 概念 | 簡述 | 細節（`preview-methodology.md`） |
+|---|---|---|
+| 5 層 | 規劃、執行、審查、驗證、交付；每層可以交給不同的 adapter。交付層預設 `none`：不開 PR、不發布、不開分支 | § 5 層與需求類型 |
+| 抽換與分層疊加 | `methodology` 換主方法論；`methodology_<層>` 讓某一層改用別家；工單寫「這張用 X 做」可蓋過設定（交付層除外） | § 抽換 vs 分層疊加 |
+| adapter 與來源 | 一份描述檔＋一份 README；來源有 CT 內建（`bmad`）、外部 skill（CT 官方 `ct-adapter-pstack`）、專案本地（`_ct-workorders/_adapters/`）與 `methodology_adapters_path`。找不到或壞掉一律降級，不阻塞、不替方法論編造行為 | § adapter 是什麼 |
+| 不是一定要引入 | BMAD 引入（內建、預設）、pstack 選用（已在用才裝）、Superpowers 不建議引入（只留共存防護）、mattpocock/skills 是 ③ 的可選範例（品質效益未實證） | § 方法論不是一定要引入：各家定位 |
+| 三種引入方式 | ① 完整安裝、② 只引用 skill、③ 部分參考（本地副本）；③ 已實測、② 未實測；塔台不替你選 | § 引入方式：完整安裝、只引用 skill、部分參考 |
+| 注入防護 | 方法論的 SessionStart 注入可能把 Worker 帶去別的流程；`methodology_guard: warn`（預設）時塔台派工自動加 `### 方法論邊界`，衝突時 CT 規則優先 | § 注入防護：為什麼要「邊界段」、§ 雙注入：兩家方法論同時開著 |
+| 設定鍵 | 9 個 `methodology*` 鍵，全部預設時與 5.x 相同；`*config methodology` 看解析結果 | `ecosystem.md` § 設定系統；CT `tower-config.md` § 方法論設定鍵（v6.0.0+） |
+| Worker 端 | 工單有 frontmatter `methodology` 才帶入；呼叫任何方法論 skill 都要記錄；compact／resume 後先重讀工單 | § Worker 端會看到什麼不同；正式教材：`work-order-lifecycle.md` § 方法論（v6.0.0+） |
+
+圖：`diagrams.md` 的「5 層 × adapter 疊加圖」與「三種引入方式」。
 
 ---
 
@@ -144,12 +188,26 @@ mem0 REST API → 向量儲存
 
 **無 mem0 時**：`_learnings.md` 寫入與 `*evolve` 流程完全不受影響，只有跨裝置／跨專案的長期記憶同步失效；面板會提示，但不阻斷任何操作。
 
+### 啟用條件（v6.0.0-beta.10+）
+
+穩定版 5.15.0 只要偵測到 memsync 可用就啟用 Level 3。beta.10 起多一道條件：mem0 是用 Stop hook 接記憶服務的形態，屬於使用者層「agent 記憶外掛預設不安裝」的範圍，所以**要在專案的本地規則（例 `_ct-workorders/_local-rules.md`）寫明例外才啟用**——符合使用者層規範的哪一條例外、量測依據與日期、元件名稱與版本。
+
+| 情況 | 塔台怎麼做 |
+|------|-----------|
+| 偵測到 memsync，本地規則有例外紀錄 | 照上面的方式啟用 |
+| 偵測到 memsync，但沒有例外紀錄 | 不啟用（不算進能力等級）；本 session 提示一次，之後靜默 |
+| 沒有安裝 | 同「無 mem0 時」，不提示 |
+
+為什麼是「保留但加條件」而不是移除：Level 3 是單向寫入、塔台不查詢，不會形成第二套採信規則；但它仍是一個記憶外掛，要不要裝屬於使用者層的規範。CT 只寫「要有例外紀錄」這個條件並指向使用者層，不複製那份規範的條文；不啟用時 Stop hook 是使用者自己的設定，CT 不動它。
+
+（權威：CT `control-tower/references/enhancement-integration.md` § Level 3 › 啟用條件）
+
 ---
 
 ## Codex 整合
 
 CT 的 8 個 skill 都能在 Codex 中以 `$` 前綴呼叫（`$control-tower`、`$ct-exec T0001`…），塔台與 Worker 可以各自是 Claude Code 或 Codex。
-v5.14.0 起用 plugin 安裝時，Codex 要寫 `$ct:` 前綴（`$ct:control-tower`、`$ct:ct-exec T0001`），BAT 派工在 BAT `>= 0.7.2-pre.1` 時兩種安裝都支援（BAT 依安裝方式送 `$ct-exec` 或 `$ct:ct-exec`，v5.14.2），更舊的 BAT 只支援 zip 手動安裝（見 `governance.md` § plugin marketplace：另一種安裝方式）。
+v5.14.0 起用 plugin 安裝時，Codex 要寫 `$ct:` 前綴（`$ct:control-tower`、`$ct:ct-exec T0001`），BAT 派工在 BAT `>= 0.7.2-pre.1` 時兩種安裝都支援（BAT 依安裝方式送 `$ct-exec` 或 `$ct:ct-exec`，v5.14.2），更舊的 BAT 只支援 zip 手動安裝（見 `governance.md` § plugin marketplace：另一種安裝方式）。v6 的條文自 v6.0.0-beta.5 起相同（依 BAT 版本自 v6.0.0-beta.6 起），6.0.0 起上架；預發行版（beta、rc）不提供 plugin。
 
 讓同一套 skill 能在兩邊執行的三件事：
 
@@ -193,10 +251,10 @@ Playbook 在 **3 個以上專案**使用並達最高置信度後，`*evolve --sk
 適用場景 → 觸發條件、工單序列 → 執行步驟、品質關卡 → 驗收條件。
 
 到此為止。要真正寫成已安裝的 skill，使用者須**自己在新 session 呼叫 `skill-creator`**。
-已安裝的 skill 屬於 Layer 1，塔台與 `ct-evolve` 都不寫入（見 `three-layer-arch.md` § Layer 1 寫入規則）；playbook 寫入路徑若落在 Layer 1 路徑（`~/.claude/skills/`、`~/.codex/skills/`，v5.14.0 起含 plugin 安裝路徑）之下一律拒絕。
+已安裝的 skill 屬於 Layer 1，塔台與 `ct-evolve` 都不寫入（見 `three-layer-arch.md` § Layer 1 寫入規則）；playbook 寫入路徑若落在 Layer 1 路徑（`~/.claude/skills/`、`~/.codex/skills/`，v5.14.0／v6.0.0-beta.5 條文起含 plugin 安裝路徑）之下一律拒絕。
 
 另有一條回饋路徑：某個 playbook 被 2 個以上專案驗證後，塔台會提議更新外部 `bmad-guide` 的對應 reference——是否更新由使用者決定。
-bmad-guide 是 plugin 安裝時（v5.14.1），這條路徑不改已安裝的檔案：plugin 目錄是 Layer 1，下次更新也會蓋掉，所以改成提議修改 bmad-guide 的原始碼、隨下一版發布。
+bmad-guide 是 plugin 安裝時（v5.14.1；v6 自 v6.0.0-beta.6 起，寫成方法論中立：CT `enhancement-integration.md` § Playbook → 方法論回饋），這條路徑不改已安裝的檔案：plugin 目錄是 Layer 1，下次更新也會蓋掉，所以改成提議修改 bmad-guide 的原始碼、隨下一版發布。
 
 ---
 
@@ -276,9 +334,9 @@ bmad-guide 是 plugin 安裝時（v5.14.1），這條路徑不改已安裝的檔
 
 | 元件 | 判定可用的依據 |
 |------|--------------|
-| ECC（Level 1） | `~/.claude/homunculus/` 存在 |
-| 外部 bmad-guide（Level 2） | skill 可讀且 workflow 對照表讀得到（手動安裝或 plugin 安裝皆可，v5.14.1） |
-| mem0 REST（Level 3） | memsync 存在且健康檢查在 timeout 內通過 |
+| ECC（Level 1；v6.0.0-beta.10 起不偵測） | `~/.claude/homunculus/` 存在（只有穩定版 5.15.0） |
+| 外部 bmad-guide（Level 2） | skill 可讀且 workflow 對照表讀得到（手動安裝或 plugin 安裝皆可，v5.14.1；v6 自 v6.0.0-beta.6 起） |
+| mem0 REST（Level 3） | memsync 存在且健康檢查在 timeout 內通過；v6.0.0-beta.10 起另需本地規則記錄使用者層例外（§ Level 3 › 啟用條件） |
 
 偵測結果只決定**增強功能**的啟用範圍；缺少任何元件都不影響核心功能，面板只提示、不阻斷。
 

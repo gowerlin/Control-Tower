@@ -213,7 +213,7 @@ v4.4.x 系列工單 metadata 加了三個欄位。每一個都對應一個具體
 
 1. **平行化策略**：`fire-and-forget` 類別可多工單併發，`decision-requiring` 必須序列。
 2. **Standby 預告**：發現工單鏈裡有 `decision-requiring`，提前通知使用者「等下要做架構決策」。
-3. **Sprint 資源估算**：`decision-requiring` 佔比高的 sprint，實際產出速度會被使用者 availability 卡住，不是被 AI 卡住。
+3. **迭代資源估算**：`decision-requiring` 佔比高的迭代（例：bmad 的 sprint），實際產出速度會被使用者 availability 卡住，不是被 AI 卡住。
 
 **CT 實例錨點**：`T0102`（Phase 2 落地該欄位到工單模板）。
 

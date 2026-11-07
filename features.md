@@ -1,6 +1,6 @@
 ---
 title: 功能總覽
-description: CT 由哪 8 個 skill 組成、各在哪種 session 做什麼，塔台內建命令依用途分成哪幾組，四級能力、設定的四層覆蓋，以及每項功能對應的進階篇。指令語法與參數見指令參考大全。
+description: CT 由哪 8 個 skill 組成、各在哪種 session 做什麼，塔台內建命令依用途分成哪幾組，四級能力、設定的四層覆蓋、6.0.0 起的方法論轉接，以及每項功能對應的進階篇。指令語法與參數見指令參考大全。
 ---
 
 <script setup>
@@ -54,8 +54,8 @@ CT 由 1 個塔台 skill 和 7 個 Worker／輔助 skill 組成，塔台在自�
 
 - **掃描與設定**（`*rescan`、`*config`、`*help`）：刷新塔台對環境的快照、調整塔台行為、不離開塔台查使用說明。
 - **同步與中斷**（`*sync`、`*pause`、`*resume`）：以工單檔為準校準塔台記憶與進度；緊急任務插進來時凍結手上的工單，處理完再接回來。
-- **單據與歸檔**（`*bug`、`*plan`、`*exp`、`*archive`）：登記 BUG、規劃與實驗單（各自需先啟用），把結案的單據移到冷區、需要時再找回來。
-- **學習與分析**（`*evolve`、`*insights`、`*fieldguide`）：在塔台裡萃取學習、分析使用模式、盤點 FIELDGUIDE 與 DESIGN.md；要改檔的一律開成工單交給 Worker。
+- **單據與歸檔**（`*bug`、`*plan`、`*exp`、`*archive`）：登記 BUG、規劃與實驗單（6.0.0 起預設開啟，可以個別關閉），把結案的單據移到冷區、需要時再找回來。
+- **學習與分析**（`*evolve`、`*insights`、`*fieldguide`）：在塔台裡萃取學習、分析使用模式（6.0.0 起另有 `*insights sessions` 依工單彙總 token 用量、`*insights tools` 找出一直載入卻很少用到的工具）、盤點 FIELDGUIDE 與 DESIGN.md；要改檔的一律開成工單交給 Worker。
 - **匯入與引導**（`*import`、`*onboard`）：安全匯入規則、Playbook 與其他專案的設定；用問答探索你的工作習慣，產出個人化的本地規則。
 
 有幾個命令和獨立 skill 同名（例如 `*evolve` 與 `ct-evolve`），差別不在功能多寡，而在**在哪個角色裡執行**：塔台命令在塔台角色裡處理，獨立 skill 在自己的 session 以自己的角色執行。
@@ -69,8 +69,9 @@ CT 的功能隨可選元件遞增。每項偵測各自獨立，可以任意組�
 <CapabilityLevels />
 
 - **第 0 級已經完全可用**。工單、進度、Debug、中斷處理、多塔台與自我學習都只靠檔案。
-- **bmad-guide 是外部依賴**。CT 不內嵌 BMad-Method 內容；沒有它時，工作流程欄位改由你手動指定。
-- **mem0 目前只單向寫出**。經驗會同步出去，塔台不會反過來查詢它。
+- **bmad-guide 是外部依賴**。CT 不內嵌 BMad-Method 內容；沒有它時，工作流程欄位改由你手動指定。6.0.0 起這一級改稱「方法論轉接」，bmad-guide 由內建的 `bmad` adapter 偵測與使用，行為相同（見[方法論轉接](#methodology)）。
+- **mem0 目前只單向寫出**。經驗會同步出去，塔台不會反過來查詢它；6.0.0 起要在專案的本地規則記錄例外才啟用。
+- **ECC（第 1 級）在 6.0.0 退場**。CT 不再寫 ECC 的 observation，也不讀它的置信度；經驗照舊寫在 `_learnings.md`。編號保留，5.x 照舊。
 
 ## 設定 {#config}
 
@@ -84,6 +85,23 @@ CT 的功能隨可選元件遞增。每項偵測各自獨立，可以任意組�
 塔台派工時把模式透過環境變數 `CT_MODE`、`CT_INTERACTIVE` 傳給 Worker；Worker 只從設定讀重試上限、commit 政策這類調諧參數，不用設定檔決定要不要自動回報。這樣同一張工單、同一組參數，在哪個 session 執行都會得到相同的行為。
 :::
 
+## 方法論轉接（6.0.0 起） {#methodology}
+
+CT 管「編排」：工單、派工、驗收、收單；方法論（BMad-Method 等）管「一張工單裡怎麼做」。6.0.0 起兩者用 adapter 描述檔接起來，換方法論不必改 CT 本體。**什麼都不設，行為和 5.x 相同**：預設 `methodology: auto`，BMad 是內建、預設的 adapter（`bmad`）。
+
+| 概念 | 簡述 |
+|---|---|
+| 5 層 | 規劃、執行、審查、驗證、交付，每一層可以交給不同的 adapter。交付層預設 `none`：不開 PR、不發布、不開分支 |
+| 抽換與分層疊加 | `methodology` 換主方法論；`methodology_planning` 這類分層鍵讓某一層改用別家；工單寫「這張用 X 做」可以蓋過設定（交付層除外） |
+| adapter 從哪來 | CT 內建 `bmad`；官方外部 adapter `ct-adapter-pstack`（另出 zip，已經在用 pstack 才裝）；也可以放專案本地的 adapter。找不到或壞掉一律降級，不阻塞、不替方法論編造行為 |
+| 注入防護 | 方法論在 session 開頭注入的指示，可能把 Worker 帶去別的流程。預設 `methodology_guard: warn`：塔台派工時自動在工單加〈方法論邊界〉段，衝突時 CT 規則優先 |
+| Worker 這一側 | 工單有 frontmatter `methodology` 才帶入方法論；呼叫任何方法論 skill 都記進回報；方法論自己開的寫入型子代理預設不允許；被 compact 或 resume 後先重讀整張工單再繼續 |
+| 設定 | 9 個 `methodology*` 鍵，全部預設時和 5.x 相同；在塔台輸入 `*config methodology` 看每一層的解析結果、`*help methodology` 看說明（見[指令參考大全 › `*config`](/reference/commands#config)） |
+
+「能接」不等於「該接」：BMad 引入（內建、預設），pstack 選用，其他方法論多半只需要共存防護。設計理由、實測證據、各家方法論的定位，以及預發行期間每一版的改動，保留在「實驗功能」的[方法論轉接](/preview/methodology-adapters)專章。
+
+權威：`control-tower/references/methodology-adapters.md`（唯一權威）、`control-tower/references/tower-config.md` § 方法論設定鍵、`ct-exec/SKILL.md` § Methodology。
+
 ## 每項功能在進階區的哪一篇 {#deep-map}
 
 <CardTable caption="功能與進階篇對照" :columns="['功能', '進階篇']" :rows="mapRows" />
@@ -94,7 +112,7 @@ CT 的功能隨可選元件遞增。每項偵測各自獨立，可以任意組�
 
 - `control-tower/SKILL.md` § Built-In Commands、§ Hard Boundaries
 - `ct-help/SKILL.md` § Command Families
-- CT 安裝與使用指南 § 4.3 Skill 架構（v5.15.0）、§ 5. 四級能力等級、§ 13. Config 速查表（v5.15.0）、§ 14. 命令速查表（v5.15.0）
+- CT 安裝與使用指南 § 4.3 Skill 架構（v6.0.0）、§ 5. 四級能力等級、§ 13. Config 速查表（v6.0.0）、§ 14. 命令速查表（v6.0.0）、§ 2.65 v6.0.0（正式版）
 - CT Guide `references/ecosystem.md` § 八個 Skill 元件、§ 三軌前綴：`*`、`/`、`$`、§ 能力等級（Level 0-3）
 - `control-tower/references/tower-config.md` § `*config` 命令、§ 可用選項、§ 作用域與持久化
 

@@ -1,0 +1,323 @@
+# CT methodology adapter — BMAD-METHOD（CT 內建預設；v6.0.0）
+# 契約（欄位意義、必填、組合規則、降級）：../methodology-adapters.md（唯一權威定義）
+# 本檔只放名稱、對照與連結，不含 BMad-Method 或 bmad-guide 的 skill 原文。
+# 由 spec 原型 BMad-Control-Tower/spec/方法論介接/adapters/bmad/adapter.yaml（0.1.0-prototype，T0298）轉入（T0300）。
+
+schema: ct-methodology-adapter/v1
+id: bmad
+display_name: BMAD-METHOD
+adapter_version: 0.2.1               # 0.2.1：probe 依 runtime 分開（guide-skill 拆成 guide-skill-claude／guide-skill-codex，各 probe 加 runtime）、刪掉 guide-claude-plugin 第 2 個 search（CT v6.0.0-beta.8）
+adapter_status: prototype           # prototype / stable / deprecated；隨 CT v6 發行；CT 正式版 6.0.0 仍維持 prototype（要不要改 stable 另行評估）
+maintainer:
+  kind: ct-builtin                  # ct-builtin / external-skill / project-local
+  owner: Control Tower
+  sync_rule: LR-003                 # bmad-guide 更版時同一輪檢查本檔（tested_version、retired_names、routing）
+  # bmad-guide 是 BMAD 名稱與細路由的權威；本檔是標明 upstream.tested_version 的快照。
+  # 兩者不一致時以 bmad-guide 為準，並更新本檔（../methodology-adapters.md § 未來介接 › 有 guide 的方法論）。
+
+upstream:
+  name: BMad-Method
+  url: https://github.com/bmad-code-org/BMAD-METHOD
+  license: MIT                      # 另有商標聲明（BMad™ 等），見 Portal THIRD-PARTY-NOTICES.md
+  version_range: ">=6.10.0 <7.0.0"
+  tested_version: 6.12.4
+  version_source: bmad-guide        # 版本從外部 guide skill 的 marker 讀，不直接讀 BMad-Method 安裝
+  guide:
+    skill: bmad-guide
+    url: https://github.com/gowerlin/Control-Tower   # bmad-guide 以 Release bmad-guide-v<版號> 發布（LR-003）
+
+runtimes:
+  - claude-code
+  - codex
+
+# ── 偵測 ────────────────────────────────────────────────
+detection:
+  strategy: any                     # 任一 probe 成功即視為可用
+  probes:
+    # 手動安裝（zip）依 runtime 分開（v6.0.0-beta.8+）：塔台先試本 runtime 的 probe，另一個 runtime 的只當讀檔來源
+    # （../methodology-adapters.md § probe 怎麼解析 skill 根目錄 第 1 點）。設了 CLAUDE_CONFIG_DIR／CODEX_HOME 時照它（P-3，T0314）。
+    - id: guide-skill-claude
+      kind: skill
+      runtime: claude-code
+      name: bmad-guide
+      search:
+        - "${CLAUDE_CONFIG_DIR:-~/.claude}/skills/bmad-guide/SKILL.md"
+      version_marker:
+        file: SKILL.md
+        pattern: 'current_version: v([0-9][0-9.]*)'
+      required_files:
+        - references/workflow-map.md
+    - id: guide-skill-codex
+      kind: skill
+      runtime: codex
+      name: bmad-guide
+      search:
+        - "${CODEX_HOME:-~/.codex}/skills/bmad-guide/SKILL.md"
+        - ~/.agents/skills/bmad-guide/SKILL.md                           # Codex 文件列的使用者層 skill 位置；Claude Code 不讀這裡
+      version_marker:
+        file: SKILL.md
+        pattern: 'current_version: v([0-9][0-9.]*)'
+      required_files:
+        - references/workflow-map.md
+    # plugin 安裝（v6.0.0-beta.6+；T0357、T0374 實測位置）。同一個 runtime 內排在手動安裝 probe 之後 = 手動優先（並存時 agent 載入的是手動安裝那份）。
+    # marketplace 不寫死（官方是 control-tower）。skill_root、required_files、version_marker 的解析見 ../methodology-adapters.md § probe 怎麼解析 skill 根目錄。
+    - id: guide-claude-plugin
+      kind: plugin
+      runtime: claude-code
+      name: bmad-guide@*
+      search:
+        - "${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}/installed_plugins.json"   # key bmad-guide@<marketplace> → installPath；Claude plugin 根目錄只有這一處
+      skill_root: skills/bmad-guide
+      version_marker:
+        file: SKILL.md                    # 與 guide-skill-* 同一個 marker；plugin.json version = current_version 去掉 v
+        pattern: 'current_version: v([0-9][0-9.]*)'
+      required_files:
+        - references/workflow-map.md
+    - id: guide-codex-plugin
+      kind: plugin
+      runtime: codex
+      name: bmad-guide@*
+      search:
+        - "${CODEX_HOME:-~/.codex}/config.toml"                          # 啟用：[plugins."bmad-guide@<marketplace>"] enabled = true
+      skill_root: skills/bmad-guide
+      version_marker:
+        file: "${CODEX_HOME:-~/.codex}/plugins/cache/<marketplace>/bmad-guide/<version>/.claude-plugin/plugin.json"   # 本 marketplace 沒有 .codex-plugin/
+        json_path: version
+      required_files:
+        - references/workflow-map.md
+  min_version: 6.10.0
+  on_below_min: warn                # 顯示升級提示，不阻塞 Tower（沿用 v5.12.6 Level 2 規則）
+  on_missing: manual                # 退回手動自由文字欄位（沿用 v5.12.6 Level 2 規則）
+  note: 版本化發行包（BMad-Guide-Skill/bmad-guide-v<版號>/）可供參考，runtime 事實來源是實際可用的 bmad-guide skill
+
+# ── 能力宣告（覆蓋哪些層）────────────────────────────────
+# full = 有完整流程；partial = 有但不是主軸；none = 不提供
+capabilities:
+  planning: full                    # brief / PRD / UX / architecture / spec / stories.yaml / sprint-planning
+  execution: full                   # bmad-build（互動）/ bmad-build-auto（無人值守單次）
+  review: full                      # bmad-code-review、bmad-review lenses
+  verification: partial             # TEA 模組（opt-in）；build 內建 claims check
+  delivery: none                    # 不管 PR / release
+
+# ── 需求類型 → 流程路由 ─────────────────────────────────
+# 每個需求類型列出各層的入口；Tower 依專案設定決定每層由哪個 adapter 負責，
+# 再取該 adapter 對應層的入口。缺的層 = 本方法論不處理，由其他層的 adapter 或 CT 本身負責。
+# reference 欄位是 bmad-guide 的 reference 檔名，相對於偵測成功的 probe 解析出的 skill 根目錄下的 references/
+# （手動安裝：<skills 目錄>/bmad-guide/references/；plugin：<installPath>/skills/bmad-guide/references/；../methodology-adapters.md § probe 怎麼解析 skill 根目錄）。
+routing:
+  feature:
+    planning:
+      workflow: bmad-spec
+      alternatives: [bmad-prd, bmad-ux, bmad-architecture, bmad-product-brief, bmad-forge-idea]
+      agent: bmad-agent-pm
+      reference: workflow-map.md § Four Planning Paths
+      note: 意圖已清楚 → bmad-spec；不清楚 → 先 brief / PRD / forge-idea；UX 用 bmad-ux（產出 DESIGN.md + EXPERIENCE.md）
+    execution:
+      workflow: bmad-build
+      unattended: bmad-build-auto
+      agent: bmad-agent-dev
+      reference: workflow-map.md § Build And Build Auto；無人值守見 supplementary-workflows.md（prerequisites、spec status contract、blocked handling）
+    review:
+      workflow: bmad-code-review
+      reference: workflow-map.md § Review Triage
+  bugfix:
+    execution:
+      workflow: bmad-build
+      unattended: bmad-build-auto
+      agent: bmad-agent-dev
+    review:
+      workflow: bmad-code-review
+  refactor:
+    execution:
+      workflow: bmad-build
+      agent: bmad-agent-dev
+    review:
+      workflow: bmad-code-review
+  research:
+    planning:
+      workflow: bmad-deep-recon
+      alternatives: [bmad-project-context]
+      agent: bmad-agent-analyst
+      note: 一般調查開 CT research 工單；棕地專案先補 context（Phase 0）
+      reference: brownfield.md（Phase 0 步驟、context／docs、research 工單判斷）、supplementary-workflows.md
+  review:
+    review:
+      workflow: bmad-code-review
+      alternatives: [bmad-review]
+      reference: supplementary-workflows.md（Adversarial Review 規則）
+      note: bmad-review 只在使用者明說 review 時觸發（v6.12）
+  test:
+    verification:
+      workflow: tea                 # TEA 模組（opt-in）
+      reference: tea-module.md（TEA 整合時機）
+      requires_module: tea
+  small-change:
+    execution:
+      workflow: none                # workflow-map「Edit directly」：瑣碎低風險改動不必走 BMad
+      fallback: bmad-build
+      reference: supplementary-workflows.md
+      note: 可能讓 bug 流到 production 時仍建議 bmad-build
+
+# ── 工單欄位與段落 ──────────────────────────────────────
+workorder:
+  section_heading: "### 方法論工作流程"
+  annotations:                      # Tower 在段落內可填的標注
+    - agent                         # 例：PM (John) — bmad-agent-pm
+    - phase                         # 例：Planning
+    - reference                     # 例：bmad-guide v6.12.4 workflow-map.md
+    - retired_replacement
+  required_when:
+    - workflow: bmad-build-auto
+      section: "### Autonomous Contract"
+      fields: [monitor_artifact, terminal_status_source, required_closeout]
+      monitor_artifact: "{implementation_artifacts}/spec-*.md、<spec-folder>/stories/<id>-*.md，或 {implementation_artifacts}/bmad-build-auto-result-*.md"
+      terminal_status_source: spec frontmatter `status`（done / blocked）
+      required_closeout: 見 status_mapping.required_report
+  legacy:
+    section_heading: "### BMad 工作流程"   # 舊工單照讀，視為 methodology.adapter = bmad
+    observation_key: bmad_workflow        # ECC observation 舊鍵；v6.0.0-beta.10 起 ECC Level 1 退場、不再寫 observation，只留作識別舊紀錄
+
+# ── Worker 執行時怎麼帶入 ───────────────────────────────
+worker:
+  lifecycle_owner: ct-exec          # 落點、狀態、回報、commit、通知一律照 ct-exec
+  run_mode: inline                  # 在 ct-exec Phase 2 內呼叫，不另開 session
+  invoke:
+    claude-code: "Skill 工具呼叫 `{workflow}`（或 `/{workflow}`）"
+    codex: "`${workflow}`"
+  requires:
+    subagents:
+      only_for: [bmad-build-auto]            # build-auto 沒有子代理會 blocked: no subagents
+    tools: [uv]                              # bmad-build / bmad-build-auto 是 rendered skill，缺 uv 會停
+  asks_user:
+    - workflow: bmad-build
+      when: intent gap 或 dispatch 路線要核准計畫
+      ct_handling: yolo → 改問塔台（ct-exec § Questions For Tower）；或改派 bmad-build-auto
+  ct_overrides:                     # ct-exec 內使用 BMAD 時，下列以 CT 為準（methodology-adapters.md § 衝突與防護）
+    - behavior: "bmad-build 的 dispatch 路線要使用者回答 Open Questions、核准計畫"
+      ct_rule: "yolo 下改問塔台；非 yolo 照 ct-exec 互動規則"
+    - behavior: "bmad-build 把順手發現的問題寫進 deferred-work.md"
+      ct_rule: "照寫（屬 artifacts.writes），另在回報區 followups 列出，由塔台決定是否開單"
+    - behavior: "bmad-loop（opt-in 模組）自己跑循環"
+      ct_rule: "不當一般工單 workflow 派發；要用時先確認模組已安裝且 bmad-loop-setup 已完成；工單之間的循環由 CT 派工／Renew 負責"
+
+# ── 驗證閘門與狀態對應 ──────────────────────────────────
+status_mapping:
+  source: spec frontmatter `status`（`{implementation_artifacts}/spec-*.md` 或 `<spec-folder>/stories/<id>-*.md`）
+  rules:
+    - when: "status: done，且工單驗證閘門通過"
+      ct_status: DONE
+    - when: "status: done，且 followup_review_recommended: true"
+      ct_status: DONE
+      note: 把 Auto Run Result 指名的風險寫進 followups
+    - when: "session 結束時仍是 in-progress / in-review"
+      ct_status: PARTIAL
+    - when: "status: blocked，原因是 unclear intent / intent gap / handoff conflicts with spec / story already blocked"
+      ct_status: BLOCKED
+    - when: "status: blocked，原因是 implementation verification failed / patch verification failed / review repair loop exceeded"
+      ct_status: FAILED
+    - when: "status: blocked，原因是 no subagents / version-control metadata not writable / 缺 uv"
+      ct_status: BLOCKED
+      note: 環境問題
+  required_report:
+    - spec 檔路徑
+    - spec status 與 route（oneshot / dispatch）
+    - blocking condition（若 blocked）
+    - baseline_revision
+    - commit 範圍 baseline_revision..HEAD（多個 story 時為 baseline_revision..下一個 story 的 baseline_revision）
+    - deferred（build-auto）
+    - followup_review_recommended（build-auto）
+    - changed files 與驗證證據
+
+# ── 產物（Tower 開單時要放進 affects_files）──────────────
+artifacts:
+  writes:
+    - "{planning_artifacts}/**"          # 預設 _bmad-output/planning-artifacts/；實際路徑以 _bmad config 為準
+    - "{implementation_artifacts}/**"    # spec-*.md、deferred-work.md（互動 build）、bmad-build-auto-result-*.md
+    - "<spec-folder>/stories.yaml"
+    - "<spec-folder>/stories/*.md"
+    - "sprint-status.yaml"               # 使用 sprint 追蹤時
+  note: 不要寫死 _bmad-output，依 _bmad config
+
+# ── 跨層交接 ────────────────────────────────────────────
+handoff:
+  produces:                              # 本方法論在某層的產出，可交給下一層（同一或其他 adapter）
+    - layer: planning
+      kind: story-spec
+      artifact: "<spec-folder>/stories/<id>-<slug>.md 或 {implementation_artifacts}/spec-*.md"
+      status_field: frontmatter status   # draft / ready-for-dev / in-progress / in-review / done / blocked
+    - layer: planning
+      kind: epic-spec
+      artifact: "<spec-folder>/SPEC.md + stories.yaml"
+  consumes:
+    - layer: execution
+      kind: story-spec
+      how: "bmad-build <spec-folder> <story-id>（folder+ID dispatch）"
+    - layer: execution
+      kind: goal-text
+      how: "bmad-build <一句話 / issue / 檔案>"
+  writeback:                             # 別家 adapter 執行了本方法論產出的 story 時，誰回寫狀態
+    target: story spec frontmatter status、sprint-status.yaml（有用時）
+    by: worker-step                      # 工單步驟要求 Worker 回寫；塔台 *sync 複查（沿用 work-order-system.md 雙層保障）
+
+# ── 進度追蹤檔（*sync／ct-status sync 用）────────────────
+tracker:
+  file: sprint-status.yaml
+  search: [repo root, "{implementation_artifacts}/", docs/]
+  optional: true                         # 沒有就跳過比對（沿用 ct-status 現行行為）
+
+# ── 退役／改名（CT 文件裡的 BMAD 舊名只留在這裡）──────────
+retired_names:
+  bmad-investigate: {replacement: "CT research 工單 / bmad-deep-recon / bmad-project-context", since: 6.10.0, kind: retired}
+  bmad-automator: {replacement: "bmad-loop（+ bmad-loop-setup）/ bmad-build-auto", since: 6.10.0, kind: deprecated}
+  bmad-create-architecture: {replacement: bmad-architecture, since: 6.10.0, kind: forwarding-shim}
+  bmad-create-ux-design: {replacement: bmad-ux, since: 6.10.0, kind: retired}
+  bmad-create-prd: {replacement: "bmad-prd（create intent）", since: 6.11.0, kind: forwarding-shim}
+  bmad-quick-dev: {replacement: bmad-build, since: 6.11.0, kind: forwarding-shim}
+  bmad-dev-auto: {replacement: bmad-build-auto, since: 6.11.0, kind: forwarding-shim}
+  bmad-create-story: {replacement: "bmad-spec Story Breakdown / bmad-build", since: 6.11.0, kind: retained-shim, note: "v5.12.6 的「Story 內建 Review」說法不再成立；審查在 bmad-build 的 Review Triage"}
+  bmad-dev-story: {replacement: bmad-build, since: 6.11.0, kind: retained-shim}
+  bmad-sprint-status: {replacement: "bmad-sprint-planning action=status", since: 6.11.0, kind: forwarding-shim}
+  bmad-document-project: {replacement: "bmad-project-context（setup intent）", since: 6.11.0, kind: forwarding-shim}
+  bmad-generate-project-context: {replacement: "bmad-project-context（setup intent）", since: 6.11.0, kind: forwarding-shim}
+  bmad-dev-auto-result-*.md: {replacement: bmad-build-auto-result-*.md, since: 6.11.0, kind: renamed-artifact}
+  final_revision: {replacement: "baseline_revision..HEAD（多個 story：baseline_revision..下一個 story 的 baseline_revision）", since: 6.11.0, kind: removed-field}
+  note: v6.12 起 shim 在新安裝預設不裝（需 --shims）；舊名可能已不存在
+
+# ── 降級 ────────────────────────────────────────────────
+degradation:
+  not_installed: 工單 `### 方法論工作流程` 段寫自由文字，Worker 依步驟手動執行（= Level 0）
+  below_min_version: 顯示升級提示，照常路由；工單標注實際偵測到的版本
+  workflow_missing: 工作流名稱不存在（例：shim 沒裝）→ 查 retired_names 換新名；查不到 → 自由文字
+
+# ── session／hook ───────────────────────────────────────
+session:
+  hooks: []                         # BMad-Method 核心不裝 harness hook（推論，依 bmad-guide 文件）
+  hooks_note: opt-in 模組 bmad-loop 有自己的 hook 與 policy，裝了要另外評估
+  name_collisions:
+    - name: bmad-loop
+      with: Claude Code 內建 /loop
+      severity: low
+      note: 名稱不同（bmad- 前綴），語意都是循環
+  subagents:
+    writes: true                    # bmad-build-auto 用子代理實作
+    only_in: [bmad-build-auto]
+    ct_rule: 寫入型子代理需要工單授權（methodology-adapters.md § 衝突與防護 C4）
+  skill_patterns: ["bmad-*"]         # 邊界段範本的 <skill 樣式> 位置（methodology-adapters.md 欄位表 session）
+  always_on_tokens: unknown
+
+# ── 詞彙對照（避免撞詞）─────────────────────────────────
+vocabulary:
+  story: BMAD story（spec 檔或 stories.yaml 條目），不是 CT 工單
+  epic: BMAD epic，不是 CT PLAN
+  spec: BMAD spec 檔（frontmatter 有 status），不是 CT 規格文件
+  retrospective: BMAD 回顧，與 CT *evolve 學習萃取不同
+
+links:
+  workflow_map: bmad-guide references/workflow-map.md（Phase→Workflow→Agent 映射、retired／deprecated 名稱替代）
+  migration: bmad-guide references/v6-11-migration.md
+  brownfield: bmad-guide references/brownfield.md
+  supplementary: bmad-guide references/supplementary-workflows.md
+  ecosystem_modules: bmad-guide references/ecosystem-modules.md（opt-in modules registry、bmad-loop 安裝與 bmad-loop-setup、Web Bundles、BMad Builder、TEA、Game Dev、Creative、WDS）
+  tea: bmad-guide references/tea-module.md
+  ct_contract: control-tower/references/methodology-adapters.md
+  ct_level2: control-tower/references/enhancement-integration.md § Level 2

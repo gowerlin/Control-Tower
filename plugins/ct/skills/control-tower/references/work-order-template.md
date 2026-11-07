@@ -49,20 +49,38 @@
 
 ## 任務指令
 
-### BMad 工作流程
-<bmad-workflow-name>（若未安裝 BMad-Method，依下方步驟手動執行）
+### 方法論工作流程
+（v6.0.0+。沒有任何層由方法論 adapter 負責時刪除本段；何時要寫、內容是什麼見 `methodology-adapters.md` § 工單欄位，
+填法與範例見下方「填寫方法論欄位指引」。frontmatter `methodology` 是 SoT，本段是人讀鏡像）
+- <層>：`<adapter>` / `<workflow>`（<adapter `workorder.annotations` 宣告的標注>）
+- <層>：`<adapter>` / `<workflow>`
 
-可選標注（若外部 `bmad-guide` 可用）：
-- Guide: `bmad-guide` v<version>
-- Reference: `workflow-map.md` / `supplementary-workflows.md` / `ecosystem-modules.md`
-- Phase: <phase>
-- Agent: <BMad agent skill>
-- Deprecated/retired replacement: <若適用>
+<adapter `workorder.required_when` 指定的段落；例：bmad `bmad-build-auto` → `### Autonomous Contract`，欄位見 `adapters/bmad.yaml`>
 
-若 workflow 為 `bmad-build-auto`，必須追加：
-- Monitor artifact: `{implementation_artifacts}/spec-*.md` 或 `bmad-build-auto-result-*.md`
-- Terminal status source: spec frontmatter `status`
-- Required closeout: blocking condition, verification, changed files, `baseline_revision`, commit range `baseline_revision..HEAD` (multiple stories: `baseline_revision..<next story's baseline_revision>`)
+### 方法論邊界
+（何時寫見 `methodology-adapters.md` § 工單欄位 › 內文段落：`methodology_guard: warn` 時塔台自動加（沒有 `methodology` 的工單也加）、
+adapter `required_when` 要求、本單開放方法論子代理寫入、或本單要用 `methodology-adapters.md` § 引入方式 ③ 的本地副本；否則刪除。本段是邊界段範本的**唯一一份**，措辭照 V1 實測版
+（`spec/方法論介接/verification/V1-pstack-ct-exec.md` § 7.2），V2b（`verification/V2b-dual-injection.md` § 7.2）改成由各家 adapter 填值並加通用條文。
+第一條：本單有層由 adapter 負責 → 【只允許】；注入開著、但不負責本單任何一層的方法論 → 【不使用】，**每一家都列**；兩種都有就兩項都寫，【只允許】在前。
+其餘照抄。`<…>` 換成實際值，每家的值取自它的 adapter（`methodology-adapters.md` § 與 hook／session 路由的相處規則 第 2 點）：
+`<skill 樣式>` = `session.skill_patterns`、`<入口 skill>` 與 `<注入條件摘要>` = `session.hooks[].entry_skills`、`trigger_summary`、
+`<範圍外產物例子>` = 本單相關 adapter `artifacts.writes` 的聯集）
+- 【不使用】本單**不使用**下列方法論的任何 skill；它們的 SessionStart 注入要 session 先叫某個 skill 的指示**不適用本單**：
+  - `<skill 樣式>`（注入：「<注入條件摘要> → 先叫 <入口 skill>」）
+  - （每一家注入開著、且不負責本單的方法論各一行）
+
+  本段就是使用者的明確指示，依注入文字自己寫的「User instructions ... take precedence」優先。
+- 【只允許】本單**只允許** `<skill 清單>`（含上列 skill 自己呼叫的子 skill 與它們自帶的唯讀審查子代理，回報照實寫；子 skill 取自 adapter `session.subagents.ct_rule`）；其他 `<skill 樣式>` skill 一律不用（例：`<要停用的 playbook 或 skill>`）。SessionStart 注入的「<注入條件摘要> → 先叫 <入口 skill>」指示只在上述 skill 的範圍內適用：本段就是使用者的明確指示，依注入文字自己寫的「User instructions ... take precedence」優先。
+  （§ 引入方式 ③ 的本地副本沒有 adapter：`<skill 清單>` 寫副本路徑，沒有注入就省略注入那一句。例：「本單**只允許** `.claude/skills/mp-tdd/SKILL.md`（mattpocock/skills `tdd` 的本地副本，見 `methodology-adapters.md` § ③ 的做法）；其他 `.claude/skills/mp-*` 副本一律不用。」）
+- 方法論 skill 要求先問使用者或等使用者核准（例：設計核准前不准實作的硬閘門、規格釐清提問、建 worktree 前徵求同意）時，不得因此問使用者或停下等待；需要決策時照 ct-exec 的規則處理（`CT_MODE=yolo` 時問塔台）。
+- 實作直接由主 Worker 照 ct-exec 流程完成；子代理只能唯讀，不開寫入型子代理，也不另開背景子代理（`methodology.subagent_writes: deny`）。上列 skill 自帶的唯讀審查子代理（含背景，adapter `session.subagents.only_in`、`background`）除外：回報區照實寫子代理數、是否背景、子代理內呼叫的 skill。
+  （開放寫入時改成「子代理寫入只限本單〈方法論子代理授權〉表列；表外只能唯讀」，授權段放在 `## 元資料` 之後，見下方「撰寫方法論子代理授權」）
+- 不開分支、不建 worktree、不 push、不開 PR、不 `git reset`（交付層 `methodology.delivery: none`）。
+  （交付層由使用者授權開放時，改成只列本單允許的交付動作；push 仍要本單明寫使用者授權）
+- 不在 `affects_files` 以外產生檔案（例：<範圍外產物例子>）；方法論要留的工作檔放 Worker scratchpad，沒有 scratchpad 時（headless `claude -p`、Codex、一般終端機）放系統暫存目錄（`$TMPDIR`／`%TEMP%`）下的 `ct-<工單號>/`，收尾刪除。收尾時 repo 外不留檔（不寫 repo 上一層或其他目錄）。
+- 回報區照本工單模板，用<工單語言>；不套 <方法論的寫作風格規則，例：unslop> 寫法。
+- 若仍呼叫了任何方法論 skill，在回報區 `### 方法論執行紀錄` 寫明哪個 skill、在哪一步、做了什麼、跳過什麼。
+- compact 或 resume 之後，先重讀本工單（含本段）再繼續。
 
 ### 前置條件
 需載入的文件清單：
@@ -78,7 +96,7 @@
 - <產出檔案或交付物 1>
 - <產出檔案或交付物 2>
 
-### 相關通過案例（僅 `customer_acceptance_gate: on` 且本單會改程式或資料，v5.13.0+）
+### 相關通過案例（僅 `customer_acceptance_gate: on` 且本單會改程式或資料，v6.0.0-beta.3+）
 （不適用就刪除本段。寫法與 Worker 做法見本檔 § 撰寫〈相關通過案例〉）
 - 驗收案例表：<位置>
 - 改動範圍：<模組／畫面／資料表>
@@ -102,7 +120,7 @@
 5. 完成後填寫回報區
 6. 更新「狀態」（DONE / FAILED / BLOCKED / PARTIAL）
 7. 更新「完成時間」
-8. 若使用 BMad-Method，同步更新 sprint-status.yaml
+8. 若工單有 `methodology.writeback`，或主方法論有 tracker（bmad 時為 `sprint-status.yaml`），依 adapter 規則回寫，結果寫進回報區 `### 方法論狀態回寫`
 
 ---
 
@@ -122,6 +140,7 @@
 
 ### 完成狀態
 （DONE / FAILED / BLOCKED / PARTIAL）
+- **session_id**：<本 session 的 `CLAUDE_CODE_SESSION_ID`，或 `unavailable`>（v6.0.0-beta.10+；frontmatter `session_ids` 的鏡像，見 `ct-exec/SKILL.md` § Phase 4 › Session id）
 
 ### 產出摘要
 （列出產生的檔案、修改的檔案、關鍵變更）
@@ -143,8 +162,15 @@
 | 案例 | 判定（不受影響／受影響但預期不變／會改變） | 理由 |
 |---|---|---|
 
-### sprint-status.yaml 已更新
-（是 / 否 / 不適用）
+### 方法論執行紀錄
+（有任何層由方法論 adapter 負責、本 session 呼叫了任何方法論 skill、或看到方法論注入時填；都沒有就刪除本段。
+內容與格式見 `methodology-adapters.md` § 工單欄位 › `### 方法論執行紀錄` 的內容：`methodology_ambient` 行、方法論 skill 使用表、
+adapter `status_mapping.required_report` 逐項與狀態對應）
+- **methodology_ambient**：<none／<adapter id>（<事件>；標記「<一句原文>」）>
+
+### 方法論狀態回寫
+（有 `methodology.writeback` 或主方法論有 tracker 時填：回寫了什麼、寫在哪（bmad 時為 `sprint-status.yaml`、story spec `status`）；
+都沒有就填「不適用」。舊工單的 `### sprint-status.yaml 已更新` 段照讀，等同本段）
 
 ### 隔離分支證據（僅 `isolation: worktree` 工單，v5.3.0+）
 （非隔離工單刪除本段。欄位定義與取值方式以 `ct-exec/SKILL.md` § Worktree Isolation 第 7 點為準）
@@ -161,6 +187,8 @@
 > **Renew 支援**：一般工單也可由塔台 Renew。塔台在回報區 `---` 之前插入 `## 塔台補充（Renew #N）` 區段,
 > 並更新元資料加入 `Renew 次數` 欄位。Worker 偵測觸發詞後增量讀取新指示。
 > 完整 Renew 格式見 [research-workorder.md](research-workorder.md) § Renew 機制。
+> Worker 還在 `IN_PROGRESS` 時要補充或修正指示，不用 Renew，改寫 `## 塔台補充（執行中 #N）`（v6.0.0-beta.11+，不加 `Renew 次數`）；
+> 寫法只定義在 [work-order-system.md](work-order-system.md) § 執行中補充工單。Worker 讀到後記在 `### 互動紀錄`，回報區不新增段落。
 
 ### 填寫 `intervention_type` 指引
 
@@ -202,7 +230,7 @@
 - **只列寫入目標**：Worker 會對哪些檔案做 **寫入 / 修改 / 刪除**。單純讀取的檔案（前置條件載入）**不算**，不要列入。
 - **使用相對路徑**：以專案根目錄為基準（例：`control-tower/SKILL.md`、`_ct-workorders/_tower-state.md`）。
 - **不含專案前綴**：mono-repo 中的子專案路徑已由 `目標子專案` 欄位補足，`affects_files` 維持相對於工單所在專案根的路徑。
-- **巢狀的獨立 repo**（v5.14.3+；子專案各有自己的 `.git`，工單集中在上層）：一樣從上層（工單所在專案根）寫起，包含子 repo 的目錄（例 `src/app-frontend/src/login.ts`）；Worker 在子 repo commit 時要去掉子 repo 前綴，見 [mono-repo-patterns.md](mono-repo-patterns.md) § 巢狀的獨立 repo。
+- **巢狀的獨立 repo**（v6.0.0-beta.7+；子專案各有自己的 `.git`，工單集中在上層）：一樣從上層（工單所在專案根）寫起，包含子 repo 的目錄（例 `src/app-frontend/src/login.ts`）；Worker 在子 repo commit 時要去掉子 repo 前綴，見 [mono-repo-patterns.md](mono-repo-patterns.md) § 巢狀的獨立 repo。
 
 **標註粒度**：
 
@@ -295,7 +323,12 @@
 - **memory_overrides**：
   - ❌ 「發 ct-evolve 要同步更新 Layer 1 安裝品」→ 本工單處理：嚴禁。棄用理由：見 `data-layer-architecture.md` § 寫入規則（唯一權威定義）
   - ✅ 「改動後要補 commit」→ 本工單處理：沿用。理由：保留工單 commit 慣例
+  - ❌ 「輸出整組環境變數或 `BAT_REMOTE_TOKEN` 的值」→ 本工單處理：嚴禁。棄用理由：偵測照 `auto-session.md` § BAT 內部終端路由 › 偵測條件 只列名稱；該節明列的例外（`CT_MODE`／`CT_INTERACTIVE`／`BAT_WORKSPACE_ID`／`CT_HOME`／`CT_WORKTREE_*`）可單獨讀；唯一可以**寫進工單**的值是 `CLAUDE_CODE_SESSION_ID`（v6.0.0-beta.10+，`ct-exec/SKILL.md` § Phase 4 › Session id）
 ```
+
+**環境變數的標準寫法**（D385、D388）：要在 `memory_overrides` 提醒 Worker 不外洩環境變數時，照上面範例第三條寫：引用
+[auto-session.md](auto-session.md) § BAT 內部終端路由 › 偵測條件（只列名稱），並註明該節的明列例外可單獨讀（一個變數一個指令）。
+不要寫「嚴禁輸出任何環境變數的值」：它比權威規則嚴，會和 `ct-exec` 讀 `CT_MODE`／`CT_INTERACTIVE` 判斷模式、落點檢查記錄 `BAT_WORKSPACE_ID` 衝突，Worker 照規則做也會被判違反（T0320、T0323 因此 PARTIAL）。
 
 ### 撰寫 verification 工單的驗收步驟
 
@@ -318,7 +351,7 @@
    Worker 的完成狀態**只就 Worker 段落判定**：塔台段落在工單裡還沒有證據，不構成 `PARTIAL`，留給塔台補記
    （Worker 端同一條規則在 `ct-exec/SKILL.md` § Phase 4 › Status rules 之後）。
 
-### 撰寫〈相關通過案例〉（客戶驗收不回歸閘，v5.13.0+）
+### 撰寫〈相關通過案例〉（客戶驗收不回歸閘，v6.0.0-beta.3+）
 
 本小節是客戶驗收不回歸閘的**唯一權威定義**；開關 `customer_acceptance_gate` 的有效值與預設在 [tower-config.md](tower-config.md) § 可用選項。
 
@@ -362,6 +395,155 @@
 ```
 
 Worker 回報區的 `### 子代理與 Workflow 使用` 由 Worker 依 `ct-exec` 填寫；不必預先放進模板。
+
+### 填寫方法論欄位指引（v6.0.0+）
+
+> 本小節只是**塔台寫方法論欄位的範本與範例**。欄位與段落的定義、何時要寫、狀態怎麼對應、怎麼降級，唯一權威在
+> [methodology-adapters.md](methodology-adapters.md)（§ 工單欄位、§ 舊欄位相容、§ 狀態對應總則、§ 降級、§ 衝突與防護）；
+> 每層由誰負責依該檔 § 解析步驟 算出，派工流程見 [work-order-system.md](work-order-system.md) § 派發流程 第 2 步。由來：T0301（I2，D333）。
+
+- frontmatter `methodology` 是機器 SoT；內文 `### 方法論工作流程` 是人讀鏡像，兩者要一致（drift 時照 § Body metadata mirror 注意事項，以 frontmatter 為準）。
+- 解析結果**沒有任何層由 adapter 負責**（`methodology: none`、adapter 都沒安裝，或全部降級成自由文字；或主方法論對本單需求的入口是 `workflow: none`）→ 不寫 `methodology`、
+  不寫 `### 方法論工作流程`，工單與 v5.12.6 相同。兩個例外：
+  - 主方法論有 `tracker`（bmad：`sprint-status.yaml`）→ 回報區**保留** `### 方法論狀態回寫`（等同 v5.12.6 一律有的 `### sprint-status.yaml 已更新`；用不到時 Worker 填「不適用」），
+    與 `methodology-adapters.md` § 工單欄位 › 內文段落 的「有 `writeback` 或主方法論有 `tracker`」一致（P-1，T0314）。`methodology: none` 沒有主方法論，不保留。
+  - `methodology_guard: warn` 偵測到注入時照樣加 `### 方法論邊界`（【不使用】變體；`methodology-adapters.md` § 與 hook／session 路由的相處規則 第 2 點）。
+- adapter `artifacts.writes` 會寫到的檔放進 `affects_files`，或在 `### 方法論邊界` 指定放 Worker scratchpad（§ 衝突與防護 C7）；有 `writeback` 時，回寫目標也要在 `affects_files`。
+- 段名用「方法論工作流程」；Workflow 工具的授權段維持「Workflow 使用授權」，兩者不要混用（§ 衝突與防護 C13）。
+
+#### 範例 A：抽換（專案主方法論改用 pstack）
+
+專案設定 `methodology: pstack`（其他層 `inherit`）；需求「登入失敗時錯誤訊息沒顯示」，`request_kind: bugfix`。
+pstack 的欄位值取自它的 adapter（CT 官方外部 skill `ct-adapter-pstack`，原始碼在 `adapters/ct-adapter-pstack/adapter.yaml`）。
+
+```yaml
+methodology:
+  request_kind: bugfix
+  resolved_from:                   # 每層各記來源（methodology-adapters.md § 工單欄位）
+    execution: project             # inherit → 主方法論 pstack，來自 project
+    review: project
+  layers:
+    execution:
+      adapter: pstack
+      workflow: pstack:poteto-mode
+      detail: Bug fix playbook
+    review:
+      adapter: pstack
+      workflow: pstack:thermos
+  versions:
+    pstack: "upstream 0.9.103 / adapter 0.2.5"
+  subagent_writes: deny
+  delivery: none
+```
+
+```markdown
+### 方法論工作流程
+- execution：`pstack` / `pstack:poteto-mode`（playbook：Bug fix）
+- review：`pstack` / `pstack:thermos`
+
+### 方法論邊界
+- 本單**只允許** `pstack:poteto-mode`（Bug fix playbook）、`pstack:thermos`（含 `pstack:thermos` 自己呼叫的子 skill 與它自帶的唯讀審查子代理，回報照實寫）；其他 `pstack:*` skill 一律不用（例：Opening a PR、Babysit、Shipping、Autopilot-*、Orchestrate playbook）。SessionStart 注入的「多檔、設計選擇、原因未知的 bug → 先叫 `pstack:poteto-mode`」指示只在上述 skill 的範圍內適用：本段就是使用者的明確指示，依注入文字自己寫的「User instructions ... take precedence」優先。
+- 方法論 skill 要求先問使用者或等使用者核准（例：設計核准前不准實作的硬閘門、規格釐清提問、建 worktree 前徵求同意）時，不得因此問使用者或停下等待；需要決策時照 ct-exec 的規則處理（`CT_MODE=yolo` 時問塔台）。
+- 實作直接由主 Worker 照 ct-exec 流程完成；子代理只能唯讀，不開寫入型子代理，也不另開背景子代理（`methodology.subagent_writes: deny`）。上列 skill 自帶的唯讀審查子代理（含背景，adapter `session.subagents.only_in`、`background`）除外：回報區照實寫子代理數、是否背景、子代理內呼叫的 skill。
+- 不開分支、不建 worktree、不 push、不開 PR、不 `git reset`（交付層 `methodology.delivery: none`）。
+- 不在 `affects_files` 以外產生檔案（例：`todo.md`、`.audit/`、`decisions.tsv`）；方法論要留的工作檔放 Worker scratchpad，沒有 scratchpad 時（headless `claude -p`、Codex、一般終端機）放系統暫存目錄（`$TMPDIR`／`%TEMP%`）下的 `ct-<工單號>/`，收尾刪除。收尾時 repo 外不留檔（不寫 repo 上一層或其他目錄）。
+- 回報區照本工單模板，用繁體中文；不套 unslop 寫法。
+- 若仍呼叫了任何方法論 skill，在回報區 `### 方法論執行紀錄` 寫明哪個 skill、在哪一步、做了什麼、跳過什麼。
+- compact 或 resume 之後，先重讀本工單（含本段）再繼續。
+```
+
+`### 方法論邊界` 在這裡是必寫的：pstack 的 `workorder.required_when` 對 `pstack:poteto-mode` 要求它，而且 pstack 有 SessionStart 注入（C1）；pstack 是本單負責者，所以用【只允許】變體。
+`pstack:*`、入口 skill 與注入條件摘要取自 pstack adapter 的 `session.skill_patterns`、`session.hooks[].entry_skills`、`trigger_summary`；範圍外產物例子取自它的 `artifacts.writes`。
+另有不負責本單的方法論注入開著時，照範本在第一條之後加【不使用】項（`methodology-adapters.md` § 與 hook／session 路由的相處規則 第 2 點）。
+回報區 `### 方法論執行紀錄` 填 `methodology_ambient` 行（本單有 `methodology`，一律寫）、方法論 skill 使用表與 pstack `status_mapping.required_report` 的項目；pstack 沒有 `tracker`、本單沒有 `writeback`，`### 方法論狀態回寫` 填「不適用」。
+
+#### 範例 B：疊加（規劃 bmad、執行 pstack）
+
+專案設定 `methodology: bmad`、`methodology_execution: pstack`（`methodology_review: inherit` → bmad）；需求「會員可以用 Passkey 登入」，`request_kind: feature`。
+先派一張規劃工單（`layers.planning: {adapter: bmad, workflow: bmad-spec}`，產出 `<spec-folder>/SPEC.md`、`stories.yaml` 與 story spec），
+每個 story 再派一張執行工單，下面是其中一張：
+
+```yaml
+methodology:
+  request_kind: feature
+  resolved_from:
+    execution: project             # methodology_execution: pstack，project 明寫
+    review: project                # inherit → 主方法論 bmad，來自 project
+  layers:
+    execution:
+      adapter: pstack
+      workflow: pstack:poteto-mode
+      detail: Feature playbook
+    review:
+      adapter: bmad
+      workflow: bmad-code-review
+  inputs:
+    - kind: story-spec
+      from_adapter: bmad
+      path: <spec-folder>/stories/2-passkey-register.md
+  writeback:
+    adapter: bmad
+    target: <spec-folder>/stories/2-passkey-register.md frontmatter status、sprint-status.yaml（有用時）
+  versions:
+    bmad: "upstream 6.12.4 / adapter 0.2.0"
+    pstack: "upstream 0.9.103 / adapter 0.2.5"
+  subagent_writes: deny
+  delivery: none
+```
+
+```markdown
+### 方法論工作流程
+- execution：`pstack` / `pstack:poteto-mode`（playbook：Feature；目標 = 實作 `<spec-folder>/stories/2-passkey-register.md`）
+- review：`bmad` / `bmad-code-review`（Reference：bmad-guide v6.12.4 `workflow-map.md` § Review Triage）
+- 輸入：bmad story spec `<spec-folder>/stories/2-passkey-register.md`
+- 回寫：完成後把該 story 的 frontmatter `status` 改成 `done`（失敗改 `blocked` 並寫原因）；有用 `sprint-status.yaml` 時一併更新
+
+### 方法論邊界
+（同範例 A，第一條的清單改成 `pstack:poteto-mode`（Feature playbook）與 `bmad-code-review`；其他 `pstack:*`、`bmad-*` skill 一律不用）
+```
+
+- 交接：bmad `handoff.produces` 的 `story-spec` 對上 pstack `handoff.consumes` 的 `story-spec`；回寫由產生產物的 bmad 的 `handoff.writeback` 決定（`by: worker-step`），所以執行步驟要有回寫這一步，塔台收單時複查（`work-order-system.md` § 主方法論 tracker 同步）。
+- 取捨：執行層不是 bmad，`bmad-build` 內建的 Review Triage 不會跑；派工摘要要提示（`methodology-adapters.md` § 分層疊加 第 5 點）。審查也要用 pstack 就設 `methodology_review: pstack`。
+- `affects_files` 要含 story spec 與 `sprint-status.yaml`（回寫目標）。回報區 `### 方法論執行紀錄` 填 pstack 與 bmad 各自的 `required_report`，`### 方法論狀態回寫` 寫 story `status` 與 tracker 改了什麼。
+
+#### 範例 C：只有舊 `### BMad 工作流程` 段的舊工單（照讀）
+
+v6.0.0-pre.1 之前開的工單沒有 `methodology` frontmatter，只有：
+
+```markdown
+### BMad 工作流程
+bmad-build（若未安裝 BMad-Method，依下方步驟手動執行）
+
+可選標注（若外部 `bmad-guide` 可用）：
+- Agent: bmad-agent-dev
+```
+
+- 照 `methodology-adapters.md` § 舊欄位相容 讀：視為 `layers.<層>.adapter = bmad`，層照該節「由 workflow 推得的層」的規則推（本例 `bmad-build` → `execution`；
+  退役名 `bmad-dev-auto` 先經 `retired_names` 換成 `bmad-build-auto` 再推；都查不到 → 當自由文字）。
+- **不回寫舊工單**：不補 `methodology` frontmatter、不把段名改成 `### 方法論工作流程`。重派或 Renew 時也一樣，只有新開的工單用新段落。
+- Worker 對沒有 `methodology` 欄位的工單，行為與 v5.12.6 完全相同。
+- 舊回報區的 `### sprint-status.yaml 已更新` 等同 `### 方法論狀態回寫`，`*sync` 與收單照讀。
+
+### 撰寫方法論子代理授權（v6.0.0+）
+
+> 規則在 [methodology-adapters.md](methodology-adapters.md) § 衝突與防護 C4：預設 `deny`，工單寫「子代理只能唯讀」；要開放寫入才加本段。
+> 本小節只是段落位置與骨架。這不是 Workflow 工具的授權（上方「撰寫 Workflow 使用授權」），兩段各自獨立。
+
+- 只有專案設定 `methodology_subagent_writes: per-workorder` 時才可以寫；生效值是 `deny` 時**不得寫**。`per-workorder` 時沒寫本段的工單，
+  frontmatter 照預設寫 `subagent_writes: deny`（`methodology-adapters.md` § 抽換、§ 衝突與防護 C4）。
+- 寫了本段，frontmatter 改 `methodology.subagent_writes: authorized`，`### 方法論邊界` 的子代理一行改成「見本單〈方法論子代理授權〉」。
+- Worker 照本段執行、超出時停下並向塔台提問、回報區記什麼：`ct-exec/SKILL.md` § Methodology › 方法論子代理。
+
+放在 `## 元資料` 之後（有 `Workflow 使用授權` 時接在它後面）：
+
+```markdown
+- **方法論子代理授權**：🟢 本單授權下表的方法論子代理寫入，**僅限**下表，規模為使用者 <時間> 核准的上限（D###）。
+  超出上限或要做下表以外的寫入，**先停，向塔台提問**。worktree 一律走 BAT `--isolation worktree`，不用方法論自建的 worktree。
+
+| # | adapter / workflow | 用途 | 子代理上限 | 寫入範圍（須在 `affects_files` 內） | 可否 commit |
+|---|---|---|---|---|---|
+| 1 | <id> / <workflow> | <用途> | <N> | <路徑> | 否 |
+```
 
 ## 研究型工單模板
 
@@ -412,7 +594,7 @@ Worker 進入研究模式，允許主動提問。完整規格見 [research-worko
 **新指示**：
 > <具體的新執行指示>
 
-（Renew 時由塔台新增此區段，格式見 research-workorder.md § Renew 機制）
+（Renew 時由塔台新增此區段，格式見 research-workorder.md § Renew 機制；Worker 還在執行中時改寫 `## 塔台補充（執行中 #N）`，見 work-order-system.md § 執行中補充工單，v6.0.0-beta.11+）
 
 ---
 
@@ -425,6 +607,7 @@ Worker 進入研究模式，允許主動提問。完整規格見 [research-worko
 
 ### 完成狀態
 （DONE / PARTIAL / BLOCKED）
+- **session_id**：<本 session 的 `CLAUDE_CODE_SESSION_ID`，或 `unavailable`>（v6.0.0-beta.10+；frontmatter `session_ids` 的鏡像，見 `ct-exec/SKILL.md` § Phase 4 › Session id）
 
 ### 互動紀錄
 > [HH:MM] Q: <問題摘要> → A: <使用者回覆> → Action: <採取的行動>
@@ -449,8 +632,8 @@ Worker 進入研究模式，允許主動提問。完整規格見 [research-worko
 ### 遭遇問題
 （若有問題或需要指揮塔介入的事項，在此描述）
 
-### sprint-status.yaml 已更新
-（是 / 否 / 不適用）
+### 方法論狀態回寫
+（有 `methodology.writeback` 或主方法論有 tracker 時填回寫了什麼、寫在哪；都沒有就填「不適用」。另加 `### 方法論執行紀錄` 的條件與內容同上方標準模板）
 
 ### 回報時間
 （填入當前時間）
@@ -626,6 +809,7 @@ LOCAL 工單（預設）省略此區段。詳見 [cross-project-coordination.md]
 
 ### 完成狀態
 （DONE / FAILED / BLOCKED / PARTIAL）
+- **session_id**：<本 session 的 `CLAUDE_CODE_SESSION_ID`，或 `unavailable`>（v6.0.0-beta.10+；frontmatter `session_ids` 的鏡像，見 `ct-exec/SKILL.md` § Phase 4 › Session id）
 
 ### 產出摘要
 （列出產生的檔案、修改的檔案、關鍵變更）
@@ -636,8 +820,8 @@ LOCAL 工單（預設）省略此區段。詳見 [cross-project-coordination.md]
 ### 遭遇問題
 （若有問題或需要指揮塔介入的事項，在此描述）
 
-### sprint-status.yaml 已更新
-（是 / 否 / 不適用）
+### 方法論狀態回寫
+（有 `methodology.writeback` 或主方法論有 tracker 時填回寫了什麼、寫在哪；都沒有就填「不適用」。另加 `### 方法論執行紀錄` 的條件與內容同上方標準模板）
 
 ### 回報時間
 （填入當前時間）
@@ -856,6 +1040,20 @@ workdir: main repo
 landing_check:                       # 可選；僅塔台可填，Worker 不得自加
   expect_missing: false
 # isolation: worktree                # 可選（v5.3.0+）；預設不隔離 = 不寫此行。要隔離才取消註解，見下方 `isolation`
+# session_ids:                      # 選填（v6.0.0-beta.10+）；Worker 收尾寫、塔台收單補記，建立工單時不寫，見下方 `session_ids`
+#   - "<uuid>"
+methodology:                         # 可選（v6.0.0+）；沒有任何層由方法論 adapter 負責時整段不寫，見下方 `methodology`
+  request_kind: <需求類型>
+  resolved_from:                     # 每層各記（鍵同 layers）
+    <層>: <workorder / session / project / global / default>
+  layers:
+    <層>:
+      adapter: <adapter id>
+      workflow: <adapter routing 的 workflow>
+  versions:
+    <adapter id>: "upstream <偵測值> / adapter <adapter_version>"
+  subagent_writes: deny
+  delivery: none
 ---
 # 工單 T<編號>-<描述>
 
@@ -949,7 +1147,7 @@ basename "$(git rev-parse --show-toplevel)"   # -> BMad-Guide
 
 塔台建立新工單時**應**填入。
 
-工單集中在上層、改的是巢狀的獨立 repo 時，`repo` 填**上層**的目錄名，不是子 repo 的（v5.14.3+，見 [mono-repo-patterns.md](mono-repo-patterns.md) § 巢狀的獨立 repo）。
+工單集中在上層、改的是巢狀的獨立 repo 時，`repo` 填**上層**的目錄名，不是子 repo 的（v6.0.0-beta.7+，見 [mono-repo-patterns.md](mono-repo-patterns.md) § 巢狀的獨立 repo）。
 
 #### `landing_check`（v5.0.5+，落點檢查逃生閥）
 
@@ -991,7 +1189,7 @@ isolation: worktree
   - 同時派出多張會動產品檔的工單（並行），避免互相踩到工作樹；
   - 會大量改動產品檔、希望驗收過後再合併回 `main` 的工單。
 - **不適合**：只改 `_ct-workorders/` 或文件的小單、研究型工單、需要在主 checkout 操作執行環境的工單（例：安裝、部署）。
-- **不能用**（v5.14.3+）：工單在上層、產品檔在巢狀的獨立 repo 的工單。BAT 以上層建 worktree，worktree 裡沒有子 repo；見 [mono-repo-patterns.md](mono-repo-patterns.md) § 巢狀的獨立 repo › 限制。
+- **不能用**（v6.0.0-beta.7+）：工單在上層、產品檔在巢狀的獨立 repo 的工單。BAT 以上層建 worktree，worktree 裡沒有子 repo；見 [mono-repo-patterns.md](mono-repo-patterns.md) § 巢狀的獨立 repo › 限制。
 - 🔴 隔離工單的 `_ct-workorders/` 一律在主 checkout 修改；worktree 裡的 `_ct-workorders/` 是 base 當下的唯讀副本，
   不得修改、不得 stage（Worker 規則見 `ct-exec/SKILL.md` § Worktree Isolation）。
 - `affects_files` 照常填，而且更重要：BAT 以它計算 `outOfScopeFiles`，塔台直接合併判準要求它為空陣列
@@ -1013,6 +1211,41 @@ worker_question_timeout: 30   # 塔台寫：yolo 派工時的生效值（分鐘�
   並與 `### 待塔台決策` 的題目一起 commit 後才送出。走 BAT 通道（v5.7.0+，`--ask`）時一樣要加（雙寫）：BAT 通道成功時塔台不在工單寫答覆行，
   Worker 收到答覆、全部答完後照樣刪除此欄位。
 - 塔台不改 `tower_question`；Worker 不改 `worker_question_timeout`。
+
+#### `session_ids`（v6.0.0-beta.10+，選填）
+
+```yaml
+session_ids:
+  - "<uuid>"   # 範例：換成實際的 session id
+```
+
+- 執行這張工單的 Claude Code session id（`CLAUDE_CODE_SESSION_ID`），給 `*insights sessions` 做歸屬（優先序 ⓪，見
+  `ct-insights/references/analysis-rules.md` § Session 用量統計）。**建立工單時不寫**；由誰寫：
+  - **Worker**：ct-exec 收尾寫自己的 session id（取值、UUID 驗證、`unavailable`、Renew 追加不覆蓋，唯一權威 `ct-exec/SKILL.md` § Phase 4 › Session id），
+    回報區〈完成狀態〉加鏡像行 `- **session_id**：<值>`；
+  - **塔台**：收單時、`--close-worker` 之前，用 BAT MCP 讀 Worker 分頁的 `claudeSessionId`，不在清單裡就追加（[work-order-system.md](work-order-system.md) § 收單補記 session id）。
+- YAML block list、每個值加引號；去重；值只能是 UUID 或 `unavailable`。session id 不是秘密，但這是「環境變數只列名稱」唯一允許寫值的地方，
+  不得順帶寫其他變數或任何權杖（[auto-session.md](auto-session.md) § BAT 內部終端路由 › 偵測條件）。
+- 沒有這個欄位的工單（含所有舊工單）照常；統計改用第一則訊息與分頁標題歸屬。
+
+#### `methodology`（v6.0.0+，選用）
+
+```yaml
+methodology:
+  request_kind: feature
+  resolved_from:
+    execution: project
+  layers:
+    execution:
+      adapter: bmad
+      workflow: bmad-build
+```
+
+- **結構與每個鍵的意義以 [methodology-adapters.md](methodology-adapters.md) § 工單欄位 為準**（含選填的 `detail`、`inputs`、`writeback`），本檔不複述。
+- 塔台派工時依該檔 § 解析步驟 寫入；Worker 不讀 `_tower-config.yaml` 決定方法論，只讀這個欄位。
+- 沒有任何層由 adapter 負責 → 不寫這個欄位。沒有這個欄位的工單（含所有舊工單），Worker 行為與 v5.12.6 相同；
+  舊工單的 `### BMad 工作流程` 段照讀、不回寫（上方「填寫方法論欄位指引」範例 C）。
+- 有這個欄位時，內文要有 `### 方法論工作流程` 鏡像，回報區要有 `### 方法論執行紀錄`、`### 方法論狀態回寫`（本檔開頭的模板）。
 
 #### `affects_files`
 
@@ -1055,6 +1288,7 @@ interaction:
 - `repo` 欄位有定義、有取值指令、且明文與 `project` 區分語意。
 - `landing_check.expect_missing` 有定義，且明訂非萬用消音、Worker 不得自加。
 - `isolation` 欄位有定義，且明訂預設不隔離（v5.3.0+）。
+- `methodology` 欄位有範本，結構引用 `methodology-adapters.md` § 工單欄位，且明訂缺省 = v5.12.6 行為、舊段照讀（v6.0.0-pre.1）。
 
 ---
 

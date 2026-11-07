@@ -201,6 +201,54 @@ Worker 的名稱由 BAT 加，CT 派工命令不變、不用做任何事。
 **版本**：BAT `>= 0.7.1-pre.1`。舊 BAT（≤ `0.7.0-pre.9`）或非 BAT 沒有這些名稱與 `scope: towers`，第 1、2 步都找不到 → 第 3 步，
 與 v5.8.1 的做法相同。
 
+### 通知自己的 Worker 重讀工單（v6.0.0-beta.11+，選用）
+
+> 本小節是「塔台用跨 session 訊息提醒**自己派出的 Worker** 去讀工單新增段落」的**唯一權威定義**（PLAN-005 P3，D545）。
+> 放在這裡而不放 [auto-session.md](auto-session.md)，是因為收件人的名稱格式、ListAgents 與 `claudeSessionName` 的對照、「Worker 永遠不是塔台」都定義在上一小節，
+> 兩種收件人規則要一起讀才不會混用；`auto-session.md` 只放一句摘要指回這裡。
+
+**定位**：選用的加速通道，**不是**必要通道。補充內容一律先寫在工單（[work-order-system.md](work-order-system.md) § 執行中補充工單）；
+Worker 不靠這則訊息也會在驗證前、產品 commit 前、寫回報前讀到（`ct-exec/SKILL.md` § Tower Addenda Check）。沒送、送不到、送了沒反應，都不影響工單的正確性，
+也不得因此重送、重派或改走其他寫入 Worker 分頁的方式（塔台不得寫入 Worker PTY：BAT 範圍權杖；BUG-196 證實 PTY「文字＋Enter」會替對話框作答）。
+
+**適用**：Claude Code 塔台＋Claude Code Worker（BAT `>= 0.7.1-pre.1` 派出、ListAgents 上叫 `<工作區> · Worker · <工單 ID>`）。Codex 塔台或 Codex Worker
+沒有這條路，不適用，靠節點檢查。
+
+**選收件人的順序**（依序，命中就停；與上一小節同一套找法，只是目標換成自己的 Worker）：
+
+1. **ListAgents 名稱**：恰好一列名稱是 `<自己的工作區> · Worker · <完整工單 ID>`（完整 ID 含前綴，見 [work-order-system.md](work-order-system.md) § 回報與通知用的工單 ID）→ 送它。
+   同名多列、或不確定自己的工作區名稱 → 改用第 2 步對照。
+2. **BAT 自己的 Worker 清單**：只在自己在 BAT 內時做。MCP `bat_list_terminals`、`scope: mine`，找 `workorder` 等於完整工單 ID 的列；**恰好一列**才取它的
+   `claudeSessionName`，到 ListAgents 找**完全相同**的名稱再送（同名多列附 `[ref]`）。`claudeSessionName: null`、鍵不存在（舊 BAT）、零列或多列、
+   ListAgents 沒有同名、呼叫回錯誤 → 都算找不到，不重試、不改用其他 scope。
+3. **都找不到** → **不送**。節點檢查會兜底；急的話請使用者回 Worker 分頁說「重讀工單」。
+
+- 🔴 不得只靠目錄名＋兩字元、`<工作區> · <短 ID>`、idle／busy 狀態推定收件人（同上一小節）。
+- 🔴 收件人只限**這張工單**的 Worker；不得把訊息送給別張工單的 Worker 或別的塔台。
+
+**訊息內容**：只放指引，一行即可：
+
+```text
+T#### 工單新增〈塔台補充（執行中 #N）〉，請重讀工單該段（ct-exec § Tower Addenda Check）。
+```
+
+- `T####` 用完整工單 ID。不放指令、不放補充內容本身（內容只在工單）、不放權杖或任何環境變數值、不要求回覆。
+- Worker 把這則訊息當成一次額外的節點檢查（`ct-exec/SKILL.md` § Tower Addenda Check）；做什麼只看工單。
+
+**已知限制（實測）**：以下以 BAT 實際派出的 Claude Code／Codex Worker 驗過；訊息仍只是加速通道，上面的規則不變：
+
+- **權限模式相同**：訊息送達，Worker 收到即當成一次額外的節點檢查讀入補充段。
+- **權限模式不同**（例：塔台 bypass、Worker 被切到 manual mode）：訊息在 Worker 端擱置，Worker 分頁跳出要使用者處理的提示（Deny／Deliver），
+  塔台收到 held 的 delivery notice。擱置不擋 Worker：Worker 照常執行，到節點自己讀到補充段；使用者按 Deliver 後訊息晚到，Worker 只多跑一次標題檢查，不重讀全文。
+  **建議**：塔台已知 Worker 與自己的權限模式不同（例：使用者切過 Worker 的模式、非 yolo 派工）時**不送**，靠節點；yolo 下送了會多打擾使用者一次。
+  收到 held notice 時照 tool 的指示，不重送、不等回覆。
+- **Worker 正在跑工具**：訊息排隊，到該工具結束後的下一輪才看到，不打斷工具；Claude Code 上常與「檔案已變更」提示同一輪到。
+- **Codex 不適用**：實測 Codex Worker 不在 ListAgents、`bat_list_terminals` 的 `claudeSessionName: null`，依上面的選收件人順序即「不送」，靠節點檢查。
+- Claude Code 有 `crossSessionInbound: "accept"` 設定可讓訊息不擱置；未驗，CT 不要求。
+
+**與既有規則的相容**：上一小節「名稱含 ` · Worker · ` 加工單編號的 session **一律不是塔台**」**不變**：本小節加的是另一種收件人（塔台對自己的 Worker），
+不改塔台對塔台的選法、訊息內容規則與降級。送出與否寫在 yolo 時的 `[補充]` 條目（[yolo-mode.md](yolo-mode.md) § `_tower-state.md` 新增 `## YOLO 歷程` 區段 › 寫入時機）。
+
 ## 工單前綴機制
 
 ### 設定（Layer 3）
@@ -337,7 +385,7 @@ Step 6: 統籌工單狀態更新（全部子任務完成 → DONE）
 
 `*sync` 掃描時，CP 前綴工單（如 `CP-T0012-xxx.md`）視為標準工單處理——前綴 ID 的合法性依 [work-order-system.md](work-order-system.md) § 工單 ID 格式（權威定義）：
 
-- 歸入 sprint-status.yaml 同步
+- 歸入主方法論 tracker（bmad 時為 sprint-status.yaml）同步（[work-order-system.md](work-order-system.md) § 主方法論 tracker 同步）
 - 狀態追蹤與一般工單一致
 - `_cross-references.md` 由 `*sync` 在步驟 8（計數器驗證）後額外掃描 CP-前綴工單，驗證參照表與實際工單狀態一致
 
@@ -345,7 +393,7 @@ Step 6: 統籌工單狀態更新（全部子任務完成 → DONE）
 
 HANDOVER 與 ADVISORY **不是工單**，因此：
 
-- **不受 `*sync` 狀態掃描管轄**——不進 sprint-status.yaml、不計入工單計數器、不參與 drift 檢查。
+- **不受 `*sync` 狀態掃描管轄**——不進主方法論 tracker（bmad 時為 sprint-status.yaml）、不計入工單計數器、不參與 drift 檢查。
   `_` 前綴使 `T####` 掃描自然不會命中，無需額外排除規則。
 - **不計入熱區統計**。
 - **`*archive` 可比照工單歸檔**：`status` 為 `ACKNOWLEDGED` 或 `DECLINED` 且超過 `archive_days`

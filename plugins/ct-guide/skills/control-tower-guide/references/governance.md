@@ -129,14 +129,14 @@ CT 的結論是「逐處改寫只會讓下次再度發散——**收斂成一處
 最後一條也有實例：YOLO 斷點 A 比對 Worker 回報字串的正則曾經就地寫死無前綴形式，
 帶前綴的 `CP-T0113 完成` 因此被誤判成非預期回報。**展開就是複製一份定義，下次改動必然漏改一處。**
 
-v5.0.6 把工單 ID 格式收斂到 `work-order-system.md`；v5.0.7 以同樣作法收斂 `~/.claude/skills/` 寫入規則，把 6 處複述改為交叉引用；v5.0.9 再把 `~/.codex/skills/` 納入同一權威定義；v5.14.0 把 plugin 安裝路徑也收進同一份定義。
+v5.0.6 把工單 ID 格式收斂到 `work-order-system.md`；v5.0.7 以同樣作法收斂 `~/.claude/skills/` 寫入規則，把 6 處複述改為交叉引用；v5.0.9 再把 `~/.codex/skills/` 納入同一權威定義；v5.14.0（v6：v6.0.0-beta.5）把 plugin 安裝路徑也收進同一份定義。
 本教材自己也照這個原則寫：同一主題只在一個檔案展開，其他檔案只引用。
 
 ---
 
 ## Layer 1 寫入機制：為什麼「放旁邊」也危險
 
-規則本身（範圍是整個 `~/.claude/skills/` 與整個 `~/.codex/skills/`，v5.14.0 起再加上 plugin 安裝路徑；唯一例外的三個條件、備份落點）已在 `three-layer-arch.md` § Layer 1 寫入規則說明。
+規則本身（範圍是整個 `~/.claude/skills/` 與整個 `~/.codex/skills/`，v5.14.0／v6.0.0-beta.5 條文起再加上 plugin 安裝路徑；唯一例外的三個條件、備份落點）已在 `three-layer-arch.md` § Layer 1 寫入規則說明。
 這裡補的是規則背後的**實證與推理**。
 
 ### 實證（D006）
@@ -144,12 +144,13 @@ v5.0.6 把工單 ID 格式收斂到 `work-order-system.md`；v5.0.7 以同樣作
 一次 bmad-guide 升級前，備份被放在 `~/.claude/skills/_backup-bmad-guide-v6.10.0-<時間戳>/`。
 該目錄根層有 `SKILL.md`，隨即被註冊為現役 skill、出現在可用 skill 清單中，description 還是舊版那份。
 舊 description 與新版高度重疊，路由時可能命中舊版，答出已被新版推翻的內容——沒有任何錯誤訊息。
-這是 Claude Code 端的實證；Codex 端未實測。
+這是 Claude Code 端的實證。Codex 端另有實測（v6.0.0-beta.10 條文）：Codex 0.166.0 的掃描器會往下遞迴，第一層底線開頭與第二層的 `SKILL.md` 都被註冊。
 
 ### 「上次這樣做沒事」不構成反證
 
 同期另一次升級也把備份放在 `skills/` 底下，卻沒出事。原因是那次備份的是 8 個 skill 的**父目錄**，
 根層沒有 `SKILL.md`，而掃描器只看第一層，於是略過——**那是結構僥倖，不是規則有效**。換成備份單一 skill，必然踩到。
+同樣的父目錄備份放到 Codex 端就沒有這個僥倖：Codex 掃描器會往下遞迴，裡面每個 skill 都會被註冊。
 
 這是護欄設計中常見的陷阱：一次沒出事的經驗，很容易被當成「這樣做是安全的」證據。
 CT 的寫法是把**機制**寫出來（掃描器註冊第一層子目錄），讓讀者自己推得出「下一次會不會出事」，而不是只給一句「禁止」。
@@ -174,7 +175,12 @@ CT 的寫法是把**機制**寫出來（掃描器註冊第一層子目錄），�
 
 > 完整步驟與指令見 `version-governance.md` § 安裝／升級流程；可否寫入以 `data-layer-architecture.md` § 寫入規則為準。
 
-### plugin marketplace：另一種安裝方式（v5.14.0）
+### plugin marketplace：另一種安裝方式（v5.14.0／v6.0.0-beta.5 條文；v6 自 6.0.0 起上架）
+
+> ⚠️ **預發行版（beta、rc）不提供 plugin。** marketplace `control-tower` 只上架穩定版（帶 `-` 的版號不上架），v6.0.0-beta.N、v6.0.0-rc.N 照舊只用 zip 手動安裝；v6 自正式版 6.0.0 起上架（`ct@control-tower`、`ct-guide@control-tower` 6.0.0）；
+> 本節講的是穩定版 5.14.0 起的做法，v6 自正式版 6.0.0 起同樣適用（v6 條文自 v6.0.0-beta.5 起與 5.14.0 相同；5.14.1、5.14.2 的補充自 v6.0.0-beta.6 起）。
+> 在 beta 環境執行 plugin 安裝指令，裝到的是**穩定版 5.x**，會和手動安裝的 beta 並存，而不帶前綴的 `/ct-exec`、`$ct-exec` 用的是手動那份
+> （見下方〈手動與 plugin 並存時誰生效〉）——兩份不同版本同時在機器上，卻看不出來。所以**不要用 marketplace 裝 beta**。
 
 **是什麼。** marketplace 是一個 git repo，裡面有一份目錄檔，列出可以安裝的 plugin。Claude Code 與 Codex 都能「訂閱」一個 marketplace
 （`plugin marketplace add`），之後用 `<plugin>@<marketplace>` 安裝其中的 plugin。CT 的 marketplace 叫 `control-tower`，放在發行 repo
@@ -186,8 +192,9 @@ CT 的寫法是把**機制**寫出來（掃描器註冊第一層子目錄），�
 | `ct-guide` | 本教材 | 和獨立 zip 一樣可裝可不裝 |
 | `bmad-guide` | BMad Guide（Level 2 的導航 skill，見 `integration.md` § Level 2） | 不是 CT 的一部分，所以版號跟 BMad-Method 走（例 `6.12.4`），不跟 CT；可裝可不裝（v5.14.1 起寫進 CT 的安裝說明） |
 
-beta 版不上架，照舊用 zip。安裝寫法是 `ct@control-tower`（BMad Guide 是 `bmad-guide@control-tower`）。
+beta 版不上架，照舊用 zip（見本節開頭）。安裝寫法是 `ct@control-tower`（BMad Guide 是 `bmad-guide@control-tower`）。
 `bmad-guide` 要改用 plugin，同樣先把它的手動安裝移出 `skills/`；用 plugin 裝了以後，5.14.1 起塔台偵測得到（`integration.md` § 偵測與降級）。
+bmad-guide 不跟 CT 版號，所以 v6 beta 的使用者也可以從這個 marketplace 只裝 `bmad-guide`（CT 本身仍用 zip）；v6 自 v6.0.0-beta.6 起偵測得到它。
 
 **和 zip 的關係。** 內容相同，來源是同一個版本目錄；差別在誰用、怎麼更新。
 
@@ -210,7 +217,7 @@ zip 沒有被取代：它是唯一能給每一種 agent 的格式。marketplace 
 所以從 zip 改用 plugin 的第一步是**先備份、再把手動安裝移出 `skills/`**，然後才裝 plugin，開新 session 用完整寫法確認。
 claude.ai 同步下來的 `anthropic-skills:*` 副本不在本機 `skills/`，不受這一步影響，會繼續並存。
 
-**Codex 搭配 BAT：看 BAT 版本（v5.14.2）。** 5.14.0 時 BAT 對 Codex 派工一律送 `$ct-exec`，只裝 plugin 的 Codex 收到後叫不到 CT，
+**Codex 搭配 BAT：看 BAT 版本（v5.14.2；v6 條文自 v6.0.0-beta.6 起）。** 5.14.0 時 BAT 對 Codex 派工一律送 `$ct-exec`，只裝 plugin 的 Codex 收到後叫不到 CT，
 所以 CT 寫明這個組合用 zip 手動安裝。BAT `0.7.2-pre.1` 起改由 BAT 依 Codex 端的安裝方式送 `$ct-exec` 或 `$ct:ct-exec`，
 5.14.2 把限制改成：BAT `>= 0.7.2-pre.1` 兩種安裝都支援，更舊的 BAT 仍用 zip。兩種都裝時 BAT 一樣送手動那份，
 所以上面「先移除手動安裝」這一步在 BAT 派工下照樣要做（為什麼由 BAT 判斷，見 `bat-integration.md` § 誰負責 `/` 還是 `$`）。

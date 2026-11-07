@@ -88,8 +88,8 @@
 ### 遭遇問題
 （若有問題或需要指揮塔介入的事項，在此描述）
 
-### sprint-status.yaml 已更新
-（是 / 否 / 不適用）
+### 方法論狀態回寫
+（有 `methodology.writeback` 或主方法論 tracker（bmad 時為 sprint-status.yaml）時填回寫了什麼、寫在哪；都沒有就填「不適用」。舊工單的 `### sprint-status.yaml 已更新` 段照讀；定義見 [methodology-adapters.md](methodology-adapters.md) § 工單欄位）
 
 ### 回報時間
 （填入當前時間）
@@ -225,6 +225,7 @@ JWT 相關的 function 有好幾個，需要進一步研究。
 
 - **主要**：研究型工單（`type: research`）— 多輪調查是常態
 - **也可用於**：一般工單（T####）— 使用者決定，無類型限制
+- **不適用**：Worker 還在 `IN_PROGRESS`、塔台要補充或修正指示 → 寫 `## 塔台補充（執行中 #N）`，不加 `Renew 次數`（v6.0.0-beta.11+；唯一權威 [work-order-system.md](work-order-system.md) § 執行中補充工單）
 
 ### 塔台端：Renew 區段格式
 
@@ -274,6 +275,9 @@ yolo 提問備援），派工前先照 [work-order-system.md](work-order-system.
 5. 根據新指示繼續執行（不重置已完成的工作）
 6. 收尾時在回報區「Renew 歷程」標註每次 Renew 的摘要
 
+收到觸發詞時，`ct-exec` Worker 另做一次節點檢查（v6.0.0-beta.11+）：新增的 `## 塔台補充（執行中 #N）` 段也一併讀入。檢查方式只定義在 `ct-exec/SKILL.md` § Tower Addenda Check；
+沒有觸發詞時，Worker 也會在驗證前、產品 commit 前、寫回報前各檢查一次。
+
 ### 回報區 Renew 歷程格式
 
 ```markdown
@@ -298,6 +302,6 @@ yolo 提問備援），派工前先照 [work-order-system.md](work-order-system.
 | 功能 | 關係 |
 |------|------|
 | F-07 Renew | 研究結論不清晰時 Renew 同一張工單，是研究型工單的核心配套 |
-| F-01 多文件類型引擎 | `*sync` 掃描時 research 類型工單按 T#### 前綴歸入 sprint 統計 |
+| F-01 多文件類型引擎 | `*sync` 掃描時 research 類型工單按 T#### 前綴歸入工單統計與主方法論 tracker（bmad 時為 sprint-status.yaml）同步 |
 | F-04 決策日誌 | 研究結論可記錄到 `_decision-log.md` 作為決策依據 |
 | F-14 歷史封存 | 已完成的研究工單適用標準歸檔流程 |

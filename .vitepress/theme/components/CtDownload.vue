@@ -32,7 +32,7 @@ const bmadGuideAsset = computed(() => `${releasesUrl.value}download/bmad-guide-v
       <li v-if="release.zip">
         <a class="download-item" :href="`${releasesUrl}tag/${ctTag}`" target="_blank" rel="noreferrer">
           <span class="download-label">CT 單一 skill zip（claude.ai 上傳用）</span>
-          <span class="download-note">8 個 &lt;skill&gt;-v{{ release.ctVersion }}.zip，在 v{{ release.ctVersion }} 的 Release 頁</span>
+          <span class="download-note">8 個 &lt;skill&gt;-v{{ release.ctVersion }}.zip（另有選用的 ct-adapter-pstack），在 v{{ release.ctVersion }} 的 Release 頁</span>
         </a>
       </li>
       <li v-if="release.guideZip">

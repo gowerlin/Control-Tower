@@ -49,7 +49,7 @@
 
 ---
 
-## 探索流程（5 個主題）
+## 探索流程（6 個主題）
 
 > 每個主題完成後才進入下一個。
 > 遇到使用者說「不確定」或「都可以」→ 告訴他：「那我先設最常見的預設，之後再改也沒關係。」
@@ -96,7 +96,7 @@
 **記錄欄位**：`git_mode`、`staging_preference`
 
 > 使用者提到上層底下有好幾個跟團隊共用的獨立 repo 時，說明可以用一個塔台、工單集中在上層，
-> 見 [mono-repo-patterns.md](mono-repo-patterns.md) § 巢狀的獨立 repo（v5.14.3+）。這不影響本主題要記錄的欄位。
+> 見 [mono-repo-patterns.md](mono-repo-patterns.md) § 巢狀的獨立 repo（v6.0.0-beta.7+）。這不影響本主題要記錄的欄位。
 
 ---
 
@@ -111,7 +111,7 @@
 - [A] 改錯字、調整文字措辭、文件格式整理
 - [B] 改變數名稱（只改名稱，不動邏輯）
 - [C] 調整非功能性設定（log level、timeout 數值等）
-- [D] 整理 sprint 狀態 / 更新工單紀錄
+- [D] 整理方法論進度狀態（例：bmad 的 sprint 狀態）/ 更新工單紀錄
 - [E] 以上都不要，所有事情都要開工單
 - [F] 其他：________
 
@@ -200,9 +200,53 @@
 
 ---
 
-### 主題 5：塔台 vs Worker 的邊界（快速確認）
+### 主題 5：主方法論（v6.0.0+）
 
-> 這個主題**不問問題**，直接複述前 4 題彙整結果讓使用者確認。
+> 塔台提問前先確認：專案 `_ct-workorders/_tower-config.yaml` 已經有 `methodology` → 先說出目前的值，並在選項最前面加一項「維持目前設定（`<值>`）」。
+> 鍵的語意與 `auto` 的偵測規則見 [methodology-adapters.md](methodology-adapters.md) § 抽換；本題不改變預設流程。
+
+**問題 5-A**：
+
+> 塔台派工時，可以照某一套開發方法（例如 BMAD）幫 Worker 選工作流程。
+> 這個專案你想怎麼做？
+
+選項：
+- [A] 自動偵測（推薦）：有裝 bmad-guide 就用 BMAD，沒裝就不套方法論——跟現在的做法一樣
+- [B] 指定一套方法論（下一題選）
+- [C] 不使用方法論：塔台只照工單本身的描述派工
+- [D] 其他：________
+
+**條件分支**：
+- 選 A → 跳過 5-B，記錄：`methodology_choice = auto`（不寫設定檔）
+- 選 C → 跳過 5-B，記錄：`methodology_choice = none`
+- 選 B → 繼續問 5-B
+
+**問題 5-B**（僅在選 B 時問）：
+
+> 要用哪一套？
+
+選項：
+- 塔台照 [methodology-adapters.md](methodology-adapters.md) § 散布與搜尋順序 找到的 adapter，一個一列（`<id>`：`display_name`）
+- [其他] 輸入 adapter id：________（還沒安裝也可以，之後派工時找不到會照 § 降級 退回，不會卡住）
+
+**複述確認**：
+
+> 這個專案的主方法論是 [自動偵測／<id>／不使用]。
+> 要讓某一層（例如審查）改用別的方法論，之後可以用 `*config methodology_<層> <id>` 再調。
+> （選的方法論有 SessionStart hook 時，加一句：這套也可以只引用需要的 skill 或只參考做法，不必整套安裝——
+> 三種引入方式與各家建議見 [methodology-adapters.md](methodology-adapters.md) § 引入方式；塔台不替你改安裝。
+> 偵測到沒有 adapter 的注入時改說：方法論不是一定要引入，這套在 CT 下的建議看 § 引入方式 的建議表（例：Superpowers 不建議引入）；
+> 已經裝了的話，塔台派工時照共存防護處理，不替你改安裝。）
+>
+> 正確嗎？
+
+**記錄欄位**：`methodology_choice`
+
+---
+
+### 主題 6：塔台 vs Worker 的邊界（快速確認）
+
+> 這個主題**不問問題**，直接複述前 5 題彙整結果讓使用者確認。
 
 輸出格式：
 
@@ -221,6 +265,8 @@
 > - 讀程式碼、改程式碼、執行測試
 > - 調查型任務（如果你有開研究型工單）
 > - 完成後回報給我，我再告訴你下一步
+>
+> **派工時套用的方法論**：[自動偵測／<id>／不使用]（主題 5）
 >
 > 這樣你清楚了嗎，還是有哪裡你想調整？
 
@@ -256,6 +302,18 @@
 >
 > 這個沒問題嗎？
 
+### Step 2-b：方法論設定草稿（條件性）
+
+僅在主題 5 選了 B 或 C、且與目前設定不同時執行（選 A 或「維持目前設定」→ 不寫設定檔，流程與現在相同）：
+
+> 我會在專案設定加一行：
+>
+> ---
+> `_ct-workorders/_tower-config.yaml`：`methodology: <id 或 none>`
+> ---
+>
+> 這個沒問題嗎？
+
 ### Step 3：使用者確認
 
 等使用者明確說「沒問題」、「對」、「確認」等肯定回覆。
@@ -267,6 +325,7 @@
 3. 衝突分析 → 顯示差異 → 詢問處理方式
 4. 不存在 → 直接建立
 5. Playbook 同理寫入 `_learnings.md`
+6. 方法論（僅 Step 2-b 有草稿時）：照 `*config methodology <值> --save project` 寫入（驗證與寫入規則見 [tower-config.md](tower-config.md) § 方法論設定鍵），不經 `*import`
 
 ### Step 5：顯示完成訊息
 
@@ -276,6 +335,7 @@
 已寫入：
 - _ct-workorders/_local-rules.md（N 條規則）
 - _ct-workorders/_learnings.md（N 個 playbook）← 僅在有 playbook 時
+- _ct-workorders/_tower-config.yaml（methodology: <值>）← 僅在主題 5 改了設定時
 
 這些設定在下次啟動塔台時會自動載入。
 之後如果想改，直接告訴我「我想改 XX 規則」，
@@ -334,6 +394,7 @@
 | `worker_git_behavior` | Q3-A | 規則 2 |
 | `unclear_handling` | Q4-A | Playbook 觸發情境 |
 | `research_default` | Q4-B | Playbook 啟用模式 |
+| `methodology_choice` | Q5-A／Q5-B | `_tower-config.yaml` 的 `methodology`（`auto` 不寫入；不進 `_local-rules.md`） |
 
 ---
 
@@ -388,6 +449,7 @@ Worker 完成後：
 | Q3-A | B（不動 git，給 commit message） |
 | Q4-A | D（看情況） |
 | Q4-B | B（不預設，使用者要求才開） |
+| Q5-A | A（自動偵測，不寫設定檔）；已有 `methodology` 時 = 維持目前設定 |
 
 ---
 

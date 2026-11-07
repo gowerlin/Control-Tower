@@ -1,23 +1,38 @@
 # 多單據類型系統（BUG / PLAN / EXP）
 
 > Control Tower v4 擴展：在標準工單（T####）之外，新增 BUG、PLAN、EXP 三種專用單據類型。
-> 所有新類型**預設關閉**，透過 `*config` 啟用。索引檔（`_bug-tracker.md`、`_backlog.md`）格式的唯一權威定義在 § 索引格式。
+> v6 起三種新類型**預設開啟**（D363、D368）；專案或全域設定明寫 `false` 的照舊關閉，用 `*config <選項> false` 關閉。
+> 啟用時（含預設啟用）立即產生空的索引檔，見 § 啟用與索引檔；索引格式的唯一權威定義在 § 索引格式。
 
 ## 類型總覽
 
 | 類型 | 檔名格式 | 用途 | 啟用設定 | 預設 |
 |------|---------|------|---------|------|
 | Work Order | `T####-description.md` | 標準任務（不變） | 永遠啟用 | 是 |
-| Bug Report | `BUG-###-description.md` | Bug 追蹤 | `enable_bug_tracking: true` | 否 |
-| Plan | `PLAN-###-description.md` | 規劃/想法 | `enable_plan_tracking: true` | 否 |
-| Experiment | `EXP-[TOPIC]-###-description.md` | 實驗性工作 | `enable_experiments: true` | 否 |
+| Bug Report | `BUG-###-description.md` | Bug 追蹤 | `enable_bug_tracking: true` | 是（v6 起） |
+| Plan | `PLAN-###-description.md` | 規劃/想法 | `enable_plan_tracking: true` | 是（v6 起） |
+| Experiment | `EXP-[TOPIC]-###-description.md` | 實驗性工作 | `enable_experiments: true` | 是（v6 起） |
+
+## 啟用與索引檔
+
+本節是「啟用即產生索引」的**唯一權威定義**；`SKILL.md` § Startup Protocol、`tower-config.md` § 可用選項 只引用這裡（D360、D363）。
+
+| 類型 | 索引檔 | 啟用時 |
+|------|--------|--------|
+| BUG | `_ct-workorders/_bug-tracker.md` | 檔案不存在 → **立即**產生空索引（§ 索引格式，`total: 0`、`breakdown` 各狀態 0、各區段放「（無）」列） |
+| PLAN | `_ct-workorders/_backlog.md` | 同上 |
+| EXP | 無（EXP 只列在 `*sync` 摘要的「🧪 實驗分支」區塊） | 不產生檔案 |
+
+- **啟用時**指：塔台啟動（`SKILL.md` § Startup Protocol 第 4 步）時生效值是 `true`（含沒有任何設定、照預設 `true`），或 `*config enable_bug_tracking true`／`enable_plan_tracking true` 改值的當下。不等第一次 `*sync`：BAT 指揮塔面板的「待辦池」讀 `_backlog.md`、「臭蟲」讀 `_bug-tracker.md`，檔案不存在時面板是空的（D360）。
+- 檔案已存在 → 不動（只有 `*sync` 整檔重寫，§ 索引格式）。
+- 產生者是塔台；兩檔屬塔台私有狀態（`SKILL.md` § Hard Boundaries），Worker 不產生、不修改。
+- 關閉（`false`）不刪除既有索引檔；之後的行為見 § 未啟用時的行為。
+- `generated_at` 取系統時間，不得推估。
 
 ## 索引格式
 
-> v5.13.0 新增（5.12.8 以前本檔指向「SKILL.md `*sync` 段落」，該段落不存在）。
-
 本節是 `_bug-tracker.md`、`_backlog.md` 格式的**唯一權威定義**（D360；照 CT 開發 repo 現行兩檔的實際格式寫成）。`*sync` 每次整檔重寫
-（frontmatter 與 body 一起，§ PLAN-034 Sprint 2 transition 元資料解析規則）；啟用後第一次 `*sync` 產生索引時用同一格式。
+（frontmatter 與 body 一起，§ PLAN-034 Sprint 2 transition 元資料解析規則）；§ 啟用與索引檔 的空索引用同一格式。
 BAT 指揮塔面板的「臭蟲」「待辦池」只讀這兩個索引，不讀個別單據（展開詳情時才讀），所以**改了 BUG／PLAN 狀態就要重建索引**（§ BUG 單據 › `*sync` 整合）。
 BAT 依賴的部分、值域對照與大小預算以 [memory-protocol.md](memory-protocol.md) § BAT 塔台面板讀取契約 為準；改格式前先對照該節。
 
@@ -140,6 +155,7 @@ list 欄位用 YAML block list。
   這些 BUG 在 BAT 臭蟲頁照樣出現在 CLOSED 區。
 - 區段沒有單據時放一列 `| _（無）_ | | | | |`（欄數照該表）；各區段與欄位標題照上方範本，不增減。
 - 表格列與儲存格的共通寫法（每列 `|` 開頭與結尾、格子內不得有 `|`）見 [memory-protocol.md](memory-protocol.md) § BAT 塔台面板讀取契約 › 各檔要求。
+- 空索引（§ 啟用與索引檔）的「最後同步」說明寫「啟用時產生的空索引」。
 
 ## 編號管理
 
@@ -460,7 +476,7 @@ EXP 工單會自動出現在 worktree 的 `_ct-workorders/` 中（共用同一 g
      ```
   2. 塔台更新 EXP 狀態 → ABANDONED，記錄放棄原因
 
-**`*sync` 行為**：EXP 工單列在獨立「🧪 實驗分支」區塊，不計入 sprint 進度。
+**`*sync` 行為**：EXP 工單列在獨立「🧪 實驗分支」區塊，不計入主方法論 tracker 的進度（bmad 時為 sprint 進度）。
 
 ### EXP 互動流程
 
@@ -500,7 +516,7 @@ EXP 單據參與 `*sync` 掃描，在同步摘要中列於獨立的「🧪 實�
 | 狀態 | 元資料區 `**狀態**：` 後的值（EXPLORING/CONCLUDED/ABANDONED） | 統計分類 |
 | TOPIC | 元資料區 `**TOPIC**：` 後的值 | 計數器驗證 |
 
-> EXP 不計入 Sprint 進度，僅在 `*sync` 摘要中顯示統計。
+> EXP 不計入主方法論 tracker 的進度（bmad 時為 Sprint 進度），僅在 `*sync` 摘要中顯示統計。
 
 ---
 
@@ -523,7 +539,7 @@ EXP 單據參與 `*sync` 掃描，在同步摘要中列於獨立的「🧪 實�
 
 ## 未啟用時的行為
 
-當對應 config 選項為 `false` 時：
+當對應 config 選項為 `false` 時（v6 起預設 `true`，所以只有專案或全域設定**明寫** `false` 才會走這裡；升級前已寫 `false` 的專案照舊）：
 
 | 情境 | 塔台行為 |
 |------|---------|

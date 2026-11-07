@@ -127,9 +127,11 @@ const nav: DefaultTheme.NavItem[] = [
     ]
   },
   {
-    text: 'RC',
+    // 預發行專章（/preview/）的群組名固定「實驗功能」，項目只寫功能名，不帶版號、不寫 Beta／RC／pre。
+    // 群組內分「進行中」與「已納入正式版」兩段；「進行中」沒有項目時省略那一段
+    text: '實驗功能',
     activeMatch: '^/preview/',
-    items: [{ text: '方法論轉接（v6.0.0-rc.1 RC，與穩定版並行）', link: '/preview/methodology-adapters' }]
+    items: [{ text: '已納入正式版', items: [{ text: '方法論轉接', link: '/preview/methodology-adapters' }] }]
   },
   {
     text: '案例與課程',
@@ -209,8 +211,8 @@ const sidebar: DefaultTheme.SidebarItem[] = [
     ]
   },
   {
-    text: 'RC（與穩定版並行）',
-    items: [{ text: '方法論轉接（v6.0.0-rc.1 RC）', link: '/preview/methodology-adapters' }]
+    text: '實驗功能',
+    items: [{ text: '已納入正式版', items: [{ text: '方法論轉接', link: '/preview/methodology-adapters' }] }]
   },
   {
     text: '案例與課程',

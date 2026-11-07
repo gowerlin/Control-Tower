@@ -21,11 +21,11 @@
 
 工單 ID 可以帶一個**可選**的 2–4 位大寫前綴，例如 `CP-T0113`（跨塔台交辦）或 `LC-T0001`（設定了 `project-prefix`）。
 所以「沒設 project-prefix 就不會看到前綴 ID」並不成立——收到別的塔台交辦的工單時就會出現。
-Worker 回報與通知時也要原樣送出含前綴的完整 ID（v5.13.1），見下方 § 回報與通知用完整工單 ID。
+Worker 回報與通知時也要原樣送出含前綴的完整 ID（v5.13.1／v6.0.0-beta.4），見下方 § 回報與通知用完整工單 ID。
 ID 格式在 CT 中只有**一處權威定義**（`work-order-system.md` § 工單 ID 格式），其他地方一律交叉引用；
 為何要收斂成單一定義，詳見 `governance.md`。
 
-BUG／PLAN／EXP 預設關閉，由 `enable_bug_tracking`／`enable_plan_tracking`／`enable_experiments` 開啟（見 `ecosystem.md` § 設定系統）。
+BUG／PLAN／EXP 由 `enable_bug_tracking`／`enable_plan_tracking`／`enable_experiments` 控制（見 `ecosystem.md` § 設定系統）：v5.12.x 預設關閉，**v6.0.0-beta.1 起預設開啟**、明寫 `false` 的照舊（`preview-methodology.md` § BUG／PLAN／EXP 預設開啟）。
 
 ---
 
@@ -68,7 +68,7 @@ status: IN_PROGRESS
 | `id` / `title` | `T####` 與不含狀態 emoji 的標題 | ID 不含檔名描述，比對才不會因描述改字而失準 |
 | `type` | `research`／`impl`／`fix`／`test`／`docs`／`refactor`／`audit`／`spike`／`chore` | `research` 會改變 Worker 的互動行為（見下方研究型工單） |
 | `status` | 狀態 enum（見下節） | 顯式狀態讓塔台只讀前幾十行就能分類，不必全文判讀 |
-| `repo` | repo 根目錄的**目錄名** | 落點檢查的身分依據；與 `project`（子專案／PLAN／BUG 名）語意不同、不得混用。工單集中在上層、改的是巢狀的獨立 repo 時填**上層**的目錄名（v5.14.3，見 `advanced-patterns.md` § 巢狀的獨立 repo） |
+| `repo` | repo 根目錄的**目錄名** | 落點檢查的身分依據；與 `project`（子專案／PLAN／BUG 名）語意不同、不得混用。工單集中在上層、改的是巢狀的獨立 repo 時填**上層**的目錄名（v5.14.3；v6 自 v6.0.0-beta.7 起，見 `advanced-patterns.md` § 巢狀的獨立 repo） |
 | `project` | mono-repo 子專案或記錄編號 | 由人命名，不參與落點檢查 |
 | `created_at` / `started_at` / `updated_at` / `completed_at` | 帶時區的 ISO 8601 時間 | 時間一律由系統指令取得，不由 AI 推估 |
 | `depends_on` / `followups` | 前置與後續工單 | 工單鏈的明文依賴 |
@@ -78,6 +78,7 @@ status: IN_PROGRESS
 | `interaction.intervention_type` | `fire-and-forget`／`context-dependent`／`decision-requiring` | 依「對塔台的介入成本」分類：決定能否平行、要不要預告使用者等下得做決策 |
 | `renew_count` | Renew 次數 | 塔台據此判斷是否該改開新工單 |
 | `landing_check.expect_missing` | 本工單自己會建立目標樹 | 落點檢查的逃生閥，**只有塔台能設** |
+| `methodology`（v6.0.0+，選用） | 各層由哪個方法論 adapter 負責、輸入與回寫 | 塔台派工時解析好寫進工單，Worker 照它帶入、不讀設定檔自己決定；沒有這段時照 5.x 執行（見下方〈方法論（v6.0.0+）〉） |
 | `isolation`（v5.3.0，選用） | 唯一的值 `worktree`：派工時讓 BAT 建獨立 worktree | **預設不隔離**，沒有這個欄位時一切與 v5.2.6 相同；見下方〈worktree 隔離與合併工單〉 |
 
 另外兩個 body 區段也屬工單 metadata：`memory_overrides`（明列「AI 記憶中某個舊作法本工單不採用」及理由）與
@@ -107,6 +108,10 @@ v5 的差別在「派工」與「回報」兩端可以由 BAT 自動化，依 `a
 在 BAT 內，迴圈前後還多了幾個附帶步驟：塔台啟動時宣告自己的分頁（v5.2.0）、收單後可請 BAT 回收 Worker 分頁（v5.1.0，預設關閉）、同一張工單重派前先回收舊 Worker 分頁（v5.12.0）；
 塔台也必須在使用者自己開的一般分頁啟動，不能在 Worker 分頁裡（v5.2.4）。這些步驟失敗都不影響迴圈本身。
 一張分頁從宣告、派工、通知到回收的完整路徑與設計理由，見 `bat-integration.md` § 一張分頁的生命週期。
+
+v6.0.0-beta.10 起在收單這一端再加兩步，都在任何 `--close-worker` **之前**：先用 BAT MCP 讀 Worker 分頁的 `claudeSessionId` 補進工單 `session_ids`（備援，分頁關掉就讀不到了），
+再對這張工單寫一筆 session 用量快照。兩步拿不到資料都只跳過或註一句，不影響收單結果。塔台啟動時也在開工條目記自己的 session id。
+設計理由見 `preview-methodology.md` § beta.10：session 用量統計；權威：CT `work-order-system.md` § 收單補記 session id、§ 收單快照。
 
 v5.3.0 起，帶 `isolation: worktree` 的工單在迴圈尾端多一段**合併**：Worker 的成果在分支 `ct/T####` 上，要合併回 `main` 才算進了主線。
 見下方〈worktree 隔離與合併工單〉。
@@ -163,7 +168,7 @@ PENDING / IN_PROGRESS / DONE / FIXED / FAILED / BLOCKED / PARTIAL / INTERRUPTED 
 保留原回報區與證據、加一段事後註記說明由哪張工單／哪個決策解決，並同步各處追蹤。
 若 blocker 是因設計方向被淘汰而消失，則用 `ABANDONED`／superseded 類終態，而非 `DONE`。
 
-**v5.13.0：一裁示就收尾。** 以前補正的時點落在歸檔前覆核，結果常是塔台早就決定「剩下的交給另一張單」，
+**v5.13.0／v6.0.0-beta.3：一裁示就收尾。** 以前補正的時點落在歸檔前覆核，結果常是塔台早就決定「剩下的交給另一張單」，
 原工單卻在看板上掛著 `PARTIAL` 好幾天，看起來像沒做完。現在的規則是：Worker 依停止條件回 `PARTIAL` 是對的，收尾是塔台的事——
 塔台**一裁示**剩餘部分怎麼處理（另開接手單、或判定不需再做），就**當下**在原工單文末補〈塔台收尾補記〉並改 `DONE`，
 接手單完成後再回頭確認；剩餘部分被設計方向淘汰的改 `ABANDONED`。只有真的在等外部條件（廠商、客戶、環境、使用者還沒給的輸入）
@@ -225,6 +230,17 @@ frontmatter 的 `mode_hint` 也只是參考。設定檔只能用來讀重試上�
   yolo 下這些防護不問使用者，改為記錄或問塔台（v5.5.1）
 - **Claude Code Workflow 只在工單明文授權時才用**（v5.11.0）：工單沒有「Workflow 使用授權」段落就不呼叫；有的話只做列出的執行，超過 agent 或 token 上限、要重跑都先停下問塔台。Worker 自己開的唯讀子代理不需授權，但回報區要記數量、用途、是否唯讀、約略 tokens（權威 CT `ct-exec/SKILL.md` § Workflow And Sub-Agents；為什麼見 `concepts.md` § v5.11.0：回測沒過之後，先做便宜的部分）
 
+### 方法論（v6.0.0+）
+
+工單 frontmatter 有 `methodology`（塔台派工時已解析好每一層由哪個 adapter 負責）時，Worker 在 Phase 2 先依層序（規劃 → 執行 → 審查 → 驗證）
+照 adapter 寫的方式在本 session 內呼叫方法論的 workflow；工單自己的步驟、排除項與驗收閘門照樣適用，衝突時 CT 規則優先。
+Worker **不讀設定檔決定方法論**，跟不讀設定檔決定模式是同一個「Worker 無狀態」原則。沒有 `methodology` 的工單照 5.x 執行。
+
+不論工單有沒有 `methodology`，只有三件事會觸發方法論規則：看到方法論注入（記一行 `methodology_ambient`）、呼叫了方法論 skill（記入 `### 方法論執行紀錄`）、
+被 compact 或 resume（先重讀整張工單再繼續）。方法論自己開的寫入型子代理預設不允許；交付（PR、發布）預設關閉。
+設計理由與實測見 `preview-methodology.md` § Worker 端會看到什麼不同、§ 注入防護：為什麼要「邊界段」；概念總覽見 `integration.md` § 方法論轉接（v6.0.0+）；
+權威：CT `ct-exec/SKILL.md` § Methodology、§ Startup。
+
 ### Phase 3：Verify
 
 跑工單指定的驗收閘門；跑不了的閘門要記下確切阻礙，**不得暗示 PASS**。
@@ -267,6 +283,10 @@ commit 訊息必須帶工單編號；有無關的未提交變更時只 commit �
 
 `sprint-status.yaml` 只在工單明確要求時由 Worker 更新，塔台每次處理回報時會複查補漏。
 
+**session id（v6.0.0-beta.10+）**：第 3 步更新狀態時，Worker 也把自己的 Claude Code session id（`CLAUDE_CODE_SESSION_ID`）寫進 frontmatter
+`session_ids`（Renew 追加、不覆蓋；拿不到寫 `unavailable`），回報區〈完成狀態〉多一行鏡像。這是「環境變數只列名稱」唯一允許寫值的例外——session id 不是秘密，
+但它讓 `*insights sessions` 在原始紀錄被清掉之後仍對得上工單。權威：CT `ct-exec/SKILL.md` § Phase 4 › Session id。
+
 ### BAT Notify
 
 通知在最終狀態與回報區都寫完**之後**才送，依 `CT_MODE` 處理：`yolo` 預填並自動送出（`--submit`）；`on` 只預填、不送出；
@@ -276,18 +296,18 @@ commit 訊息必須帶工單編號；有無關的未提交變更時只 commit �
 Worker 只送通知：不宣告分頁（那是塔台的事）、回報區記錄 BAT 證據時權杖只寫「已設定」、不寫出它的值。
 helper 用哪個 node、Worker 分頁的權限範圍與這些規定的理由，見 `bat-integration.md` § Worker 執行與通知、§ 範圍權杖與分頁角色。
 
-### 回報與通知用完整工單 ID（v5.13.1）
+### 回報與通知用完整工單 ID（v5.13.1／v6.0.0-beta.4）
 
 上面各處寫的 `T#### 完成`、`T#### 提問` 是**訊息種類的名稱**，實際送出的是**工單完整 ID**：`/ct-exec`（`/ct-done`）收到什麼 ID 就照原樣用，
 它等於工單 frontmatter `id`，含前綴、不截短。沒設前綴的專案送 `T0341 完成`；設了前綴（例 `LB-`）的專案送 `LB-T0184 完成`，
 `bat-notify.mjs --source` 也是 `LB-T0184`。提問（`--ask --source`）與手動帶回塔台的備援訊息同樣適用。
 
-**為什麼要特別寫出來**：v5.13.0 以前的通知範本寫的是 `--source "T####" … "T#### 完成"`。Worker 照著範本「T 加四位數字」的形狀，
+**為什麼要特別寫出來**：v5.13.0／v6.0.0-beta.3 以前的通知範本寫的是 `--source "T####" … "T#### 完成"`。Worker 照著範本「T 加四位數字」的形狀，
 有時會從 `LB-T0184` 截出 `T0184`——一個設了前綴的專案統計，回報 87 次帶前綴、43 次沒帶，隨機發生。
 塔台讀得懂這種回報，問題出在 BAT：BAT 用 `--source` 比對 Worker 分頁登記的工單，對不上就無法把那個分頁標成 Done，
 使用者也就不能一次關掉所有已完成的 Worker 分頁。CT 的 ID 格式本來就允許前綴，**規格沒錯，錯在範本沒教**，所以修在 CT 這邊。
 
-v5.13.1 分三層修：
+v5.13.1／v6.0.0-beta.4 分三層修：
 
 | 層 | 做什麼 | 補的是哪個洞 |
 |---|---|---|
@@ -299,7 +319,7 @@ v5.13.1 分三層修：
 所以真正的修法是 Worker 端的前兩層，塔台容錯只是不讓流程卡住。容錯也只往一個方向：收到帶前綴的 ID、熱區卻只有無前綴的同號單時不套用，
 因為「漏寫前綴」解釋不了這種情況，照樣問使用者。
 
-**塔台端範本也改（v5.14.1）。** v5.13.1 修的是 Worker 端；塔台端的派工與回收範本（`--workorder`、`--close-worker`、`--worktree-status`）
+**塔台端範本也改（v5.14.1；v6 條文自 v6.0.0-beta.6 起相同）。** v5.13.1 修的是 Worker 端；塔台端的派工與回收範本（`--workorder`、`--close-worker`、`--worktree-status`）
 當時還寫 `T####`，給塔台的是同一個可以照抄的錯誤形狀。派工時塔台傳什麼，BAT 就替 Worker 分頁登記什麼，
 所以完整 ID 要從派工那一刻就對；5.14.1 把這些範本也改成 `<工單 ID>`（代入 frontmatter `id` 原樣、含前綴）。
 `/ct-exec T####` 這類 agent 呼叫字串樣板保留 `T####`：表頭本來就標明是占位，CT 另在派工權威表加一句說明它同樣代表完整 ID。
@@ -424,6 +444,8 @@ Worker session 意外關閉、AI 沒收尾、或需要手動更正狀態時，�
 `ct-done` 一樣先跑落點檢查，再補完回報與收尾，確保工單不會成為「幽靈工單」（`IN_PROGRESS` 卻沒人在做）。
 v5.7.0 起 `ct-done` 在通知塔台前也會 commit **工單檔本身**，和 `ct-exec` 一樣守「通知前工單已 commit」；
 產品變更則不替你 commit，只告訴你哪些看起來還沒 commit（權威見 CT `ct-done/SKILL.md` § Workflow）。
+v6.0.0-beta.11 起，`ct-done` 寫回報前也看一次有沒有開工後才加的 `## 塔台補充（…）` 段，有就只讀那段、記一行在 `### 互動紀錄`，補救收尾做不到的照實寫進回報
+（同 `ct-exec` 的寫回報前節點；見 `preview-methodology.md` § beta.11：Worker 執行中接收塔台補充）。
 
 塔台面對中斷的工單：回報區有部分結果 → 開**接續工單**（新編號、參照原工單）；回報區為空 → 重派原工單或改策略開新工單；原工單標記 `INTERRUPTED`。在 BAT 內重派原工單前，塔台先回收舊 Worker 分頁（v5.12.0，見 `bat-integration.md` § 重派前回收舊 Worker 分頁）。
 
@@ -442,7 +464,7 @@ v5.7.0 起 `ct-done` 在通知塔台前也會 commit **工單檔本身**，和 `
 
 ```
 ✅ 「T0001 完成」              ← 帶工單編號
-✅ 「LB-T0184 完成」           ← 工單有前綴就帶前綴（完整 ID，v5.13.1）
+✅ 「LB-T0184 完成」           ← 工單有前綴就帶前綴（完整 ID，v5.13.1／v6.0.0-beta.4）
 ✅ 「T0003 需要協助」           ← 帶編號 + 狀態訊息
 ✅ 「T0002 遇到問題，API 回傳 403」← 帶編號 + 一句話描述
 ```
@@ -478,7 +500,7 @@ v5.7.0 起 `ct-done` 在通知塔台前也會 commit **工單檔本身**，和 `
 
 ---
 
-## 客戶驗收不回歸閘（可選，v5.13.0）
+## 客戶驗收不回歸閘（可選，v5.13.0／v6.0.0-beta.3）
 
 專案進入客戶驗收之後，最傷的往往不是新 BUG，而是修 BUG 時把**已經驗收通過**的功能改壞：客戶要重測，信任也受損。
 同一輪連開十幾張修正單時，很容易沒有人回頭核對哪些通過案例會被碰到。
@@ -519,10 +541,10 @@ BUG 單據有專屬的 6 態狀態機，包含驗證（VERIFY）中間態：
 
 FIXED 與 CLOSED 分開，是為了防止「修了但沒真的修好」：Worker 回報 FIXED 只代表實作完成，要經過驗證才能關閉。
 
-### 結案判準與 `closed_reason`（v5.13.0）
+### 結案判準與 `closed_reason`（v5.13.0／v6.0.0-beta.3）
 
 狀態機回答「可以怎麼走」，沒有回答「這張該落在哪」。實際專案裡，未結清單常累積一批早就修好、過時、被取代或其實不是 BUG 的單——
-留著會讓人誤判工作量與風險。v5.13.0 補上結案判準，把常見情況對到既有狀態：
+留著會讓人誤判工作量與風險。v5.13.0／v6.0.0-beta.3 補上結案判準，把常見情況對到既有狀態：
 
 | 情況 | 狀態 |
 |---|---|
@@ -652,7 +674,7 @@ BAT `0.7.0-pre.7` 起提供一條結構化的問答通道，v5.7.0 接上它：
 ```
 Worker 照舊寫 ### 待塔台決策 Q-n、標 tower_question: open、commit 工單      ← 這三步不變（雙寫）
   → bat-notify.mjs --ask 提問（題目只經 stdin 傳入；它自己會通知塔台 T#### 提問，不再另送；
-    一次問多題時只有最後一題會叫醒塔台，v5.15.0，見下方〈一批只叫醒塔台一次〉）
+    一次問多題時只有最後一題會叫醒塔台，v5.15.0／v6.0.0-beta.9，見下方〈一批只叫醒塔台一次〉）
   → MCP bat_wait_question 長輪詢等答覆（不能用就改 --wait-answer）
 塔台收到 T#### 提問 → MCP bat_list_questions 看到這一題
   → 代決邊界照舊 → bat-terminal.mjs --answer 答覆（工單裡不寫答覆行）→ 記決策日誌與 YOLO 歷程
@@ -699,7 +721,7 @@ v5.7.2 的改法只動 CT：晚退回的題，Worker 也加 `通道` 標記、co
 
 > 規則的權威在 CT `yolo-mode.md` § Worker 向塔台提問 › Worker 端 3-A 第 6 步、§ 塔台端 第 1 點，BAT 保留規則在同節 § BAT 通道 › 已知限制。
 
-**一批只叫醒塔台一次（v5.15.0）。** 上面的做法解決了「同一題兩個通道都答」，但留下一個浪費：Worker 一次問三題就送三次 `--ask`，
+**一批只叫醒塔台一次（v5.15.0；v6：v6.0.0-beta.9）。** 上面的做法解決了「同一題兩個通道都答」，但留下一個浪費：Worker 一次問三題就送三次 `--ask`，
 每一次都會在塔台輸入框預填 `T#### 提問` 並按 Enter，塔台就被叫醒三輪，每輪都重讀工單、查列表、判斷一次。BAT 不排隊也不合併；
 塔台忙碌時，Claude CLI 會把這些通知排隊，再一則一則送進來。實測每多一輪約多花 10 萬等效 token，一批三題約一半以上是重複處理。
 v5.15.0 兩頭一起改：
@@ -738,7 +760,7 @@ BAT 通道裡，Worker 每次等最多 45 秒，兩次之間不能隔超過 120 
 | 問題的性質 | 誰決定 |
 |-----------|-------|
 | 工單範圍內的技術／實作選擇 | 塔台代決，記決策日誌 |
-| 範圍變更、刪除或不可逆操作、對外發布、需要使用者偏好的選擇 | 塔台先暫停問使用者（`⏸ YOLO PAUSED — 提問需要你決定`），再寫答覆；同一題只提醒一次（v5.15.0） |
+| 範圍變更、刪除或不可逆操作、對外發布、需要使用者偏好的選擇 | 塔台先暫停問使用者（`⏸ YOLO PAUSED — 提問需要你決定`），再寫答覆；同一題只提醒一次（v5.15.0／v6.0.0-beta.9） |
 
 這條線和斷點 C「擴大範圍是人的決定」同一個道理：塔台能自主的只有「在既定範圍內怎麼做」。
 提問本身不是斷點，不算 Renew，也不計入 `yolo_max_retries`。
@@ -782,6 +804,9 @@ v5.5.1 起，Worker 執行期四項防護裡原本要問使用者的地方，yol
 觸發者是**使用者**——Worker 不會自己「請求 Renew」，它需要更多資訊時是回報 `BLOCKED` 或在研究型工單中提問（yolo 下改問塔台，見上方〈yolo 提問通道〉）。
 
 Renew 主要用於研究型工單，但一般工單也可使用。
+
+**Worker 還在跑時的補充（v6.0.0-beta.11+）**：上面的流程要靠使用者說觸發詞。beta.11 起，Worker 還是 `IN_PROGRESS` 時塔台改寫 `## 塔台補充（執行中 #N）`（不是 Renew、不加 `renew_count`），
+Worker 會在驗證前、產品 commit 前、寫回報前各看一次段落標題，自己讀到新段落；觸發詞照樣有效。為什麼這樣設計見 `preview-methodology.md` § beta.11：Worker 執行中接收塔台補充。
 
 上面這種「使用者在原分頁說重讀工單」的 Renew 不會回收任何分頁——那個分頁就是要繼續的 Worker。塔台改派**新的** Worker 重跑同一張工單時（例：`BLOCKED`／`FAILED` 之後、yolo 提問備援），v5.12.0 起才會先回收舊分頁，見 `bat-integration.md` § 重派前回收舊 Worker 分頁。
 

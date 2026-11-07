@@ -181,7 +181,7 @@ source／docs │ build／test │ runtime │ deploy │ release／安裝包 �
 | **PLAN-###** | `PLAN-001-描述.md` | 規劃、技術評估 | 5 態，含 DROPPED |
 | **EXP-[主題]-###** | `EXP-CACHE-001-描述.md` | 技術實驗 | `EXPLORING → CONCLUDED／ABANDONED` |
 
-BUG／PLAN／EXP 預設關閉，需要時在設定中啟用。
+BUG／PLAN／EXP 在 v5.12.x 預設關閉；**v6.0.0-beta.1 起預設開啟**，設定明寫 `false` 的照舊關閉（為什麼改、升級影響：`preview-methodology.md` § BUG／PLAN／EXP 預設開啟）。
 
 **設計原則**：不同性質的工作，用不同的流程管理。就像醫院不會用同一份表格處理門診和手術。
 

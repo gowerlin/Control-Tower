@@ -16,7 +16,7 @@ description: 每個 CT 功能從哪一版開始、需要哪一版 BAT 與 codex�
 
 ## 每個功能需要的版本
 
-「CT 起始版本」是這個功能在 CT 出現的版本；「BAT 最低版本」與「codex」是功能完整生效需要的版本。BAT 的最低門檻從 `0.5.9-pre.1` 一路提高到 `0.7.1-pre.1`；v5.10 到 v5.13 沒有再提高門檻。v5.14.2 只有「Codex 用 plugin 安裝又接 BAT 派工」需要 `0.7.2-pre.1`，其他功能的門檻不變。v5.14.3 是文件配置，v5.14.4 是 bmad-guide 偵測的規則修正，v5.15.0 改的是 yolo 提問的送法與處理，都沒有新門檻（v5.15.0 用到的 `--ask --no-pty-write`，BAT `0.7.0-pre.7` 起就是這個行為，`0.7.2-pre.4` 起列為正式契約）。
+「CT 起始版本」是這個功能在 CT 出現的版本；「BAT 最低版本」與「codex」是功能完整生效需要的版本。BAT 的最低門檻從 `0.5.9-pre.1` 一路提高到 `0.7.1-pre.1`；v5.10 到 v5.13 沒有再提高門檻。v5.14.2 只有「Codex 用 plugin 安裝又接 BAT 派工」需要 `0.7.2-pre.1`，其他功能的門檻不變。v5.14.3 是文件配置，v5.14.4 是 bmad-guide 偵測的規則修正，v5.15.0 改的是 yolo 提問的送法與處理，都沒有新門檻（v5.15.0 用到的 `--ask --no-pty-write`，BAT `0.7.0-pre.7` 起就是這個行為，`0.7.2-pre.4` 起列為正式契約）。6.0.0 的 BAT 介面同 v6.0.0-pre.1，最低 BAT 版本也不變，沒有新門檻；只有選用的「塔台收單時補記 Worker 的 session id」用到 BAT `>= 0.7.1-pre.1` 與 BAT MCP，沒有就跳過補記。
 
 <VersionMatrix />
 
@@ -26,7 +26,7 @@ description: 每個 CT 功能從哪一版開始、需要哪一版 BAT 與 codex�
 
 ## bmad-guide
 
-CT 不內嵌 BMad-Method 的內容。需要 BMad 的 workflow 路由時，塔台去讀**另外安裝**的 `bmad-guide` skill；沒裝就靜默改用工單裡手動填的 workflow 欄位，不擋住塔台；CT 5.14.1 起，可用 skill 清單裡有 bmad-guide 卻讀不到檔案時，先提示你一次再改用手動欄位。
+CT 不內嵌 BMad-Method 的內容。需要 BMad 的 workflow 路由時，塔台去讀**另外安裝**的 `bmad-guide` skill；沒裝就靜默改用工單裡手動填的 workflow 欄位，不擋住塔台；CT 5.14.1 起，可用 skill 清單裡有 bmad-guide 卻讀不到檔案時，先提示你一次再改用手動欄位。6.0.0 起這件事由方法論轉接的內建 `bmad` adapter 承接（Level 2 改稱「方法論轉接」，見[功能總覽 › 方法論轉接](/features#methodology)），偵測順序與降級方式不變。
 
 - bmad-guide 顯示 BMad-Method v6.10.0 或更新時，塔台改用 v6.10 起的替代名稱，例如 `bmad-investigate` 已退役、改開 CT 研究型工單或一般調查，`bmad-automator` 改建議 `bmad-loop`。
 - 版本低於任務需要時，塔台只顯示升級提示，不阻塞。
@@ -52,14 +52,14 @@ BAT 站也有一張相容表，是從 BAT 的角度列（<BatLink path="compatib
 
 ## 預發行（Beta、RC） {#preview}
 
-上面的表格只列**穩定版**。CT v6.0.0-rc.1 是 RC（正式版候選），放在 GitHub 預發行 Release、與穩定版並行，不列入表格；v6 的 Beta 與 RC 都是預發行，內容與下載見[RC：方法論轉接](../preview/methodology-adapters)。
+上面的表格只列**正式版**。CT 6.0.0 是正式版，已列入表格；v6 的 Beta 與 RC（v6.0.0-pre.1～v6.0.0-rc.1）是預發行，內容都已納入 6.0.0。下面保留預發行期間各版的 BAT 對照作為歷史參考，各版的內容與當時的下載見「實驗功能」的[方法論轉接](../preview/methodology-adapters)。
 
 BAT 指揮塔總覽讀塔台狀態摘要的版本需求如下；v5.13.0 起穩定版也寫同一份摘要（上表也列了這一項）：
 
 | 功能 | BAT | CT |
 |---|---|---|
 | 總覽顯示最後更新與進行中工單 | `>= 0.7.1-pre.7`（預覽版） | 不限版本（BAT 直接讀工單檔） |
-| 總覽顯示下一個編號與待辦 | `>= 0.7.1-pre.7`（預覽版） | 穩定版 `>= v5.13.0`；v6 預覽版 `>= v6.0.0-pre.1`（含 Beta v6.0.0-beta.1～v6.0.0-beta.12 與 RC v6.0.0-rc.1）。塔台寫出 `_tower-state.md` 的機器可讀摘要 |
+| 總覽顯示下一個編號與待辦 | `>= 0.7.1-pre.7`（預覽版） | 穩定版 `>= v5.13.0`（含 6.0.0）；v6 預覽版 `>= v6.0.0-pre.1`（含 Beta v6.0.0-beta.1～v6.0.0-beta.12 與 RC v6.0.0-rc.1）。塔台寫出 `_tower-state.md` 的機器可讀摘要 |
 
 CT 版本不夠時，總覽只是少了這兩項，其他照常顯示。方法論轉接本身沒有改變 BAT 介面，也沒有提高 CT 要求的最低 BAT 版本；beta.1～beta.12 與 rc.1 的 BAT 介面與最低 BAT 版本都和 v6.0.0-pre.1 相同；beta.2 改的環境偵測寫法（bash 用 `compgen -e` 只列名稱）是 CT 這一側的指令寫法，不需要新的 BAT 版本。
 
@@ -92,7 +92,7 @@ beta.1 改成 BUG／PLAN／EXP 預設開啟，啟用時立即產生 `_bug-tracke
 - CT `auto-session.md` § BAT 內部終端路由（Better Agent Terminal）› 依賴的 BAT 基礎設施、§ 舊版 BAT 降級規則（帶前綴 `--workorder`）
 - CT `yolo-mode.md` § 相容性 › BAT / Worker 版本相容
 - CT `version-governance.md` § 歷史版號表、§ 相容性注意
-- CT `enhancement-integration.md` § Level 2：外部 bmad-guide
+- CT `enhancement-integration.md` § Level 2：方法論轉接（methodology adapter）
 - Guide `references/bat-integration.md` § 版本對照表
 
 Portal 是摘要，不具權威；與 CT reference 有出入時，以 reference 為準。

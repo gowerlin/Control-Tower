@@ -120,6 +120,6 @@ CT 的設計文件會公開列出自己還沒有答案的假設，讓「這個�
 - CT Guide `references/concepts.md` § Control Tower 解決的四個 AI 協作痛點、§ Hard Boundaries（塔台硬邊界）
 - `control-tower/references/yolo-mode.md` § Worker 向塔台提問（v5.5.0+）› 塔台端（代決邊界）
 - `control-tower/references/workflow-engine.md` § 現況：G2 未通過（v5.11.0）
-- `control-tower/references/enhancement-integration.md` § Level 2：外部 bmad-guide
+- `control-tower/references/enhancement-integration.md` § Level 2：方法論轉接（methodology adapter）
 
 Portal 是摘要，不具權威；與 reference 有出入時，以 reference 為準。

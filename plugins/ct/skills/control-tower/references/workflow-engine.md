@@ -31,6 +31,8 @@ Workflow 只在一張已經派出的工單**之內**，由 Worker 決定子任�
 
 「Workflow」在本檔專指 Claude Code 的 Workflow 工具（以腳本編排多個子 agent 的背景執行）。
 `work-order-template.md` 裡的 BMad workflow（`bmad-*` 技能流程）是另一回事，不受本檔規範。
+方法論（adapter）的工作流程與它自己開的子代理也不是 Workflow 工具：寫入型子代理的規則見
+[methodology-adapters.md](methodology-adapters.md) § 衝突與防護 C4（R1–R5 不直接套用，R3／R4 的理由同樣成立）。
 
 ## 三分法：Skill／Playbook／Workflow
 

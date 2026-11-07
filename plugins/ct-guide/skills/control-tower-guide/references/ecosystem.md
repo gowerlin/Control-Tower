@@ -66,7 +66,7 @@ ct-help（操作手冊）
 
 `/` 與 `$` 是**同一個 skill 的兩個入口**，差別只在宿主工具。BAT 派工時由 BAT 依 Worker 使用的 agent 決定送出 `/ct-exec` 還是 `$ct-exec`，塔台不寫死。
 
-v5.14.0 起 CT 也能用 plugin 安裝（plugin `ct`）。Claude Code 寫法不變（`/ct-exec`，完整寫法 `/ct:ct-exec`）；Codex 用 plugin 安裝時要寫 `$ct:ct-exec`；BAT 派工要 BAT `>= 0.7.2-pre.1` 才會依安裝方式送這個寫法（v5.14.2），更舊的 BAT 叫不到，所以 Codex 搭配舊 BAT 仍用 zip 手動安裝。為什麼、以及兩種安裝並存時誰生效，見 `governance.md` § plugin marketplace：另一種安裝方式；寫法權威是 CT `auto-session.md` § 依安裝方式的 skill 呼叫字串。
+v5.14.0 起 CT 也能用 plugin 安裝（plugin `ct`；v6 的條文自 v6.0.0-beta.5 起相同，6.0.0 起上架；**預發行版（beta、rc）不提供 plugin**）。Claude Code 寫法不變（`/ct-exec`，完整寫法 `/ct:ct-exec`）；Codex 用 plugin 安裝時要寫 `$ct:ct-exec`；BAT 派工要 BAT `>= 0.7.2-pre.1` 才會依安裝方式送這個寫法（v5.14.2；v6 條文自 v6.0.0-beta.6 起），更舊的 BAT 叫不到，所以 Codex 搭配舊 BAT 仍用 zip 手動安裝。為什麼、以及兩種安裝並存時誰生效，見 `governance.md` § plugin marketplace：另一種安裝方式；寫法權威是 CT `auto-session.md` § 依安裝方式的 skill 呼叫字串。
 
 `*` 命令與對應的獨立 skill（例如 `*evolve` 與 `ct-evolve`）的差別不在「精簡版 vs 完整版」，而在**在哪個角色裡執行**：
 `*` 命令在塔台角色裡就地處理，獨立 skill 則在自己的 session 以自己的角色執行。
@@ -181,15 +181,15 @@ CT 的功能隨可選元件遞增，每項偵測獨立，可任意組合（例�
 | Level | 條件 | 能力 |
 |-------|------|------|
 | **Level 0** | 零相依 | 完整核心：工單、進度、Debug、學習（`_learnings.md`） |
-| **Level 1** | + ECC continuous-learning-v2 | hook 觀察、instinct 置信度、`/evolve` 進化 |
+| **Level 1** | + ECC continuous-learning-v2 | hook 觀察、instinct 置信度、`/evolve` 進化（只有穩定版 5.15.0；v6.0.0-beta.10 起**退場**，編號保留，見 `integration.md` § Level 1） |
 | **Level 2** | + **外部** `bmad-guide` skill | 自動 BMad workflow routing 與 Agent 標注 |
-| **Level 3** | + mem0 REST | 寫入同步跨裝置／跨專案經驗（單向，透過 memsync CLI 橋接） |
+| **Level 3** | + mem0 REST | 寫入同步跨裝置／跨專案經驗（單向，透過 memsync CLI 橋接）；v6.0.0-beta.10 起需在本地規則記錄使用者層例外才啟用（見 `integration.md` § Level 3 › 啟用條件） |
 
 **重要**：Level 0 已經完全可用。增強元件是錦上添花，不是必要條件；缺少任何一個都靜默降級。
 
 **Level 2 的邊界**：CT 不內嵌任何 BMad-Method 內容，只偵測使用者另外安裝的 `bmad-guide` 並讀它的 reference。
 `bmad-guide` 不可用時，塔台照常運作，BMad 工作流程欄位改為手動指定，且不自行編造 BMad 行為。
-v5.14.1 起 zip 手動安裝與 plugin 安裝的 bmad-guide 都偵測得到（手動優先；v5.14.4 起先找本 runtime 的安裝，另一個 runtime 的只當讀檔來源）；可用 skill 清單有它卻讀不到檔案時，塔台提示一次而不是靜默降級，見 `integration.md` § 偵測與降級。
+v5.14.1 起 zip 手動安裝與 plugin 安裝的 bmad-guide 都偵測得到（手動優先；v5.14.4 起先找本 runtime 的安裝，另一個 runtime 的只當讀檔來源，v6 自 v6.0.0-beta.8 起同樣依 runtime）；可用 skill 清單有它卻讀不到檔案時，塔台提示一次而不是靜默降級，見 `integration.md` § 偵測與降級（v6 自 v6.0.0-beta.6 起由 adapter 的 probe 做到同樣的事，見 `preview-methodology.md` § beta.6：移植 5.14.1／5.14.2、adapter 偵測 plugin）。
 
 ## 設定系統
 
@@ -204,9 +204,9 @@ v5.14.1 起 zip 手動安裝與 plugin 安裝的 bmad-guide 都偵測得到（�
 | `auto-session` | `on` / `ask` / `off` / `yolo` | `ask` | 派工後開 Worker 的行為：`on` 靜默開新分頁；`ask` 詢問；`off` 僅文字提示；`yolo` = `on` 的超集，Worker 自動送出 + 塔台自主決定下一張 |
 | `yolo_max_retries` | `0` - `10` | `3` | YOLO 斷點 B 閾值（Renew ≥N 次或連續 N 張 FAILED 即暫停）；`0` = 停用斷點 B |
 | `project-prefix` | `2-4 字元大寫英文` / 空 | 空 | 跨專案協調用的工單 ID 前綴 |
-| `enable_bug_tracking` | `true` / `false` | `false` | 啟用 BUG 單據 |
-| `enable_plan_tracking` | `true` / `false` | `false` | 啟用 PLAN 單據 |
-| `enable_experiments` | `true` / `false` | `false` | 啟用 EXP 實驗單據 |
+| `enable_bug_tracking` | `true` / `false` | `true`（v6 起；v5.12.x 為 `false`） | 啟用 BUG 單據；啟用即產生空的 `_bug-tracker.md` |
+| `enable_plan_tracking` | `true` / `false` | `true`（v6 起；v5.12.x 為 `false`） | 啟用 PLAN 單據；啟用即產生空的 `_backlog.md` |
+| `enable_experiments` | `true` / `false` | `true`（v6 起；v5.12.x 為 `false`） | 啟用 EXP 實驗單據（沒有索引檔） |
 | `archive_days` | `0` - `365` | `7` | 終態單據超過此天數成為歸檔候選；`0` = 立即可歸檔 |
 | `auto_archive_prompt` | `on` / `off` | `off` | `*sync` 結束後是否提示歸檔候選數量 |
 | `research_interaction` | `true` / `false` | `true` | 研究型工單是否允許 Worker 互動；yolo 下不適用（Worker 一律改問塔台，v5.5.0） |
@@ -220,9 +220,12 @@ v5.14.1 起 zip 手動安裝與 plugin 安裝的 bmad-guide 都偵測得到（�
 | `worker_close_delay` | `0` - `300`（秒） | `10` | 回收前的延遲；期間 Worker 分頁的輸出不取消回收，只有使用者在該分頁輸入才取消（終端自動回應不算）；到期後 BAT 等連續安靜 5 秒才關，最多再等 60 秒。只在 `worker_auto_close: done` 時有作用（v5.12.1 對齊 BAT T0545，定義見 CT `tower-config.md`） |
 | `worker_question_timeout` | `0` - `120`（分鐘） | `30` | v5.5.0。yolo Worker 向塔台提問後等答覆的上限；`0` = 不等，直接 `BLOCKED`。塔台 yolo 派工時把生效值寫進工單 frontmatter；只影響 yolo |
 | `workflow_integration` | `off` / `ask` / `on` | `on` | v5.11.0。Claude Code Workflow 的整合強度：`off` 不建議、不授權；`ask` 每次授權前問使用者；`on` 知識卡到 ⭐ 前問使用者。token 焦慮時可用 `*config workflow_integration off` 只關這個 session（見 `concepts.md` § v5.11.0：回測沒過之後，先做便宜的部分） |
-| `bug_review_open_threshold` | `0` - `500` | `20` | v5.13.0。熱區未結 BUG 多於這個張數時，`*sync`／`*insights` 印一行清理提示；`0` = 停用這個條件 |
-| `bug_review_stale_days` | `0` - `365`（天） | `30` | v5.13.0。有未結 BUG 超過這個天數沒更新時，同上提示；`0` = 停用這個條件 |
-| `customer_acceptance_gate` | `on` / `off` | `off` | v5.13.0。客戶驗收不回歸閘（可選）；只在專案進入客戶驗收、有驗收案例表時開（見 `work-order-lifecycle.md` § 客戶驗收不回歸閘） |
+| `bug_review_open_threshold` | `0` - `500` | `20` | v5.13.0／v6.0.0-beta.3。熱區未結 BUG 多於這個張數時，`*sync`／`*insights` 印一行清理提示；`0` = 停用這個條件 |
+| `bug_review_stale_days` | `0` - `365`（天） | `30` | v5.13.0／v6.0.0-beta.3。有未結 BUG 超過這個天數沒更新時，同上提示；`0` = 停用這個條件 |
+| `customer_acceptance_gate` | `on` / `off` | `off` | v5.13.0／v6.0.0-beta.3。客戶驗收不回歸閘（可選）；只在專案進入客戶驗收、有驗收案例表時開（見 `work-order-lifecycle.md` § 客戶驗收不回歸閘） |
+
+> **v6.0.0+**：另有 `methodology` 等 9 個方法論設定鍵（主方法論、各層、子代理寫入、注入檢查、adapter 路徑）；全部預設時行為與上表相同。是什麼見 `integration.md` § 方法論轉接（v6.0.0+），設計理由見 `preview-methodology.md` § 抽換 vs 分層疊加。
+> 上表 BUG／PLAN／EXP 三列是 v6 的新預設；設定明寫 `false` 的照舊。見 `preview-methodology.md` § BUG／PLAN／EXP 預設開啟。全域設定的位置照 `CLAUDE_CONFIG_DIR` 解讀，見同章 § 全域路徑：`CLAUDE_CONFIG_DIR`／`CODEX_HOME`。
 
 設定的四層覆蓋：**Session > Project > Global > Default**（見 `three-layer-arch.md`）。
 
@@ -246,7 +249,7 @@ BAT 才知道塔台目前是不是 yolo；設計理由見 `bat-integration.md` �
 | S-5 | Worker 一律強制 commit | 依工單指示與 `worker_commit`（`required`／`recommended`／`off`） |
 | S-6 | 工單正常路徑含 `REVIEW` 待審狀態 | status enum 無此狀態；審查以另一張工單進行 |
 | S-7 | Worker 開工即信任派工端，直接改狀態 | 任何寫入前先跑 Landing Zone Check，repo 身分不符即 STOP |
-| S-8 | Layer 1 禁寫 = `control-tower` skill 目錄，升級只靠人工 | 範圍 = 整個 `~/.claude/skills/`（掃描器機制），v5.14.0 起含 plugin 安裝路徑；唯一例外 = 工單明文授權的安裝；備份放 `~/.claude/skill-backups/`（plugin 不備份） |
+| S-8 | Layer 1 禁寫 = `control-tower` skill 目錄，升級只靠人工 | 範圍 = 整個 `~/.claude/skills/`（掃描器機制），v5.14.0／v6.0.0-beta.5 條文起含 plugin 安裝路徑（6.0.0 起上架；預發行版不提供 plugin，但同機的穩定版 plugin 照樣適用）；唯一例外 = 工單明文授權的安裝（v6.0.0-beta.10 條文起含手動安裝 skill 的移除：出建議、使用者逐項決定、依決定執行）；備份放 `~/.claude/skill-backups/`（plugin 不備份） |
 | S-9 | 跨專案協調只有 3 種，ID 前綴只來自 `project-prefix` | 5 種（含非工單通道 HANDOVER／ADVISORY）；ID 格式單一權威定義，前綴可來自跨塔台交辦 |
 | S-10 | Level 3 = claude-mem 持久記憶 | Level 3 = mem0 REST（memsync CLI 單向同步） |
 | S-11 | BMad 工作流程路由由 CT 附帶 | CT 不內嵌 BMad 內容，Level 2 只偵測外部 `bmad-guide` |

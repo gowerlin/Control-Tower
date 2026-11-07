@@ -197,7 +197,7 @@ bmad-guide.zip
 - `references/ecosystem-modules.md` § Installation Prerequisites、§ Layered Configuration
 - `references/brownfield.md` § `bmad-project-context` In Detail、§ Retired Brownfield Routes
 - `references/diagrams.md` § Color Conventions、§ Clickable Node Pattern
-- CT `enhancement-integration.md` § Level 2：外部 bmad-guide
+- CT `enhancement-integration.md` § Level 2：方法論轉接（methodology adapter）
 
 bmad-guide 的 8 份 references 各管什麼（摘自 `SKILL.md` § Reference File Routing）：
 

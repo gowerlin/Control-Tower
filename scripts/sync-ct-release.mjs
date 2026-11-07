@@ -5,7 +5,8 @@
 //
 // 1. 版號一致性：參數 = CT control-tower/SKILL.md 的版號註解 = Guide SKILL.md 的版號註解，否則報錯停止
 // 2. 更新 .vitepress/ct-release.json（CT 版號、Guide 版號、發布日、zip 名稱）
-// 3. 從 CT CHANGELOG 重新產生 versions/releases.md：近 10 版全文，更早的連到演進史；
+// 3. 從 CT CHANGELOG 重新產生 versions/releases.md：近 10 版全文，更早的連到演進史；只列正式版（預發行段落略過、頁首註明），
+//    新主版號線的 CHANGELOG 缺分出後才發的舊線正式版時，從較舊的穩定版目錄補上（見 mergeOlderStable）；
 //    先做內部 id 摘要化（通用規則，見 summarizeIds；刪 SHA 後清掉空括號；落點檢查名 C-0～C-4 保留），再套 data/release-rewrites.json 的逐筆改寫
 // 4. 對產出的 releases.md 跑去識別掃描（詞表在 site/ 外，含「內部 id」選用類別）；命中就報錯停止，要人工改寫後再跑
 //
@@ -26,6 +27,8 @@ const RELEASES_MD = path.join(SITE, 'versions', 'releases.md')
 // 去識別改寫表：[{ version, pattern（正則，不寫敏感原值）, replace, reason }]；每筆都必須命中，否則報錯（來源改了要回來更新）
 // pattern 裡的 {id} 代表任一個內部 id（ID_SOURCE）、{ref} 代表任一個回函／契約條目（REF_SOURCE），改寫表本身就不必寫出原值
 const REWRITES = path.join(SITE, 'data', 'release-rewrites.json')
+// 預發行版的逐版說明所在的專章（從 versions/releases.md 連過去）
+const PREVIEW_PAGE = '../preview/methodology-adapters'
 
 // 內部 id：工單號、塔台決策號、BUG／PLAN 編號。CHANGELOG 給維護者看，公開站不需要這些出處
 const ID_SOURCE = String.raw`\b(?:CT-T[0-9]{3}|T[0-9]{4}|D[0-9]{3}|BUG-[0-9]{3}|PLAN-[0-9]{3})\b`
@@ -87,21 +90,63 @@ function unlinkRelative(line) {
   return line.replace(/\[([^\]]+)\]\((?!https?:)[^)]+\)/g, '$1')
 }
 
+// 只收正式版條目。預發行版（`## [6.0.0-rc.1]` 這類帶 - 的版號）的段落整段略過：預發行版不更新更版紀錄，
+// 內容放在「實驗功能」專章；不略過的話，這些段落會被併進上一個正式版條目的內文
 function parseChangelog(text) {
   const entries = []
+  const skipped = []
   let current = null
   let inFence = false
   for (const raw of text.split(/\r?\n/)) {
     if (/^```/.test(raw)) inFence = !inFence
-    const head = !inFence && raw.match(/^## \[([0-9]+\.[0-9]+\.[0-9]+)\]\s*[—-]\s*([0-9]{4}-[0-9]{2}-[0-9]{2})/)
+    const head = !inFence && raw.match(/^## \[([0-9]+\.[0-9]+\.[0-9]+)(-[0-9A-Za-z.]+)?\]\s*[—-]\s*([0-9]{4}-[0-9]{2}-[0-9]{2})/)
     if (head) {
-      current = { version: head[1], date: head[2], lines: [] }
+      if (head[2]) {
+        skipped.push(`${head[1]}${head[2]}`)
+        current = null
+        continue
+      }
+      current = { version: head[1], date: head[3], lines: [] }
       entries.push(current)
       continue
     }
     if (current) current.lines.push(raw)
   }
+  entries.skipped = skipped
   return entries
+}
+
+const semverCmp = (a, b) => {
+  const pa = a.split('.').map(Number)
+  const pb = b.split('.').map(Number)
+  for (let i = 0; i < 3; i++) if (pa[i] !== pb[i]) return pa[i] - pb[i]
+  return 0
+}
+
+// 新的主版號線（例 v6）從較舊的穩定版分出來時，它的 CHANGELOG 不含分出後才發的舊線正式版（例 5.12.7～5.15.0）。
+// 從比本版舊的穩定版目錄（BMad-Control-Tower-v<x.y.z>，不含帶後綴的目錄）補上缺的條目；同一版號以較新目錄的內容為準
+function mergeOlderStable(entries, version) {
+  const base = path.join(REPO, 'BMad-Control-Tower')
+  const dirs = fs
+    .readdirSync(base, { withFileTypes: true })
+    .filter(d => d.isDirectory())
+    .map(d => d.name.match(/^BMad-Control-Tower-v([0-9]+\.[0-9]+\.[0-9]+)$/)?.[1])
+    .filter(v => v && semverCmp(v, version) < 0)
+    .sort((a, b) => semverCmp(b, a))
+  const have = new Set(entries.map(e => e.version))
+  const added = []
+  for (const v of dirs) {
+    const file = path.join(base, `BMad-Control-Tower-v${v}`, 'docs', 'CHANGELOG.md')
+    if (!fs.existsSync(file)) continue
+    for (const entry of parseChangelog(fs.readFileSync(file, 'utf8'))) {
+      if (have.has(entry.version) || semverCmp(entry.version, version) >= 0) continue
+      have.add(entry.version)
+      added.push({ entry, from: v })
+    }
+  }
+  const merged = [...entries, ...added.map(a => a.entry)].sort((a, b) => semverCmp(b.version, a.version))
+  merged.skipped = entries.skipped
+  return { merged, added }
 }
 
 function renderEntry(entry) {
@@ -284,9 +329,16 @@ function main() {
 
   const changelogPath = path.join(ctDir, 'docs', 'CHANGELOG.md')
   if (!fs.existsSync(changelogPath)) fail(`找不到 ${rel(changelogPath)}`)
-  const entries = parseChangelog(fs.readFileSync(changelogPath, 'utf8'))
-  if (!entries.length) fail('CHANGELOG 沒有 `## [x.y.z] — YYYY-MM-DD` 條目')
-  if (entries[0].version !== version) fail(`CHANGELOG 最新條目是 ${entries[0].version}，不是 ${version}`)
+  const own = parseChangelog(fs.readFileSync(changelogPath, 'utf8'))
+  if (!own.length) fail('CHANGELOG 沒有 `## [x.y.z] — YYYY-MM-DD` 條目')
+  if (own[0].version !== version) fail(`CHANGELOG 最新條目是 ${own[0].version}，不是 ${version}`)
+  const { merged: entries, added } = mergeOlderStable(own, version)
+  const skipped = own.skipped
+  if (skipped.length) console.log(`[sync-ct-release] 略過預發行段落 ${skipped.length} 個（v${skipped.at(-1)} ～ v${skipped[0]}）`)
+  if (added.length) {
+    const from = [...new Set(added.map(a => a.from))].map(v => `v${v}`).join('、')
+    console.log(`[sync-ct-release] 從較舊的穩定版目錄補上 ${added.length} 個正式版條目（v${added.at(-1).entry.version} ～ v${added[0].entry.version}，來源 ${from}）`)
+  }
 
   const zipName = `BMad-Control-Tower-v${version}.zip`
   const guideZipName = `control-tower-guide-v${version}.zip`
@@ -323,6 +375,13 @@ function main() {
     `目前版本 **v${version}**（${release.releasedAt}）。這裡列出最近 ${full.length} 版的完整紀錄，最新的在最上面；` +
       `更早的 ${older.length} 版（v${older.at(-1)?.version ?? '—'} ～ v${older[0]?.version ?? '—'}）請看[演進史](./evolution)。`,
     '',
+    ...(skipped.length
+      ? [
+          `本頁只列正式版。預發行版 v${skipped.at(-1)} ～ v${skipped[0]}（${skipped.length} 版）的改動已彙整在 v${version} 的段落，` +
+            `逐版說明保留在「實驗功能」的[預發行專章](${PREVIEW_PAGE})作為歷史參考。`,
+          ''
+        ]
+      : []),
     '::: tip 摘要不具權威',
     '本頁照錄 CT 的 CHANGELOG，只拿掉工單、決策、驗收回函等內部編號與出處註記。規則的權威定義在 CT 各 skill 與 references，兩者有出入時以 CT 本體為準。',
     ':::',

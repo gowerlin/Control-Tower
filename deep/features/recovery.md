@@ -71,6 +71,16 @@ description: 進度存在檔案裡，所以塔台可以被打斷：*pause／*res
 
 在 yolo 下，Renew 次數達到 `yolo_max_retries` 會觸發[斷點 B-1](./yolo#b)，提醒你該拆單了。yolo 提問等不到答覆時，塔台也是在 Renew 區段寫答覆後重派（見 [Worker 向塔台提問](./worker-questions#edge-cases)）。
 
+## 執行中補充：Worker 還在跑時補一句 {#addenda}
+
+6.0.0 起，塔台不必等 Worker 結束、也不必請你說「重讀工單」，就能補充或修正一張還在 `IN_PROGRESS` 的工單：
+
+1. 塔台在工單回報區之前加一段 `## 塔台補充（執行中 #N）`，寫明補什麼、已完成的部分怎麼處理。
+2. Worker 在三個固定節點各看一次段落標題：**跑驗收之前、產品 commit 之前、寫回報之前**。有新段落才讀那一段並照做；沒有就繼續，不另外記錄。
+3. 補充段改了範圍或驗收條件時，以工單 frontmatter 為準；和已經做完的工作衝突、或超出 `affects_files` 時，Worker 不自己擴大範圍，停下來問（yolo 下改問塔台）。驗收跑過之後才改到的產品檔，要重跑受影響的驗收。
+
+和 Renew 的差別：Renew 用在 Worker 已回報 `BLOCKED`／`FAILED` 之後重派，或研究型工單的多輪對話；執行中補充給還在跑的 Worker，由 Worker 在節點自己看到。回答 Worker 的提問仍寫在〈待塔台決策〉，不寫在補充段。塔台與 Worker 要同一批升級，舊版 Worker 讀不到這種段落。
+
 ## `ct-done` 和重派 `ct-exec` 的分界 {#ct-done}
 
 這是最容易混淆的一點。兩者都能讓一張卡住的工單「動起來」，但做的是完全不同的事：
@@ -116,6 +126,7 @@ description: 進度存在檔案裡，所以塔台可以被打斷：*pause／*res
 - `control-tower/references/memory-protocol.md` § 機器可讀摘要（YAML frontmatter）
 - `control-tower/references/work-order-system.md` § 中斷復原、§ 重派前回收舊 Worker 分頁（v5.12.0+）
 - `control-tower/references/research-workorder.md` § Renew 機制（F-07）
+- `control-tower/references/work-order-system.md` § 執行中補充工單（v6.0.0-beta.11+）；`ct-exec/SKILL.md` § Tower Addenda Check
 - `ct-done/SKILL.md`（§ Workflow、§ Status Selection、§ Report Repair、§ Commit Check、§ BAT Notify）
 - `control-tower-guide/references/work-order-lifecycle.md` § Session 中斷善後、§ Worker Renew 機制
 - `docs/Control Tower 實戰補充/CT實戰補充（一-B）中斷處理與緊急任務.md`

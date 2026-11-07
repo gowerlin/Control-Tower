@@ -16,7 +16,7 @@ Layer 1: Core Skills（唯讀，升級時整份覆蓋）
   ~/.claude/skills/ct-help/
   ~/.claude/skills/ct-insights/
   ~/.codex/skills/<同上 8 個 skill>/   ← Codex 端安裝位置
-  ${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}/、$CODEX_HOME/plugins/ …  ← plugin 安裝位置（v5.14.0+；完整清單見 § 寫入規則）
+  ${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}/、$CODEX_HOME/plugins/ …  ← plugin 安裝位置（v6.0.0-beta.5+；完整清單見 § 寫入規則）
 
 Layer 2: Global Learning（使用者級，跨專案，升級不碰）
   ~/.claude/control-tower-data/
@@ -34,12 +34,27 @@ Layer 3: Project Learning（專案級，現有機制，不變動）
   ├ _learnings.md          ← 專案學習紀錄
   ├ _playbooks/            ← 專案 playbook
   ├ _workflows/            ← 專案 workflow 知識卡（v5.10.0+，見 workflow-engine.md）
+  ├ _insights/             ← 統計快照（v6.0.0-beta.10+；session-stats/<YYYY-MM>.json，見下方 § `_ct-workorders/_insights/`）
   ├ _local-rules.md        ← 專案特有規則
   ├ _cross-references.md   ← 跨專案參照
   ├ _tower-config.yaml     ← 專案設定
   ├ _tower-state.md        ← 塔台記憶
   └ _decision-log.md       ← 決策日誌
 ```
+
+### 路徑解析（P-3，T0314）
+
+本節是 CT 全域路徑的**唯一權威定義**；CT 各檔寫的 `~/.claude/…`、`~/.codex/…` 一律照下表解讀，不另寫死家目錄：
+
+| 文件寫法 | 實際位置 | 說明 |
+|---|---|---|
+| `~/.claude/…`（含 Layer 2 `~/.claude/control-tower-data/`、Layer 1 `~/.claude/skills/`） | `${CLAUDE_CONFIG_DIR:-~/.claude}/…` | 設了 `CLAUDE_CONFIG_DIR`（例：隔離試用、多設定目錄）就在它底下 |
+| `~/.codex/…`（Layer 1 Codex 端 `~/.codex/skills/`） | `${CODEX_HOME:-~/.codex}/…` | 設了 `CODEX_HOME` 就在它底下 |
+| `~/.claude/plugins/`（Layer 1 plugin 安裝路徑，v6.0.0-beta.5+） | `${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}/`，**只有這一處** | `installed_plugins.json`、`known_marketplaces.json`、`cache/`、`marketplaces/` 都在這一處：設了 `CLAUDE_CODE_PLUGIN_CACHE_DIR` 就是它指的目錄，只設 `CLAUDE_CONFIG_DIR` 就是 `${CLAUDE_CONFIG_DIR}/plugins/`，都沒設是 `~/.claude/plugins/`（T0357、T0374 實測）。設了其中任一個時，`~/.claude/plugins/` 屬於另一份設定，不是本 session 載入的 plugin（v6.0.0-beta.8 起改成單一路徑；之前兩處都算） |
+
+- 塔台讀全域設定、偵測 adapter（`adapters/*.yaml` 的 `detection.probes[].search`）都照這張表；只讀這兩個變數的**有無與路徑**，不列出整組環境變數（[auto-session.md](auto-session.md) § BAT 內部終端路由 › 偵測條件）。
+- 變數沒設 → 與 v5.12.6 相同（`~/.claude`、`~/.codex`）。
+- Codex 端的 CT Layer 2 仍在 `${CLAUDE_CONFIG_DIR:-~/.claude}/control-tower-data/`（CT 資料層不分 runtime）。
 
 ## 核心原則
 
@@ -56,10 +71,11 @@ Project (Layer 3) > Global (Layer 2) > Core (Layer 1)
 > 🔴 **本節是「什麼可以／不可以寫進 Layer 1 skill 安裝路徑」的唯一權威定義。**
 > Layer 1 skill 安裝路徑（下稱「Layer 1 路徑」）=
 > - **手動安裝**（zip）：**`~/.claude/skills/` 與 `~/.codex/skills/`** 兩處
-> - **plugin 安裝**（v5.14.0+）：**`${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}/`**（整個目錄，含 `installed_plugins.json`、`known_marketplaces.json`、
+> - **plugin 安裝**（v6.0.0-beta.5+）：**`${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}/`**（整個目錄，含 `installed_plugins.json`、`known_marketplaces.json`、
 >   `cache/`、`marketplaces/`；只有這一處：設了 `CLAUDE_CODE_PLUGIN_CACHE_DIR` 就是它指的目錄，只設 `CLAUDE_CONFIG_DIR` 就是
->   `${CLAUDE_CONFIG_DIR}/plugins/`，都沒設是 `~/.claude/plugins/`；v5.14.4 改寫，T0357、T0374 實測）、**`$CODEX_HOME/plugins/`**、**`$CODEX_HOME/.tmp/marketplaces/`**
->   （`CODEX_HOME` 未設定時是 `~/.codex`）
+>   `${CLAUDE_CONFIG_DIR}/plugins/`，都沒設是 `~/.claude/plugins/`，見 § 路徑解析；v6.0.0-beta.8 改寫，T0357、T0374 實測）、**`$CODEX_HOME/plugins/`**、**`$CODEX_HOME/.tmp/marketplaces/`**
+>   （`CODEX_HOME` 未設定時是 `~/.codex`）。預發行版（beta、rc）不上架 plugin（[version-governance.md](version-governance.md) § plugin 安裝／升級），
+>   但同一台機器可能裝了穩定版的 plugin，本規則照樣適用
 >
 > Q1 ~ Q4 對上列每一處**同樣適用**，差異只在各題明列之處（Q2 機制實證與 plugin 機制、Q3 plugin 的安裝方式、Q4 備份落點與 plugin 不備份）。
 > CT 全庫其餘各處一律**交叉引用本節**，不得複述判斷條件或範圍。
@@ -67,17 +83,17 @@ Project (Layer 3) > Global (Layer 2) > Core (Layer 1)
 
 | 層 | 路徑 | 可寫入 | 範圍 |
 |----|------|--------|------|
-| Layer 1 | `~/.claude/skills/` | ❌ 永遠不可寫入（唯一例外見 Q3） | **整個路徑**，不限於 skill 定義檔 |
-| Layer 1 | `~/.codex/skills/` | ❌ 永遠不可寫入（唯一例外見 Q3） | **整個路徑**，不限於 skill 定義檔 |
-| Layer 1 | `${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}/`（含 `cache/`、`marketplaces/`） | ❌ 永遠不可寫入（唯一例外見 Q3：只能透過 plugin 指令） | **整個路徑**，不限於 skill 定義檔（v5.14.0+） |
-| Layer 1 | `$CODEX_HOME/plugins/`、`$CODEX_HOME/.tmp/marketplaces/`（`CODEX_HOME` 預設 `~/.codex`） | ❌ 永遠不可寫入（唯一例外見 Q3：只能透過 plugin 指令） | **整個路徑**，不限於 skill 定義檔（v5.14.0+） |
+| Layer 1 | `~/.claude/skills/` | ❌ 永遠不可寫入（唯一例外見 Q3：授權下的安裝／升級、使用者逐項決定的移除） | **整個路徑**，不限於 skill 定義檔 |
+| Layer 1 | `~/.codex/skills/` | ❌ 永遠不可寫入（唯一例外見 Q3：授權下的安裝／升級、使用者逐項決定的移除） | **整個路徑**，不限於 skill 定義檔 |
+| Layer 1 | `${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}/`（含 `cache/`、`marketplaces/`；見 § 路徑解析） | ❌ 永遠不可寫入（唯一例外見 Q3：只能透過 plugin 指令） | **整個路徑**，不限於 skill 定義檔（v6.0.0-beta.5+） |
+| Layer 1 | `$CODEX_HOME/plugins/`、`$CODEX_HOME/.tmp/marketplaces/`（`CODEX_HOME` 預設 `~/.codex`） | ❌ 永遠不可寫入（唯一例外見 Q3：只能透過 plugin 指令） | **整個路徑**，不限於 skill 定義檔（v6.0.0-beta.5+） |
 | Layer 2 | `~/.claude/control-tower-data/` | ✅ 學習萃取、設定修改 | — |
 | Layer 3 | `<project>/_ct-workorders/` | ✅ 工單執行、學習記錄 | — |
 
 #### Q1 — 什麼絕對不能寫進 Layer 1 路徑？
 
 **任何不是 skill 定義檔的東西，一律不得寫入 `~/.claude/skills/` 或 `~/.codex/skills/` 之下。無例外。**
-plugin 安裝路徑（v5.14.0+，見本節開頭）也一樣，而且更嚴：連 skill 定義檔本身都只能由 plugin 指令寫入（Q3）。
+plugin 安裝路徑（v6.0.0-beta.5+，見本節開頭）也一樣，而且更嚴：連 skill 定義檔本身都只能由 plugin 指令寫入（Q3）。
 
 包含但不限於：
 
@@ -108,11 +124,19 @@ description 仍是 v6.10.0 那份。
 根層沒有 `SKILL.md`，掃描器只看第一層因而略過 —— 那是**結構僥倖，不是規則有效**。
 單一 skill 的備份必然踩到。
 
-**Codex 端（`~/.codex/skills/`）：比照辦理。** 上述實證來自 **Claude Code** 的掃描器（D006）。
-Codex 的 skill 掃描器是否同樣「第一層子目錄即註冊」**未經實測**；保守起見**視為相同**，
-規則（Q1、Q4）照樣適用。此段不是已證實的事實，在取得 Codex 端實測前不得改寫為「已證實」。
+**Codex 端（`~/.codex/skills/`）：已證實，而且比 Claude Code 更嚴（v6.0.0-beta.10+）。** Codex 的 skill 掃描器
+**會往下遞迴**，不只看第一層：任何深度的子目錄只要有 `SKILL.md` 就會被註冊，目錄名以底線開頭也一樣。
+所以 Claude Code 端靠結構僥倖逃過的情況，在 Codex 端逃不過 —— 像 T0115 那樣把備份放成**父目錄**、根層沒有 `SKILL.md`，
+Codex 照樣會往下找到裡面每個 skill 的 `SKILL.md` 並註冊。
 
-**plugin 安裝路徑（v5.14.0+）：機制不同，結論相同。** plugin 路徑由 plugin manager 管理：安裝、更新、移除時，
+**實證（Codex 0.166.0，2026-11-01，T0389 R3）**：用暫存的 `CODEX_HOME`（不碰真實設定），以 `codex debug prompt-input`
+列出模型會看到的 skill 清單（不呼叫模型）。`CODEX_HOME/skills/_backup-zz-root/SKILL.md`（第一層、底線開頭）與
+`CODEX_HOME/skills/_backup-zz-nested/zz-inner/SKILL.md`（第二層）**兩個都被註冊**。
+
+結論：Codex 端的備份一律放在 `~/.codex/skills/` 以外（落點見 Q4：`~/.codex/skill-backups/`），**不得放在 `~/.codex/skills/`
+之下任何深度**；Claude Code 端同樣一律放 `~/.claude/skill-backups/`。Q1、Q4 的規則兩端照樣適用。
+
+**plugin 安裝路徑（v6.0.0-beta.5+）：機制不同，結論相同。** plugin 路徑由 plugin manager 管理：安裝、更新、移除時，
 cache 裡那個 plugin 版本的目錄由它整份建立或重建（Claude 依 `plugin.json` 的 `version` 判斷新版；Codex 的 git marketplace
 每次啟動都會自動升級，依 commit 判斷；T0348）。所以：
 
@@ -124,7 +148,8 @@ cache 裡那個 plugin 版本的目錄由它整份建立或重建（Claude 依 `
 
 Tower 與 Worker **預設一律禁止寫入** Layer 1 路徑（`~/.claude/skills/`、`~/.codex/skills/`）下的 skill 定義檔。
 
-**唯一例外**：使用者明文授權的安裝／升級。三個條件全部滿足才成立 ——
+**唯一例外**：使用者明文授權的安裝／升級，以及使用者逐項決定的手動安裝 skill 移除（v6.0.0-beta.10+，見下方〈手動安裝 skill 的移除〉）。
+安裝／升級要三個條件全部滿足才成立 ——
 
 1. 授權**寫在工單內**（執行範圍或明文授權節）。Worker **不得自行認定**已取得授權
 2. 授權指名**具體版本、具體 skill 與目標路徑**（`~/.claude/skills/` 或 `~/.codex/skills/`），
@@ -132,7 +157,33 @@ Tower 與 Worker **預設一律禁止寫入** Layer 1 路徑（`~/.claude/skills
 3. 執行時遵循 [version-governance.md](version-governance.md) § 安裝／升級流程
    （備份 → 安裝 → 逐檔複驗 → 回報回退方式）
 
-**plugin 安裝（v5.14.0+）**：同樣需要上面三個條件；條件 2 的「目標路徑」改為指名 **agent（Claude Code 或 Codex）、
+**手動安裝 skill 的移除（v6.0.0-beta.10+）：出建議 → 使用者逐項決定 → 依決定自動執行。** 適用 `~/.claude/skills/`、`~/.codex/skills/`
+下手動安裝的 skill；授權的形式和安裝不同，由使用者逐項的決定構成：
+
+1. **出建議**：要移除手動安裝的 skill 時，塔台（或依工單執行的 Worker）先產出**建議清單**，每一項列：agent（Claude Code／Codex）、
+   skill 名稱、路徑、目前版本、建議處置與理由。處置三選一，**預設建議 `移出`**：
+   - `移出`：把整個 skill 目錄搬到備份落點下的 `_removed-<skill>-<版號>-<yyyyMMdd-HHmmss>/`（Claude Code 是 `~/.claude/skill-backups/`，
+     Codex 是 `~/.codex/skill-backups/`，落點同 Q4；時間戳以系統指令取得）
+   - `刪除`：直接刪除，不可復原
+   - `保留`：不動
+2. **使用者逐項決定**：清單交給使用者，**每一項分別**選處置；使用者沒回答的項目**一律不動**。使用者逐項的決定寫進工單，
+   就是那一項的執行授權 —— 不需要另外的明文授權句，但只及於清單上、使用者選過的那幾項，以及清單上寫的那個 agent 的路徑
+   （例 Claude Code 那一項的決定不及於 Codex 端的同名 skill）。
+3. **依決定自動執行**：Worker 照使用者逐項的決定執行，不再逐項確認，執行結果逐項寫進工單回報區：
+   - `移出` → 整個目錄搬走（移動，不是複製），搬完確認**原路徑已不存在**、該 agent 的 skill 清單**不再註冊**這個 skill，
+     並寫明搬到哪裡（回退方式就是搬回原路徑）
+   - `刪除` → 直接刪除；🔴 只在使用者選了 `刪除` 的項目上做
+   - `保留` → 不動
+4. **yolo**：Worker 不直接問使用者，清單照 [yolo-mode.md](yolo-mode.md) § Worker 向塔台提問 交給塔台；塔台**不代決任何一項**
+   （刪除不可逆，一律升級給使用者；`移出`、`保留` 也是使用者逐項決定的範圍），轉給使用者後把逐項的決定答回。
+5. plugin 的移除不在此列：照下方〈plugin 安裝〉，仍只能用 plugin 指令。
+
+| 動作 | 手動安裝（`~/.claude/skills/`、`~/.codex/skills/`） | plugin 安裝 |
+|---|---|---|
+| 安裝／升級 | Worker，工單授權指名版本、skill、路徑；照 § 安裝／升級流程 | Worker，工單授權指名 agent、plugin、marketplace；只能用 plugin 指令 |
+| 移除 | 塔台或 Worker 出建議清單（預設 `移出`）→ 使用者逐項選 `移出`／`刪除`／`保留`（沒回答的不動）→ Worker 依決定執行（v6.0.0-beta.10+） | Worker，工單授權指名 agent、plugin、marketplace；只能用 plugin 指令（`claude plugin uninstall`、`codex plugin remove`） |
+
+**plugin 安裝（v6.0.0-beta.5+）**：同樣需要上面三個條件；條件 2 的「目標路徑」改為指名 **agent（Claude Code 或 Codex）、
 plugin 與 marketplace**（例 `ct@control-tower`），只指名其中一個 agent 的授權不及於另一個。條件 3 的流程改為
 [version-governance.md](version-governance.md) § plugin 安裝／升級。🔴 即使有授權，也**只能透過 plugin 指令**
 （`claude plugin …`、`codex plugin …`）安裝、更新或移除；不得直接在 plugin 安裝路徑下複製、修改或刪除檔案。
@@ -144,8 +195,8 @@ plugin 與 marketplace**（例 `ct@control-tower`），只指名其中一個 age
 - 「Layer 1 唯讀，由人工升級流程覆寫」→ **仍然成立**。工單內的明文授權**就是**
   人工升級流程中「使用者授權」的那一步，不是繞過它的旁路
 
-例外的範圍僅止於**安裝／升級行為本身**，**不擴及 Q1**：
-安裝授權不允許把備份、暫存或任何非 skill 定義檔寫進 Layer 1 路徑。
+例外的範圍僅止於**安裝／升級與移除行為本身**，**不擴及 Q1**：
+安裝授權或使用者的移除決定，都不允許把備份、暫存或任何非 skill 定義檔寫進 Layer 1 路徑。
 
 #### Q4 — 備份要放哪？
 
@@ -170,7 +221,7 @@ Get-Date -Format "yyyyMMdd-HHmmss"
 或任何自認為「掃描器應該會略過」的命名。掃描器的行為不是本規則的前提，
 路徑位置才是。
 
-**plugin 安裝（v5.14.0+）：不適用。** 不在 plugin 安裝路徑旁做備份；回退方式是用 plugin 指令移除
+**plugin 安裝（v6.0.0-beta.5+）：不適用。** 不在 plugin 安裝路徑旁做備份；回退方式是用 plugin 指令移除
 （`claude plugin uninstall`、`codex plugin remove`）後重裝，或改回 zip 手動安裝。從手動安裝遷移到 plugin 時，
 備份的是**手動安裝**那份，落點照上表。
 
@@ -208,11 +259,24 @@ node --check "$SCRATCH/<name>.check.js"
 學習系統與 Playbook 的寫入路徑檢查不涵蓋腳本（腳本寫入不是學習寫入）；
 知識卡的路徑檢查見 [workflow-engine.md](workflow-engine.md) § 寫入路徑檢查（知識卡）。
 
+#### `_ct-workorders/_insights/`（v6.0.0-beta.10+）
+
+ct-insights 統計的專案級產出，屬於 **Layer 3**：跟著專案、進版控、只有數字。目前只有一種內容：
+
+| 項目 | 規則 |
+|---|---|
+| 內容 | `session-stats/<YYYY-MM>.json`：session 用量快照（`ct-session-stats-snapshot/0.2`，v6.0.0-beta.12+；`0.1` 的舊檔照常讀）；格式、併入規則與隱私自檢的唯一權威是 `ct-insights/references/analysis-rules.md` § Session 用量統計 › 快照 |
+| 誰寫 | **只由塔台**：收單時（[work-order-system.md](work-order-system.md) § 收單快照）與 `*insights sessions` 補寫；都經 `ct-insights/scripts/ct-session-stats.py --snapshot-append` 寫，不手動編輯。Worker、`ct-evolve` 不寫；寫實作或規格的工單也不建實際資料檔 |
+| 誰讀 | `*insights sessions`、`ct-session-stats.py --facts-from`（候選事實，給 ct-evolve；接法見 ⑦） |
+| 掃描 | 🔴 `*sync`、`*archive` **不掃描**這個目錄（不是單據，沒有狀態）；BAT 塔台面板也不讀（[memory-protocol.md](memory-protocol.md) § BAT 塔台面板讀取契約 › 各檔要求） |
+| 不放的東西 | 對話內容、指令原文、完整路徑、權杖、真實 session 紀錄檔（`.jsonl`） |
+| 不用的路徑 | 不放 `~/.claude/**`（不跟著專案；原始紀錄本來就在那裡、會被清掉） |
+
 ## Layer 2 詳細規格
 
 ### 目錄建立
 
-塔台啟動時偵測 `~/.claude/control-tower-data/` 是否存在：
+塔台啟動時偵測 `${CLAUDE_CONFIG_DIR:-~/.claude}/control-tower-data/` 是否存在（§ 路徑解析）：
 
 - 存在 → 讀取內容
 - 不存在 → 首次使用，提示建立（不強制——Level 0 仍可正常運作）
@@ -221,10 +285,11 @@ node --check "$SCRATCH/<name>.check.js"
 
 ```bash
 # Unix/macOS
-mkdir -p ~/.claude/control-tower-data/{learnings,playbooks,extensions}
+mkdir -p "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/control-tower-data/"{learnings,playbooks,extensions}
 
 # Windows PowerShell
-$base = "$env:USERPROFILE\.claude\control-tower-data"
+$cfg = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { "$env:USERPROFILE\.claude" }
+$base = "$cfg\control-tower-data"
 'learnings','playbooks','extensions' | ForEach-Object { New-Item -ItemType Directory -Path "$base\$_" -Force }
 ```
 

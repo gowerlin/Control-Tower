@@ -22,9 +22,9 @@
 | 3 | Playbook 目錄 | `test -d _ct-workorders/_playbooks/` | 不存在 | Playbook 引擎 | 建立空目錄 |
 | 4 | Config 新選項 | 比對 config 已有選項 vs v4 可用選項 | 缺少 v4 選項 | 12+ 選項 | 新增缺失選項（帶預設值），保留現有值 |
 | 5 | 舊索引文件 | `test -f _ct-workorders/_workorder-index.md` | 可能存在 | 廢除（*sync 自動重建） | `git mv` 到 `_archive/workorders/` |
-| 6 | BUG 追蹤 | config `enable_bug_tracking` 為 `false` 或缺失 | 未啟用 | `true` | 設定 config + 確認 `_archive/` 可用 |
-| 7 | PLAN 追蹤 | config `enable_plan_tracking` 為 `false` 或缺失 | 未啟用 | `true` | 設定 config |
-| 8 | EXP 實驗追蹤 | config `enable_experiments` 為 `false` 或缺失 | 未啟用 | `true` | 設定 config |
+| 6 | BUG 追蹤 | config `enable_bug_tracking` 明寫 `false`（v6 起缺失 = 預設 `true` = 已啟用） | 未啟用 | `true` | 設定 config + 確認 `_archive/` 可用 |
+| 7 | PLAN 追蹤 | config `enable_plan_tracking` 明寫 `false`（v6 起缺失 = 預設 `true`） | 未啟用 | `true` | 設定 config |
+| 8 | EXP 實驗追蹤 | config `enable_experiments` 明寫 `false`（v6 起缺失 = 預設 `true`） | 未啟用 | `true` | 設定 config |
 
 ---
 
@@ -141,9 +141,9 @@
 操作：
   1. 讀取現有 _ct-workorders/_tower-config.yaml
   2. 比對 v4 完整選項列表，找出缺失項：
-     - enable_bug_tracking: false
-     - enable_plan_tracking: false
-     - enable_experiments: false
+     - enable_bug_tracking: true      # v6 起預設 true（D363、D368）
+     - enable_plan_tracking: true
+     - enable_experiments: true
      - archive_days: 7
      - auto_archive_prompt: off
   3. 僅新增缺失的選項（帶預設值），保留所有現有值不變
@@ -173,7 +173,8 @@
 操作：
   1. 設定 enable_bug_tracking: true
   2. 寫入 _tower-config.yaml（project scope）
-  3. git add _ct-workorders/_tower-config.yaml
+  3. _bug-tracker.md 不存在 → 產生空索引（bug-plan-system.md § 啟用與索引檔）
+  4. git add _ct-workorders/_tower-config.yaml（與新產生的索引檔）
 
 結果：✅ BUG 追蹤已啟用
       💡 使用 *bug 建立第一張 BUG 單
@@ -185,7 +186,8 @@
 操作：
   1. 設定 enable_plan_tracking: true
   2. 寫入 _tower-config.yaml（project scope）
-  3. git add _ct-workorders/_tower-config.yaml
+  3. _backlog.md 不存在 → 產生空索引（bug-plan-system.md § 啟用與索引檔）
+  4. git add _ct-workorders/_tower-config.yaml（與新產生的索引檔）
 
 結果：✅ PLAN 追蹤已啟用
       💡 使用 *plan 建立第一張 PLAN 單

@@ -2,7 +2,7 @@
 name: ct-done
 description: "Control Tower Worker recovery-close skill for remedially closing a work order after interruption, missed closeout, manual status correction, or Tower recovery. Use when the user invokes $ct-done or /ct-done with a T#### work order and optionally a final status such as DONE, FIXED, PARTIAL, BLOCKED, or FAILED."
 ---
-<!-- ct-done-version: 5.15.0 -->
+<!-- ct-done-version: 6.0.0 -->
 
 # ct-done
 
@@ -21,8 +21,11 @@ Act as a Worker doing closeout repair. Do not implement new product work unless 
 3. Read project instructions if needed for closeout rules.
 4. Determine the final status from explicit argument, existing report evidence, or user confirmation.
 5. Collect current evidence: `git status`, relevant `git diff --name-only`, recent commits, validation notes, and existing report content.
-6. Fill missing report fields first.
-7. Update metadata only after the report is complete.
+6. Run `../ct-exec/SKILL.md` § Tower Addenda Check once first (node 3, before filling the report; v6.0.0-beta.11+): a `## 塔台補充（…）`
+   section added after the work started (one the report does not already show as read) → read only that section and log one line in
+   `### 互動紀錄`; whatever this recovery closeout cannot do from it goes into the report as is, never a scope widening. That section is the
+   single authoritative definition; do not restate it here. Then fill missing report fields, before any metadata change.
+7. Update metadata only after the report is complete, including the frontmatter `session_ids` (v6.0.0-beta.10+, § Session id below).
 8. Commit the work order file itself before any notify (v5.7.0+): `git commit --only <work order file> -m "<message with the work order id>"`
    (add it first if untracked; with `CT_HOME` set, commit it in `$CT_HOME` as § Worktree Isolation says). Commit only that file —
    product changes are never committed for the user here; § Commit Check still reports them.
@@ -74,9 +77,17 @@ Preserve existing content. Add only missing closeout evidence:
 - deviations, blockers, and follow-up recommendations
 - post-resolution note for resolved partials
 
-If the work order's own steps require syncing `sprint-status.yaml` and that step was missed, do it as part of the repair (Tower re-checks it at intake: `../control-tower/references/work-order-system.md` § sprint-status.yaml 同步).
+If the work order's own steps require a methodology writeback or a main methodology tracker sync (adapter `tracker`; bmad: `sprint-status.yaml`) and that step was missed, do it as part of the repair and record it in `### 方法論狀態回寫`, or in the legacy `### sprint-status.yaml 已更新` when that is the section the work order has (Tower re-checks it at intake: `../control-tower/references/work-order-system.md` § 主方法論 tracker 同步). The same repair covers a missing `### 方法論執行紀錄` entry when § Methodology of `../ct-exec/SKILL.md` required one and the evidence is available.
 
 For frontmatter work orders, frontmatter is metadata SoT and body table is a human mirror. Use quoted ISO 8601 timestamps with offset.
+
+### Session id (v6.0.0-beta.10+)
+
+Write the id of **the session running `ct-done`** into the frontmatter `session_ids` and its mirror line `- **session_id**：<value>` in
+〈完成狀態〉, exactly as `../ct-exec/SKILL.md` § Phase 4 › Session id defines (value, check, `unavailable`, append without overwriting, the
+names-only exception). That subsection is the single authoritative definition; do not restate it here. Never guess or copy the original
+Worker's id: an id already in the list stays, and Tower's closeout backup (`../control-tower/references/work-order-system.md`
+§ 收單補記 session id) covers the Worker tab.
 
 ## Commit Check
 
@@ -121,8 +132,10 @@ Rules:
 - `CT_MODE=yolo`: notify with `--submit`.
 - `CT_MODE=ask` / `off` / missing: show manual or clipboard fallback.
 - Before notifying or showing the manual message, compare the id you are about to use with the frontmatter `id`; if they differ,
-  use the frontmatter value (v5.13.1; steps and the report line in the authority above).
-- If a bash-backed helper cannot see `BAT_*`, verify with native PowerShell on Windows before declaring BAT unavailable. List variable names only, never values (`../control-tower/references/auto-session.md` § 偵測條件).
+  use the frontmatter value (v6.0.0-beta.4; steps and the report line in the authority above).
+- If a bash-backed helper cannot see `BAT_*`, verify with native PowerShell on Windows before declaring BAT unavailable, listing names only
+  (presence check, never the values; bash: `compgen -e | grep -E '^(BAT|CT)_' | sort`; named exceptions one variable per command;
+  `../control-tower/references/auto-session.md` § BAT 內部終端路由 › 偵測條件).
 - If notify fails, record the exact failure and show the exact manual Tower message.
 
 ## Error Handling

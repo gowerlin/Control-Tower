@@ -10,7 +10,7 @@
 
 | 層級 | 內容 | 機制 |
 |------|------|------|
-| 共享層 | 工單檔案、sprint-status.yaml、_decision-log.md、`AGENTS.md` 的專案上下文區塊（BMad v6.11+；舊專案為 project-context.md） | 磁碟檔案，天然共享 |
+| 共享層 | 工單檔案、主方法論 tracker（bmad 時為 sprint-status.yaml）、_decision-log.md、專案上下文（bmad v6.11+ 為 `AGENTS.md` 的專案上下文區塊；舊專案為 project-context.md） | 磁碟檔案，天然共享 |
 | 協調層 | 塔台登記簿、跨塔台留言板 | 約定檔案 + 啟動掃描 |
 | 隔離層 | Context window 對話、當前推理、個人進度快照 | Context window 天然隔離 |
 
@@ -60,7 +60,7 @@ HOTFIX-01 修了 Redis pool 設定（config/redis.yml max_connections 10→50）
 |------|------|
 | 子專案共用 DB、共用 API、經常同步改動 | 🗼 一個塔台 |
 | 子專案獨立部署、獨立 DB、很少同時改動 | 🗼🗼 各開塔台 |
-| 子專案是跟團隊共用的獨立 repo、隊友不用 CT（v5.14.3+） | 🗼 一個塔台，工單集中在上層的個人塔台 repo（[mono-repo-patterns.md](mono-repo-patterns.md) § 巢狀的獨立 repo）；隊友也用 CT、或需要 worktree 隔離改子 repo → 🗼🗼 各開塔台（同節〈何時改用方案 2〉） |
+| 子專案是跟團隊共用的獨立 repo、隊友不用 CT（v6.0.0-beta.7+） | 🗼 一個塔台，工單集中在上層的個人塔台 repo（[mono-repo-patterns.md](mono-repo-patterns.md) § 巢狀的獨立 repo）；隊友也用 CT、或需要 worktree 隔離改子 repo → 🗼🗼 各開塔台（同節〈何時改用方案 2〉） |
 | 不確定 | 先用一個，太雜再拆 |
 | Feature + Hotfix 在不同分支 | 🗼🗼 各開塔台 + Worktree 隔離 |
 

@@ -1,7 +1,8 @@
 # 自包含學習核心（Level 0）
 
 本協議零相依——只要 AI 能讀寫 .md 檔案就能完整運作。
-有 ECC 時自動增強（見 enhancement-integration.md），無 ECC 時本檔即為完整學習系統。
+本檔與 `ct-evolve` 就是 CT 唯一的一套學習機制（三區學習＋FIELDGUIDE 晉升＋session 證據）。ECC Level 1 已於 v6.0.0-beta.10 退場，
+不再有第二套採信規則（[enhancement-integration.md](enhancement-integration.md) § ECC Level 1 退場）。
 
 ## _learnings.md 格式
 
@@ -41,10 +42,11 @@ v4.4.0 Phase 3（T0105）起新產出以三區結構分流：
 （見下方格式）
 
 ## 估時校準
-<!-- 獨立於三區結構 -->
+<!-- 獨立於三區結構；鍵 = `<adapter>/<workflow>`（例 `bmad/bmad-build`）；
+     舊表的「BMad 流程」鍵（只有 workflow 名）照讀，視為 `bmad/<workflow>`，不回寫（methodology-adapters.md § 舊欄位相容） -->
 
-| BMad 流程 | 樣本 | 平均(min) | 建議預估 |
-|-----------|------|-----------|---------|
+| 方法論流程（adapter/workflow） | 樣本 | 平均(min) | 建議預估 |
+|-------------------------------|------|-----------|---------|
 
 ## 📚 歷史條目（Phase 3 之前，不 retrofit）
 <!-- Phase 1-2 累積條目以 <details> 摺疊保留，不自動搬位 -->
@@ -197,9 +199,14 @@ v4.4.0 起由 `*evolve` / `/ct-evolve` 的 Step 2.5 Distillation 檢核把關。
 
 升級：專案層每次在新工單中再次驗證、全域層每次在新專案中成功應用 → 依上表條件升級
 降級：使用者說「這個不適用」→ 標記 ❌ 廢棄（保留歷史）
+撤回（v6.0.0-beta.10+，只限 session 證據餵進來的條目）：之後 ≥ 2 張工單出現反證 → `⏸ 撤回候選`（可恢復、保留歷史）；`❌ 廢棄` 仍只由使用者決定
 衰減：連續 3 個專案未觸發 → 標記「休眠」
 
 > v5.10.0+：Workflow 知識卡另有依指標的降級（只限 Workflow，不適用本表），見 [workflow-engine.md](workflow-engine.md) § 指標降級。
+>
+> v6.0.0-beta.10+：session 統計產生的候選事實（`ct-session-fact/0.1`）也照本表，不另訂門檻——機器證據進場只能 🔵，
+> `workorders` ≥ 2 且 `days` ≥ 2 → 🟡，🟢 要過 Distillation Gate，⭐ 要使用者認可；計數單位是工單。接法見
+> [ct-evolve/SKILL.md](../../ct-evolve/SKILL.md) § Session Evidence（唯一權威）。
 
 ## 寫入路徑安全檢查
 
@@ -313,22 +320,22 @@ v4.4.0 起由 `*evolve` / `/ct-evolve` 的 Step 2.5 Distillation 檢核把關。
 |------|-----------|-------------|
 | 執行位置 | 塔台 session 內 | 任意 session（獨立 skill） |
 | 角色切換 | 不切換，保持塔台角色 | 載入完整學習萃取角色 |
-| 功能範圍 | 快速萃取，聚焦最近工單 | 完整流程（模式偵測、Playbook、ECC 同步、全局規則） |
-| 適用情境 | 塔台工作中順手萃取 | Sprint 結束、專案結案等完整萃取 |
+| 功能範圍 | 快速萃取，聚焦最近工單 | 完整流程（模式偵測、Playbook、session 證據、全局規則） |
+| 適用情境 | 塔台工作中順手萃取 | 迭代結束（例：bmad 的 Sprint／Epic）、專案結案等完整萃取 |
 
 ### 3. `/ct-evolve`（完整版，手動觸發）
 
-完整規範見 [ct-evolve/SKILL.md](../../ct-evolve/SKILL.md)（唯一權威）。涵蓋：模式偵測、蒸餾後寫入 _learnings.md、Playbook 候選建議（寫入走 `--playbook`）、ECC 同步、全局規則評估。
+完整規範見 [ct-evolve/SKILL.md](../../ct-evolve/SKILL.md)（唯一權威）。涵蓋：模式偵測、蒸餾後寫入 _learnings.md、Playbook 候選建議（寫入走 `--playbook`）、session 證據（`--facts-from`，v6.0.0-beta.10+）、全局規則評估。
 
-也在 Sprint 結束和專案結案時由塔台主動提議執行（v5.12.5 起由已退役的 `/ct-evolve` 長版說明搬入本節）：
+也在迭代結束和專案結案時由塔台主動提議執行（v5.12.5 起由已退役的 `/ct-evolve` 長版說明搬入本節）：
 
-**Sprint 結束時的提議**——塔台在以下時機主動提議執行 `/ct-evolve`：
-- 使用者說「Sprint 結束」「Epic 完成」「回顧」
+**迭代結束時的提議**——塔台在以下時機主動提議執行 `/ct-evolve`：
+- 使用者說「迭代結束」「里程碑完成」「回顧」，或主方法論的迭代詞（例：bmad 的「Sprint 結束」「Epic 完成」）
 - 累積 ≥10 筆觀察紀錄且尚未萃取
 
 提議格式：
 ```
-Sprint 結束。本 Sprint 執行了 N 張工單，累積 N 筆觀察。
+<迭代名稱> 結束。這一輪執行了 N 張工單，累積 N 筆觀察。
 要我執行學習萃取嗎？
 ```
 
@@ -351,5 +358,5 @@ Sprint 結束。本 Sprint 執行了 N 張工單，累積 N 筆觀察。
 1. 讀取本專案 `_learnings.md`（若存在）
 2. 讀取 `_playbooks/`（若存在）
 3. 若有 Layer 2（`~/.claude/control-tower-data/learnings/`）→ 載入全局模式
-4. 若有 mem0 REST（Level 3）→ ⚠️ Tower 無法直接查詢，跨裝置經驗僅透過 Stop hook 寫入同步（單向）；查詢需透過 OpenMemory UI（192.0.2.10:3100）或 sub-session 直接呼叫 REST API
+4. 若有 mem0 REST（Level 3；v6.0.0-beta.10+ 只在本地規則記錄了使用者層例外時啟用，見 [enhancement-integration.md](enhancement-integration.md) § Level 3 › 啟用條件）→ ⚠️ Tower 無法直接查詢，跨裝置經驗僅透過 Stop hook 寫入同步（單向）；查詢需透過 OpenMemory UI（192.0.2.10:3100）或 sub-session 直接呼叫 REST API
 5. 顯示載入摘要

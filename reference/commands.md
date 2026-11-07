@@ -17,17 +17,17 @@ const twoCliRows = [
 ]
 const towerRows = [
   ['*rescan', '完整掃描，刷新塔台狀態檔的環境快照', '—', 'v4.0.1'],
-  ['*config', '檢視或修改塔台設定', '[選項] [值] [--save project|global]、reset [選項]', 'v3.2.0'],
-  ['*help', '不離開塔台查使用說明', '[主題]：commands、workflow、config、workorder、status、tips', 'v3.2.0'],
+  ['*config', '檢視或修改塔台設定', '[選項] [值] [--save project|global]、reset [選項]、methodology', 'v3.2.0（methodology：6.0.0）'],
+  ['*help', '不離開塔台查使用說明', '[主題]：commands、workflow、config、workorder、status、tips、methodology', 'v3.2.0（methodology：6.0.0）'],
   ['*sync', '以工單檔為事實來源，校準塔台記憶、工單與 sprint-status.yaml', '—', 'v3.2.0'],
   ['*pause', '凍結進行中的工單，處理緊急任務', '[原因]', 'v3.2.0'],
   ['*resume', '恢復被暫停的工單', '[工單編號]', 'v3.2.0'],
-  ['*bug', '登記 BUG 單（需先啟用）', '[標題]', 'v4.0.0'],
-  ['*plan', '登記 PLAN 單（需先啟用）', '[標題]', 'v4.0.0'],
-  ['*exp', '登記 EXP 實驗單（需先啟用）', '[描述]', 'v4.0.0'],
+  ['*bug', '登記 BUG 單（6.0.0 起預設啟用）', '[標題]', 'v4.0.0'],
+  ['*plan', '登記 PLAN 單（6.0.0 起預設啟用）', '[標題]', 'v4.0.0'],
+  ['*exp', '登記 EXP 實驗單（6.0.0 起預設啟用）', '[描述]', 'v4.0.0'],
   ['*archive', '把最終態的單據從熱區移到冷區', '--dry-run、T####、--search <關鍵字>、--restore T####', 'v4.0.0'],
   ['*evolve', '在塔台裡萃取學習', '[主題]、--playbook [名稱]、--skill [名稱]、--status、--workflow [名稱]', 'v3.2.0（--workflow：v5.11.0）'],
-  ['*insights', '在塔台裡做使用模式分析', 'workflow [T#### …]', 'v3.4.0（workflow：v5.11.0）'],
+  ['*insights', '在塔台裡做使用模式分析', 'workflow [T#### …]、sessions [T#### …]、tools', 'v3.4.0（workflow：v5.11.0；sessions、tools：6.0.0）'],
   ['*fieldguide', 'FIELDGUIDE 與 DESIGN.md 管理（只讀與分析，寫入一律開工單）', 'scan [N]、add [主題]、audit [模組]、init、debt [主題]、design [generate|check]', 'v3.5.0（design：v3.6.0）'],
   ['*import', '安全匯入規則、Playbook 或其他專案的設定', 'rule、playbook、--from <檔案>、--check、--fix', 'v4.0.0'],
   ['*onboard', '互動式探索你的工作習慣，產出個人化的本地規則', '—', 'v4.0.0']
@@ -58,7 +58,7 @@ const towerRows = [
 
 <CardTable caption="同一個 skill 在兩種 CLI 的寫法" :columns="['用途', 'Claude Code', 'Codex']" :rows="twoCliRows" />
 
-上表是 zip 手動安裝的寫法。v5.14.0 起用 plugin marketplace 安裝時：Claude Code 照常用上表的寫法，要確定叫到 plugin 版用完整寫法 `/ct:ct-exec T0001`；Codex 一律帶前綴，例如 `$ct:ct-exec T0001`、`$ct:control-tower`，不帶前綴的 `$ct-exec` 叫不到。接 BAT 派工時，BAT `>= 0.7.2-pre.1` 依 Codex 端的安裝方式送 `$ct-exec` 或 `$ct:ct-exec`，zip 和 plugin 都能用（v5.14.2 起）；更舊的 BAT 一律送 `$ct-exec`，接它派工的 Codex 用 zip 手動安裝。安裝方式見[安裝 › 用 plugin marketplace 安裝](/install#plugin)。
+上表是 zip 手動安裝的寫法。用 plugin marketplace 安裝時（v5.14.0 起；v6 系列 6.0.0 起適用，預發行版不提供 plugin）：Claude Code 照常用上表的寫法，要確定叫到 plugin 版用完整寫法 `/ct:ct-exec T0001`；Codex 一律帶前綴，例如 `$ct:ct-exec T0001`、`$ct:control-tower`，不帶前綴的 `$ct-exec` 叫不到。接 BAT 派工時，BAT `>= 0.7.2-pre.1` 依 Codex 端的安裝方式送 `$ct-exec` 或 `$ct:ct-exec`，zip 和 plugin 都能用（v5.14.2 起）；更舊的 BAT 一律送 `$ct-exec`，接它派工的 Codex 用 zip 手動安裝。安裝方式見[安裝 › 用 plugin marketplace 安裝](/install#plugin)。
 
 `*` 命令和同名的獨立 skill（例如 `*evolve` 與 `/ct-evolve`）的差別在**在哪個角色裡執行**，不在功能多寡。
 
@@ -84,9 +84,9 @@ const towerRows = [
 - **參數**：一個工單編號或路徑。同一個編號在 `_ct-workorders/` 下找到多張時，Worker 停下來請你指定。
 - **執行環境**：由塔台派工時傳入，Worker 不讀設定檔決定模式。`CT_MODE`：`yolo`／`ask`／`off`／`on`（沒有或不合法時當成 `ask`）；`CT_INTERACTIVE`：`1` 允許研究型互動、`0` 禁止；`CT_HOME`：在 BAT 的 worktree 隔離分頁裡才有，指向主 checkout。
 - **在哪用**：Worker session（一張工單一個新的 session）。
-- **做什麼**：執行一張工單的完整生命週期——讀專案規則與整張工單 → **落點檢查**（任何寫入之前；`repo` 不符就停）→ 標 `IN_PROGRESS` → 只在範圍內執行 → 跑驗收、證據分道記錄 → **反序收尾**（產品 commit → 回報區 → 最終狀態 → 工單 commit）→ 通知塔台。通知與提問用收到的**完整工單 ID**：`/ct-exec CP-T0113` 回的是 `CP-T0113 完成`，不會截成 `T0113`；送出前先和工單 frontmatter 的 `id` 比對，不一致就改用 `id`（v5.13.1 起）。工單原本就是 `IN_PROGRESS` 時記成接續執行。`CT_MODE=yolo` 時不問你，有問題寫進工單問塔台；一次問多題時只有最後一題叫醒塔台（v5.15.0 起）。
-- **起始版本**：v2.1.1（獨立 skill：v3.1.0；`$` 入口：v5.0.3；落點檢查：v5.0.4；yolo 向塔台提問：v5.5.0；完整工單 ID 通知：v5.13.1；一批提問只叫醒塔台一次：v5.15.0）
-- **權威出處**：`ct-exec/SKILL.md`（§ Startup、§ Mode And Environment、§ Landing Zone Check、§ Phase 1～4、§ Questions For Tower (`CT_MODE=yolo`, v5.5.0+)、§ BAT Notify And Fallback）；`control-tower/references/work-order-system.md` § 回報與通知用的工單 ID
+- **做什麼**：執行一張工單的完整生命週期——讀專案規則與整張工單 → **落點檢查**（任何寫入之前；`repo` 不符就停）→ 標 `IN_PROGRESS` → 只在範圍內執行 → 跑驗收、證據分道記錄 → **反序收尾**（產品 commit → 回報區 → 最終狀態 → 工單 commit）→ 通知塔台。通知與提問用收到的**完整工單 ID**：`/ct-exec CP-T0113` 回的是 `CP-T0113 完成`，不會截成 `T0113`；送出前先和工單 frontmatter 的 `id` 比對，不一致就改用 `id`（v5.13.1 起）。工單原本就是 `IN_PROGRESS` 時記成接續執行。`CT_MODE=yolo` 時不問你，有問題寫進工單問塔台；一次問多題時只有最後一題叫醒塔台（v5.15.0 起）。6.0.0 起：收尾時把自己的 session id 寫進 frontmatter `session_ids`；在跑驗收前、產品 commit 前、寫回報前各看一次有沒有新的〈塔台補充（執行中 #N）〉段並照做（見[執行中補充](/deep/features/recovery#addenda)）；工單有 frontmatter `methodology` 時帶入方法論，呼叫方法論 skill 都記進回報；被 compact 或 resume 後先重讀整張工單。
+- **起始版本**：v2.1.1（獨立 skill：v3.1.0；`$` 入口：v5.0.3；落點檢查：v5.0.4；yolo 向塔台提問：v5.5.0；完整工單 ID 通知：v5.13.1；一批提問只叫醒塔台一次：v5.15.0；session id、執行中補充、方法論：6.0.0）
+- **權威出處**：`ct-exec/SKILL.md`（§ Startup、§ Mode And Environment、§ Landing Zone Check、§ Phase 1～4、§ Questions For Tower (`CT_MODE=yolo`, v5.5.0+)、§ BAT Notify And Fallback；6.0.0 起另有 § Tower Addenda Check、§ Methodology、§ Phase 4 › Session id）；`control-tower/references/work-order-system.md` § 回報與通知用的工單 ID
 - **相關**：[一張工單的一生](/lifecycle#worker)、[落點檢查](/deep/features/landing-check)、[Worker 向塔台提問](/deep/features/worker-questions)
 
 ### `/ct-done T#### [狀態]` {#ct-done}
@@ -94,8 +94,8 @@ const towerRows = [
 - **語法**：`/ct-done T#### [DONE|FIXED|PARTIAL|BLOCKED|FAILED]`（Codex：`$ct-done …`）
 - **參數**：工單編號或路徑；可選的最終狀態。沒給狀態時，依回報區的證據判斷，判斷不了就問你。`ABANDONED` 這類退役狀態只在範圍決定要退役這張工單時使用。
 - **在哪用**：Worker session（補救用）。
-- **做什麼**：只做收尾的修補，**不做新的產品工作**——落點檢查 → 收集現況證據（`git status`、變更檔、最近的 commit）→ 先補齊回報區缺的欄位 → 再更新狀態 → commit 工單檔本身 → 通知塔台（和 `/ct-exec` 一樣用完整工單 ID）。產品改動不替你 commit，只告訴你哪些看起來還沒 commit。遇到原本是 `PARTIAL`、但卡點已經解除的工單，補一段事後註記並改成 `DONE`。不會送 `T#### 提問`。
-- **起始版本**：v2.1.1（獨立 skill：v3.1.0）
+- **做什麼**：只做收尾的修補，**不做新的產品工作**——落點檢查 → 收集現況證據（`git status`、變更檔、最近的 commit）→ 先補齊回報區缺的欄位 → 再更新狀態 → commit 工單檔本身 → 通知塔台（和 `/ct-exec` 一樣用完整工單 ID）。產品改動不替你 commit，只告訴你哪些看起來還沒 commit。遇到原本是 `PARTIAL`、但卡點已經解除的工單，補一段事後註記並改成 `DONE`。不會送 `T#### 提問`。6.0.0 起寫回報前同樣檢查新的執行中補充段，並寫執行 `ct-done` 那個 session 的 id。
+- **起始版本**：v2.1.1（獨立 skill：v3.1.0；session id、執行中補充檢查：6.0.0）
 - **權威出處**：`ct-done/SKILL.md` § Workflow、§ Status Selection、§ Commit Check、§ BAT Notify；`control-tower/references/work-order-system.md` § 回報與通知用的工單 ID
 - **相關**：[常見問題 › 卡在 IN_PROGRESS](/faq#in-progress)、[中斷、Renew 與補救收尾](/deep/features/recovery)
 
@@ -128,11 +128,12 @@ const towerRows = [
   | `--skill [名稱]` | skill 候選 | 只產出 skill brief；真的要寫成已安裝的 skill，另外用 `skill-creator` |
   | `--workflow [名稱]` | Workflow brief（v5.10.0+） | 只產出 Workflow brief，寫成 🔵 知識卡；不寫 `.claude/workflows/`、不寫腳本、不執行 Workflow |
   | `--status` | 管線狀態 | 各成熟度的數量、過時或重複的經驗、建議的下一步 |
+  | `--facts-from <快照或事實檔>` | 接入 session 統計（6.0.0+） | 把 `*insights sessions` 產生的候選事實讀進學習流程 |
 
 - **在哪用**：任何 session。
 - **做什麼**：讀 `_learnings.md`、決策日誌、塔台狀態與已完成的工單，找出候選的模式、反模式與重複出現的序列。每個候選都要回答「發生了什麼、為什麼、什麼條件下會再發生、代表什麼通則、以後該怎麼做」才寫入；分成 Tactical、Strategic、Episodic 三區，不確定時寧可放 Tactical 或 Episodic。專案與全域的範圍不清楚時什麼都不寫、先問你。涉及程式碼慣例或視覺規範的候選會加 `[FG-CANDIDATE]` 標記，交給 `ct-fieldguide`。
-- **起始版本**：v3.0.0（獨立 skill：v3.1.0；`--playbook`／`--skill`／`--status`：v4.0.0；`--workflow`：v5.10.0）
-- **權威出處**：`ct-evolve/SKILL.md` § Modes、§ Distillation Gate、§ Promotion Modes
+- **起始版本**：v3.0.0（獨立 skill：v3.1.0；`--playbook`／`--skill`／`--status`：v4.0.0；`--workflow`：v5.10.0；`--facts-from`：6.0.0）
+- **權威出處**：`ct-evolve/SKILL.md` § Modes、§ Distillation Gate、§ Promotion Modes、§ Session Evidence
 - **相關**：[`*evolve`](#evolve)、[自我學習、Playbook 與 Workflow](/deep/features/learning-playbook-workflow)
 
 ### `/ct-insights [global]` {#ct-insights}
@@ -212,6 +213,7 @@ const towerRows = [
   *config <選項> <值> --save global           寫進 ~/.claude/control-tower-data/config.yaml
   *config reset                             所有設定重設為預設值（只影響 session）
   *config reset <選項>                       單項重設為預設值（只影響 session）
+  *config methodology                       列出 9 個方法論設定鍵與每一層的解析結果（6.0.0 起）
   ```
 
 - **作用域**：session > 專案 > 全域 > 預設，上面的蓋過下面的。值不在範圍內、或選項名稱不存在，會報錯並列出可用選項，不修改。
@@ -228,9 +230,9 @@ const towerRows = [
   | `yolo_max_retries` | `0`–`10` | `3` | 斷點 B 的門檻（Renew 次數或連續 `FAILED` 張數）；`0` = 停用斷點 B |
   | `worker_question_timeout` | `0`–`120`（分鐘） | `30` | yolo Worker 問塔台後最多等多久；逾時以 `BLOCKED` 收尾；`0` = 不等 |
   | `project-prefix` | 2–4 個大寫英文字母，或空 | 空 | 跨專案協調用的工單編號前綴。設了前綴時，Worker 回報、通知、提問一律用含前綴的完整 ID（v5.13.1 起） |
-  | `enable_bug_tracking` | `true`／`false` | `false` | 啟用 BUG 單（`*bug`） |
-  | `enable_plan_tracking` | `true`／`false` | `false` | 啟用 PLAN 單（`*plan`） |
-  | `enable_experiments` | `true`／`false` | `false` | 啟用 EXP 實驗單（`*exp`） |
+  | `enable_bug_tracking` | `true`／`false` | `true`（6.0.0 起；5.x 為 `false`） | 啟用 BUG 單（`*bug`）；啟用時產生 `_bug-tracker.md` |
+  | `enable_plan_tracking` | `true`／`false` | `true`（6.0.0 起；5.x 為 `false`） | 啟用 PLAN 單（`*plan`）；啟用時產生 `_backlog.md` |
+  | `enable_experiments` | `true`／`false` | `true`（6.0.0 起；5.x 為 `false`） | 啟用 EXP 實驗單（`*exp`） |
   | `archive_days` | `0`–`365` | `7` | 最終態超過幾天成為歸檔候選；`0` = 立即可歸檔 |
   | `auto_archive_prompt` | `on`／`off` | `off` | `*sync` 結束後是否提示歸檔候選數量 |
   | `bug_review_open_threshold` | `0`–`500` | `20` | v5.13.0 起。熱區未結 BUG 多於這個張數時，`*sync`／`*insights` 印一行提示，建議逐張核對；`0` = 停用這個條件 |
@@ -246,19 +248,28 @@ const towerRows = [
   | `worker_auto_close` | `off`／`done` | `off` | `done` = 工單 `DONE` 且不 Renew、收單確認後請 BAT 回收 Worker 分頁 |
   | `worker_close_delay` | `0`–`300`（秒） | `10` | 回收前的延遲；期間只有你在該分頁的輸入會取消回收 |
   | `workflow_integration` | `off`／`ask`／`on` | `on` | Claude Code Workflow 的整合強度：`off` 不建議也不授權；`ask` 每次授權前問你；`on` 知識卡到 ⭐ 之前問你 |
+  | `methodology` | `auto`／`none`／adapter id | `auto` | 6.0.0 起。主方法論，沒有個別指定的層都跟它；`auto` = 與 5.x 相同（見[方法論轉接](/features#methodology)） |
+  | `methodology_planning` | `inherit`／`none`／adapter id | `inherit` | 6.0.0 起。規劃層交給哪個 adapter |
+  | `methodology_execution` | `inherit`／`none`／adapter id | `inherit` | 6.0.0 起。執行層 |
+  | `methodology_review` | `inherit`／`none`／adapter id | `inherit` | 6.0.0 起。審查層 |
+  | `methodology_verification` | `inherit`／`none`／adapter id | `inherit` | 6.0.0 起。驗證層 |
+  | `methodology_delivery` | `none`／adapter id | `none` | 6.0.0 起。交付層（不接受 `inherit`）；`none` = 不開 PR、不發布、不開分支 |
+  | `methodology_subagent_writes` | `deny`／`per-workorder` | `deny` | 6.0.0 起。方法論自己開的寫入型子代理怎麼處置 |
+  | `methodology_guard` | `warn`／`block`／`off` | `warn` | 6.0.0 起。派工前的方法論注入／衝突檢查；`warn` = 自動在工單加〈方法論邊界〉段 |
+  | `methodology_adapters_path` | 路徑／空 | 空 | 6.0.0 起。額外的 adapter 搜尋路徑（一個；相對路徑以 repo 根目錄為準） |
 
   Worker 只會讀 `worker_max_retries`、`worker_strikeout_action`、`worker_commit` 與 `experience-level` 這類調諧參數；`worker_auto_close`、`worker_close_delay` 雖然以 `worker_` 開頭，卻是塔台收單時讀的。
 
   `_tower-config.yaml` 另有 `gp-prefix`（Playbook 的 GP 編號前綴），但它不是 `*config` 選項，所以不在上表；定義與未設定時的 fallback 見 `multi-tower-protocol.md` § `gp-prefix` 設定（唯一權威定義）。
 
 - **起始版本**：v3.2.0（各選項的版本見權威出處）
-- **權威出處**：`control-tower/references/tower-config.md` § `*config` 命令、§ 可用選項、§ 作用域與持久化
+- **權威出處**：`control-tower/references/tower-config.md` § `*config` 命令、§ 可用選項、§ 作用域與持久化、§ 方法論設定鍵（6.0.0 起）
 - **相關**：[功能總覽 › 設定](/features#config)（四層覆蓋的概念）
 
 ### `*help` {#help}
 
 - **語法**：`*help`、`*help <主題>`
-- **主題**：`commands`（所有指令的用途與使用位置）、`workflow`（日常開發、中斷恢復、Sprint 結束）、`config`（設定與持久化）、`workorder`（工單生命週期與狀態流轉）、`status`（紀錄在哪裡）、`tips`（怎麼表達需求、確認理解）。
+- **主題**：`commands`（所有指令的用途與使用位置）、`workflow`（日常開發、中斷恢復、Sprint 結束）、`config`（設定與持久化）、`workorder`（工單生命週期與狀態流轉）、`status`（紀錄在哪裡）、`tips`（怎麼表達需求、確認理解）、`methodology`（adapter 是什麼、怎麼看與改方法論設定；6.0.0 起）。
 - **做什麼**：不帶參數時顯示精簡的指令速查；帶主題時在塔台 session 裡回答，**不切換角色**，回答完繼續塔台的工作。完整的使用指南用 [`/ct-help`](#ct-help)。
 - **起始版本**：v3.2.0
 - **權威出處**：`control-tower/references/tower-config.md` § `*help` 命令
@@ -292,7 +303,7 @@ const towerRows = [
 ### `*bug` {#bug}
 
 - **語法**：`*bug [標題]`，例如 `*bug 登入頁面白屏`
-- **前提**：`enable_bug_tracking: true`。沒啟用時，回報 bug 照一般工單（`T####`）處理。
+- **前提**：`enable_bug_tracking: true`（6.0.0 起是預設值）。沒啟用時，回報 bug 照一般工單（`T####`）處理。
 - **做什麼**：互動登記 BUG 單 `BUG-###-<描述>.md`。最少要有標題、嚴重度與現象（預期與實際行為）；塔台會用選項問嚴重度、能不能重現、有沒有替代做法，並關聯相關工單。
 - **起始版本**：v4.0.0
 - **權威出處**：`control-tower/references/bug-plan-system.md` § BUG 單據
@@ -300,7 +311,7 @@ const towerRows = [
 ### `*plan` {#plan}
 
 - **語法**：`*plan [標題]`，例如 `*plan 重構 API 層`
-- **前提**：`enable_plan_tracking: true`。
+- **前提**：`enable_plan_tracking: true`（6.0.0 起是預設值）。
 - **做什麼**：登記規劃或想法 `PLAN-###-<描述>.md`。最少要有標題與一句話的動機；塔台會問優先級與類型（功能想法、技術改善、架構調整、其他）。
 - **起始版本**：v4.0.0
 - **權威出處**：`control-tower/references/bug-plan-system.md` § PLAN 單據
@@ -308,7 +319,7 @@ const towerRows = [
 ### `*exp` {#exp}
 
 - **語法**：`*exp [描述]`，例如 `*exp 嘗試 WebSocket`
-- **前提**：`enable_experiments: true`。
+- **前提**：`enable_experiments: true`（6.0.0 起是預設值）。
 - **做什麼**：登記實驗單 `EXP-<TOPIC>-###-<描述>.md`（每個 TOPIC 各自編號）。最少要有 TOPIC 名稱與一句話的實驗假設；塔台會引導你在獨立的 git worktree 裡做實驗。實驗的狀態是 `EXPLORING` → `CONCLUDED` 或 `ABANDONED`。
 - **起始版本**：v4.0.0
 - **權威出處**：`control-tower/references/bug-plan-system.md` § EXP 實驗單據
@@ -362,6 +373,20 @@ const towerRows = [
 - **做什麼**：執行 `ct-insights` 附帶的預篩腳本，做排除守門（不適合用 Workflow 的直接排除；重複出現在工單之間的序列建議改成 Playbook）與附證據位置的按需提示。**只提示，不標記也不修改工單**；提示仍要人工複核。塔台要把 Workflow 授權寫進工單之前，還要先看 `workflow_integration` 的設定。
 - **起始版本**：v5.11.0
 - **權威出處**：`ct-insights/references/analysis-rules.md` § 預篩腳本：排除守門與按需提示（v5.11.0+）；`control-tower/references/workflow-engine.md` § `workflow_integration` 的行為（v5.11.0+）
+
+#### `*insights sessions [T#### …]` {#insights-sessions}
+
+- **語法**：`*insights sessions`、`*insights sessions T0123 T0124`、`*insights sessions --since 2026-11-01`
+- **做什麼**：讀 Claude Code 留在本機的 session 紀錄，依工單彙總 token 用量與估算成本；工單的 `session_ids`（Worker 收尾時寫、塔台收單時補記）讓原始紀錄清掉之後仍對得上工單。**只讀**，不改工單。產生的候選事實可以用 [`/ct-evolve --facts-from`](#ct-evolve) 接進學習流程。只支援 Claude Code。
+- **起始版本**：6.0.0
+- **權威出處**：`ct-insights/references/analysis-rules.md` § Session 用量統計；`ct-exec/SKILL.md` § Phase 4 › Session id
+
+#### `*insights tools` {#insights-tools}
+
+- **語法**：`*insights tools`、`*insights tools --all-projects`、`*insights tools --keep bmad-guide`、`*insights tools --since 2026-10-06 --until 2026-11-05`
+- **做什麼**：用本機 Claude Code 的 session 紀錄，找出每一輪都載入、卻很少或從來沒用到的 skill、plugin、MCP server、agent 類型與內建工具，依工單類型分組，每項寫明層級（專案、使用者、claude.ai 帳號）與要改的設定。**只建議、不改設定**；套用與否由你決定，改完開新 session 才生效。
+- **起始版本**：6.0.0
+- **權威出處**：`ct-insights/references/analysis-rules.md` § 工具清單建議
 
 ### `*fieldguide` {#fieldguide}
 
@@ -454,7 +479,7 @@ yolo 下塔台另外也接受 `T#### 失敗`。不是這些格式的訊息，會
 - `control-tower/SKILL.md` § Built-In Commands
 - `ct-help/SKILL.md` § Command Families
 - 各 skill 的 `SKILL.md`（`ct-exec`、`ct-done`、`ct-status`、`ct-evolve`、`ct-insights`、`ct-fieldguide`、`control-tower-guide`）
-- CT 安裝與使用指南 § 13. Config 速查表（v5.15.0）、§ 14. 命令速查表（v5.15.0）
+- CT 安裝與使用指南 § 13. Config 速查表（v6.0.0）、§ 14. 命令速查表（v6.0.0）
 - `control-tower/references/tower-config.md` § `*config` 命令、§ 可用選項（表下註明 `gp-prefix` 不是選項）
 - `control-tower/references/multi-tower-protocol.md` § `gp-prefix` 設定（唯一權威定義）
 - `control-tower/references/fieldguide-commands.md`

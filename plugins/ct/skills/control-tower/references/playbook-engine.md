@@ -2,6 +2,10 @@
 
 > 將零散觀察逐步成熟為可複用 playbook，最終晉升為永久 skill。
 > 讓 Control Tower 的學習成果從「紀錄」進化為「可執行知識」。
+>
+> **用詞（v6.0.0-pre.1）**：本檔的「playbook」一律指 **CT Playbook**（`_playbooks/*.md`，工單序列，`*evolve --playbook` 晉升產物）。
+> 方法論自己的 playbook（工單**內**的步驟清單，例：pstack 的 Feature playbook）加方法論前綴稱呼，不是 CT Playbook，
+> `*evolve` 也不把方法論的 playbook 目錄當 CT Playbook 晉升（[methodology-adapters.md](methodology-adapters.md) § 衝突與防護 C3）。
 
 ## 管線總覽
 
@@ -399,5 +403,5 @@ Playbook 寫入時，詢問使用者儲存範圍：
 |------|---------------------|---------------------|
 | 執行位置 | 塔台 session 內 | 任意 session（獨立 skill） |
 | 候選來源 | 使用者指定或自動掃描 🟢 | `ct-evolve/SKILL.md` § Extraction Flow 找到的 recurring sequences，再由使用者決定是否 `--playbook` |
-| 互動深度 | 選擇 + 確認 | 完整流程（含 ECC 同步） |
-| 適用情境 | 隨時在塔台快速晉升 | Sprint 結束或專案結案 |
+| 互動深度 | 選擇 + 確認 | 完整流程（含 session 證據，v6.0.0-beta.10+） |
+| 適用情境 | 隨時在塔台快速晉升 | 迭代結束（例：bmad 的 Sprint）或專案結案 |

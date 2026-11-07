@@ -90,8 +90,8 @@ Step 0. BAT_SESSION == "1" in the owning shell
         → type: "bat-internal", is_bat_internal: true
         → 短路：已在 BAT 內部，走 BAT 內部終端路由（見下方「BAT 內部終端路由」章節）
           避免 auto-session 遞迴派發。
-        → 若 helper shell 看不到 BAT_*，Windows 上先用 native PowerShell 只列 Env:BAT* 的名稱複查（不輸出值）；
-          PowerShell 可見時仍視為 BAT，標記 shell env visibility mismatch。
+        → 若 helper shell 看不到 BAT_*，Windows 上先用 native PowerShell Env:BAT* 複查（只列名稱，
+          見 § BAT 內部終端路由 › 偵測條件）；PowerShell 可見時仍視為 BAT，標記 shell env visibility mismatch。
 
 Step 1. CODESPACES == "true"
         → type: "codespaces", platform: "container"
@@ -168,7 +168,7 @@ Fallback:
 function detect_terminal() -> TerminalDetection:
   wrapping_layers = []
 
-  # Step 0：BAT 內部短路；Windows helper shell empty 時需 native PowerShell 只列 Env:BAT* 名稱複查（不輸出值）
+  # Step 0：BAT 內部短路；Windows helper shell empty 時需 native PowerShell Env:BAT* 複查（只列名稱）
   if env.BAT_SESSION == "1" or native_powershell_has_bat_env():
     return build("bat-internal", "BAT_SESSION", infer_platform(),
                  is_bat_internal = true)
@@ -241,7 +241,7 @@ function detect_clipboard():
 }
 ```
 
-驗證轉 T0228 實機跑 `env | cut -d= -f1 | grep -iE "REMOTE|CODESPACES|TERM|SSH"`（只列名稱；要判斷值時只讀單一非祕密變數，規則見 § BAT 內部終端路由 › 偵測條件）。備案信號（若 `REMOTE_CONTAINERS` 未設）：`test -f /.dockerenv` 或檢查 `/proc/1/cgroup` 是否含 `docker` / `containerd`。
+驗證轉 T0228 實機跑 `compgen -e | grep -iE "REMOTE|CODESPACES|TERM|SSH"`（只列名稱；要看值時逐一讀單一非祕密變數，見 § BAT 內部終端路由 › 偵測條件 的「偵測只判斷有無，不列出整組變數」）。備案信號（若 `REMOTE_CONTAINERS` 未設）：`test -f /.dockerenv` 或檢查 `/proc/1/cgroup` 是否含 `docker` / `containerd`。
 
 ### VS Code（non-devcontainer）備註：R4 待 T0228 驗證
 
@@ -297,7 +297,7 @@ interface PreflightCheck {
 2. 非 BAT 路由解析順序：`CT_AGENT_CMD`（只允許 `claude` / `codex`）→ 安全自動偵測（只在兩者唯一可用時採用）→ C 面剪貼簿/文字提示。
 3. 若 `claude` 與 `codex` 同時存在且 `CT_AGENT_CMD` 未指定，不得自行偏好其中一個，避免跨工具行為漂移。
 4. 實際 spawn 前必須將 `<agent-cli>` 替換為解析後的 allowlist literal；失敗則回傳 `null` 交 C 面。
-5. 本節與 B.1、C 面寫的 `"/ct-exec T####"` 是 Claude 寫法的樣板；解析為 `codex` 時依 § BAT 內部終端路由 › 依安裝方式的 skill 呼叫字串（v5.14.0+）替換成 Codex 寫法並改用單引號（v5.14.0+）。
+5. 本節與 B.1、C 面寫的 `"/ct-exec T####"` 是 Claude 寫法的樣板；解析為 `codex` 時依 § BAT 內部終端路由 › 依安裝方式的 skill 呼叫字串（v6.0.0-beta.5+）替換成 Codex 寫法並改用單引號（v6.0.0-beta.5+）。
 
 **映射原則**：
 - `d.is_bat_internal === true` → **不走 B 面**（BAT 路由已在 A.2 Step 0 短路處理，見「BAT 內部終端路由」章節）
@@ -755,16 +755,30 @@ Tower session **不需要、也不得被要求預先具備** `BAT_TOWER_TERMINAL
 Get-ChildItem Env:BAT* | Select-Object -ExpandProperty Name | Sort-Object
 ```
 
-bash 的同義寫法：`env | cut -d= -f1 | grep -E '^BAT_' | sort`。
-
-**偵測只判斷有無、不輸出值**（v5.12.7，BUG-001）：本段是 CT 環境偵測輸出規則的**唯一權威定義**，其他檔只放一句並引用這裡。
-
-- 偵測 `BAT_*`／`CT_*` 只判斷「有沒有設定」：任何 helper 或手動檢查都只列變數名稱（上面兩種寫法），不得用會連值一起輸出的指令（例：不接 `Select-Object -ExpandProperty Name` 的 `Get-ChildItem Env:…`、`env | grep …`、`printenv`、`set`、`export -p`）。
-- `BAT_REMOTE_TOKEN` 任何時候都不得輸出，需要記錄時只寫「已設定」（或「未設定」），同下方 § 範圍權杖與分頁角色 第 2 點。
-- 例外：規則明定要用到的**單一非祕密變數**，只讀那一個變數、不列整組：`CT_MODE`、`CT_INTERACTIVE`（§ Mode 與互動旗標協定）、`ct-exec` 落點檢查記錄的 `BAT_WORKSPACE_ID`、worktree 隔離的 `CT_HOME`／`CT_WORKTREE_*` 證據（`ct-exec/SKILL.md` § Worktree Isolation）。
-- 判讀邏輯不變：下一段的 `shell env visibility mismatch` 與上面的必要變數清單照舊。
-
 若 PowerShell 可見上述 Tower dispatch 必要 env，視為 BAT 可派發，並回報為 `shell env visibility mismatch`，不得降級成剪貼簿或文字派發。
+
+**偵測只判斷有無，不列出整組變數**（BUG-001、D377；本段是這條規則的**唯一權威定義**，其他檔只放一句並引用這裡）：
+環境偵測與檢查（任何 helper 或手動檢查）**不得用會列出整組變數的指令**，只判斷有無、只列變數**名稱**：
+
+```powershell
+Get-ChildItem Env:BAT* | Select-Object -ExpandProperty Name | Sort-Object   # PowerShell
+Get-ChildItem Env:CT_* | Select-Object -ExpandProperty Name | Sort-Object
+```
+
+```bash
+compgen -e | grep -E '^(BAT|CT)_' | sort                                     # bash（compgen 是 bash 內建，只列名稱；不需要放行 env）
+```
+
+- `BAT_REMOTE_TOKEN` **任何時候**只記「已設定」（或「未設定」），不印、不遮罩後印（下方 § 範圍權杖與分頁角色 第 2 點「權杖的值不得外流」）。
+- 不用 `env`、`set`、`export -p`、`printenv`（不帶變數名）、`Get-ChildItem Env:BAT*`（不加 `-ExpandProperty Name`）等會列出整組變數值的寫法，
+  也不用「先印再用 `sed` 遮」的寫法：遮罩只遮得到名稱含 `TOKEN` 的變數。
+- **明列例外**（刻意只讀單一非祕密變數，照舊）：判斷模式的 `CT_MODE`、`CT_INTERACTIVE`；落點檢查記錄的 `BAT_WORKSPACE_ID`（`ct-exec` § Landing Zone Check › Recording）；
+  worktree 的 `CT_HOME`、`CT_WORKTREE`、`CT_WORKTREE_BRANCH`、`CT_WORKTREE_BASE` 證據（`ct-exec` § Worktree Isolation）。一次讀一個變數、一個指令
+  （例：`printenv CT_MODE`，再另一個指令 `printenv CT_INTERACTIVE`）：不把多個名稱放進同一個 `printenv`，也不把讀值的指令和列名稱的指令串成同一行。
+- **唯一可以寫值的例外**（v6.0.0-beta.10+）：`CLAUDE_CODE_SESSION_ID`（Claude Code session id，不是秘密）。Worker 收尾時把它的值寫進工單 frontmatter
+  `session_ids` 與回報區鏡像行，塔台啟動時寫進 `_tower-state.md` 開工條目；同樣一次只讀這一個變數，其他變數照舊只列名稱、權杖照舊不寫。
+  取值、驗證與寫入位置的唯一權威是 `ct-exec/SKILL.md` § Phase 4 › Session id（塔台端：[memory-protocol.md](memory-protocol.md) § 塔台 session id）。
+- 只改偵測寫法；判讀邏輯（`shell env visibility mismatch`、Tower dispatch 五要件、Worker notify 三要件、exit code）與落點檢查的證據規則不變。
 
 ### 範圍權杖與分頁角色（BAT `>= 0.7.0-pre.1`，v5.2.4+）
 
@@ -879,9 +893,9 @@ Fallback：
 - `--mode`：v4.3.0+ 顯式傳遞 runtime mode 給 Worker（注入 `CT_MODE` env），Worker 不讀 config（D062 無狀態原則）
 - `--interactive` / `--no-interactive`：研究型工單 Worker 互動旗標（注入 `CT_INTERACTIVE` env），由塔台啟動詢問決定（見 [yolo-mode.md](yolo-mode.md) § 啟動詢問）
 - `--agent default` 由 BAT 解析為 workspace defaultAgent → global defaultAgent → fallback CLI；Skill 不硬編碼 `codex` / `claude`
-- `--skill` + `--workorder` 是 agent-neutral payload；Tower skill 不寫 `/` 或 `$` prefix（也不寫 `ct:`），由 BAT app `terminal:create-agent-command` 依 resolved agent 組出 `/ct-exec T####`（Claude）或 Codex 寫法（`$ct-exec T####`；Codex 只裝 CT plugin 時，BAT `>= 0.7.2-pre.1` 送 `$ct:ct-exec T####`，更舊的 BAT 叫不到），各 agent／安裝方式／BAT 版本的寫法見下方 § 依安裝方式的 skill 呼叫字串（v5.14.0+）
+- `--skill` + `--workorder` 是 agent-neutral payload；Tower skill 不寫 `/` 或 `$` prefix（也不寫 `ct:`），由 BAT app `terminal:create-agent-command` 依 resolved agent 組出 `/ct-exec T####`（Claude）或 Codex 寫法（`$ct-exec T####`；Codex 只裝 CT plugin 時，BAT `>= 0.7.2-pre.1` 送 `$ct:ct-exec T####`，更舊的 BAT 叫不到），各 agent／安裝方式／BAT 版本的寫法見下方 § 依安裝方式的 skill 呼叫字串（v6.0.0-beta.5+）
 - `--workorder` 的合法值依 [work-order-system.md](work-order-system.md) § 工單 ID 格式（權威定義），**含帶前綴的 ID**
-- **範本裡的 `<工單 ID>`**（v5.14.1+）：本檔與其他文件的塔台端指令範本（派工 `--workorder`、`--close-worker`、`--worktree-status`）
+- **範本裡的 `<工單 ID>`**（v6.0.0-beta.6+）：本檔與其他文件的塔台端指令範本（派工 `--workorder`、`--close-worker`、`--worktree-status`）
   一律寫 `<工單 ID>`，代入工單 frontmatter `id` 原樣，含前綴、不截短成 `T` 加數字（例 `--workorder LB-T0184`，不是 `--workorder T0184`）；
   寫法與 Worker 端相同，見 [work-order-system.md](work-order-system.md) § 回報與通知用的工單 ID。B 面、C 面、派發後行為與 § 安全邊界
   的 `/ct-exec T####` 樣板裡的 `T####` 同樣代表完整 ID。
@@ -897,13 +911,15 @@ Fallback：
 - xterm.js 自動綁定 PTY output，使用者可即時互動
 - 終端標題顯示 `Remote: <command>` 方便辨識
 
-### 依安裝方式的 skill 呼叫字串（v5.14.0+）
+### 依安裝方式的 skill 呼叫字串（v6.0.0-beta.5+）
 
 > 🔴 本小節是「CT skill 在各 agent、各安裝方式下怎麼呼叫」的**唯一權威定義**。本檔其他各處（B 面矩陣、C 面剪貼簿、
 > 派發後行為的文字提示、§ 安全邊界）、`ct-help`、`ct-exec/agents/openai.yaml` 與安裝指南一律引用本小節，不另寫規則。
 > 依據：T0349 實機驗證（D435）；BAT 自 `0.7.2-pre.1` 起依 Codex 端的安裝方式組呼叫字串（D453，取代 D434 B4 的「BAT 不為此修改」）。
 > plugin 名稱 `ct`、marketplace `control-tower`，安裝流程見
 > [version-governance.md](version-governance.md) § plugin 安裝／升級。
+> 預發行版（beta、rc）不上架 plugin（同一小節開頭）：`6.0.0-beta.N`、`6.0.0-rc.N` 只適用下表「zip 手動安裝」各列；v6 正式版 6.0.0 起 plugin 各列照常適用；
+> 同一台機器另裝了穩定版 plugin 時，「兩者並存」各列照樣成立（不帶前綴的呼叫用手動安裝的預發行版，`ct:` 前綴叫到穩定版）。
 
 | Agent | 安裝方式 | 呼叫字串（以 `ct-exec` 為例） | BAT 派工（`--skill ct-exec`） |
 |---|---|---|---|
@@ -920,7 +936,7 @@ Fallback：
 2. **BAT 派工**：塔台只傳 `--skill` + `--workorder`，不寫 `/`、`$` 或 `ct:` 前綴（§ 執行方式）；派工命令不因安裝方式或 BAT 版本改變。
    呼叫字串由 BAT 依 resolved agent 組出：
    - Claude：`/ct-exec T####`（手動安裝、plugin 都叫得到）
-   - Codex，BAT `>= 0.7.2-pre.1`（v5.14.2+）：BAT 在 Codex 端判斷安裝方式——手動安裝的 skill 目錄存在 → `$ct-exec T####`；
+   - Codex，BAT `>= 0.7.2-pre.1`（v6.0.0-beta.6+）：BAT 在 Codex 端判斷安裝方式——手動安裝的 skill 目錄存在 → `$ct-exec T####`；
      否則 Codex 設定有啟用中的 `ct@<任一 marketplace>` plugin → `$ct:ct-exec T####`；判斷不了 → `$ct-exec T####`。
      兩種都裝時送手動那份，與 Codex 自己載入的一致。判斷位置與細節（`CODEX_HOME` 的來源、遠端分頁）以 BAT 為準，CT 不複述
    - Codex，更舊的 BAT：一律 `$ct-exec T####`，所以只有手動安裝能接受 BAT 派工
@@ -932,6 +948,25 @@ Fallback：
    （例 `codex '$ct:ct-exec T####'`、`Set-Clipboard -Value '$ct-exec T####'`）。
 5. **並存時的確認**：要確定用到 plugin 版，用完整寫法（Claude `/ct:ct-exec`、Codex `$ct:ct-exec`）。從手動安裝改用 plugin 時要先移除手動安裝，
    步驟見 [version-governance.md](version-governance.md) § plugin 安裝／升級 › 從 zip 手動安裝遷移到 plugin。
+
+### Claude 啟動參數不得放 `--settings`（v6.0.0-beta.10+）
+
+> 本小節是「在 BAT 下 Claude 啟動參數與 skill 組合」的**唯一權威**；`control-tower/SKILL.md` § BAT And Auto-Session 只放一句指回。
+> 依據：BAT ADVISORY 回覆（BAT D197；本專案 D517，PLAN-004〈⑥ 規格追加〉第 6 點）。
+
+1. 🔴 在 BAT 下**不得**在 Claude 的啟動參數（BAT 設定的自訂參數、工作區的 agent 參數）放 `--settings`。
+   帶了 `--settings` 時 BAT 不會注入它的 hooks，於是 blocked 偵測（[yolo-mode.md](yolo-mode.md) § 斷點 D：`blockedDetection: none`）、
+   `--wait-started`（§ Worker 啟動確認，只會得到 `started: unknown`）、session id 回報（§ BAT MCP 唯讀 tool 的 `claudeSessionId` 一直是 `null`，
+   [work-order-system.md](work-order-system.md) § 收單補記 session id 補不到）都會失效。
+   第二個理由（v6.0.0-beta.11，D527）：BAT **`>= 0.7.2-pre.8`** 起，工作區列表會在分頁等使用者回應時顯示「等待你回應」⚠️，
+   用的也是這些 hooks 回報的等待狀態，所以帶 `--settings` 的分頁不會出現 ⚠️；BAT **`>= 0.7.3-pre.8`** 起塔台等使用者時保留 Worker 通知
+   （§ Worker 完成自動通知）也會因此失效，通知照舊直接送進塔台輸入框。這兩項是 BAT 的畫面與送出時機行為（BAT T0590、T0788 的延伸，
+   不是 BAT↔CT 契約變更），不影響 CT 判讀。
+2. 要換 skill 或 plugin 的組合，改用專案的 `.claude/settings.json`／`.claude/settings.local.json` 裡的 `skillOverrides`、`enabledPlugins`。
+3. 同一個工作區的塔台與 Worker 共用啟動參數，BAT 不分角色帶不同參數；所以「塔台與 Worker 各用一份 `--settings` 帶不同 skill 組合」
+   在 BAT 下不成立。真的需要分角色的組合時另開工單設計，不得改用 `--settings` 繞過。
+4. 塔台不檢查、不改使用者的 BAT 設定。看到上面第 1 點的症狀（例：每個 Worker 都是 `blockedDetection: none`、`started: unknown`、
+   `claudeSessionId: null`）時，在回覆裡提示使用者一次，請使用者檢查啟動參數有沒有 `--settings`。
 
 ### worktree 隔離派工（`--isolation worktree`，v5.3.0+）
 
@@ -1199,6 +1234,8 @@ terminal ID（`BAT_TERMINAL_ID`、`BAT_TOWER_TERMINAL_ID`、`--notify-id` 的值
 分頁標題不是 Claude Code ListAgents 上的 session 名稱（v5.9.0+）：BAT `>= 0.7.1-pre.1` 派出的 claude Worker 在 ListAgents 上叫
 `<工作區> · Worker · T####`（BAT 啟動時以 `--name` 加上，CT 派工命令不變、不用做任何事）；塔台與其他分頁的名稱、以及跨 session 傳訊怎麼選收件人，
 只寫在 [cross-project-coordination.md](cross-project-coordination.md) § 跨 session 選收件人。
+塔台用跨 session 訊息提醒自己的 Worker 重讀工單（v6.0.0-beta.11+，選用、Claude Code 限定、只放指引、找不到就不送）只寫在
+[cross-project-coordination.md](cross-project-coordination.md) § 通知自己的 Worker 重讀工單。
 
 ### Worker 完成自動通知
 
@@ -1229,6 +1266,10 @@ Worker（ct-exec / ct-done）收尾時，若偵測到下列 Worker notify 環境
 1. **PTY write**：Tower 終端輸入行預填完成訊息（不帶 `\r`，不自動送出）
 2. **Toast**：BAT UI 右上角彈窗通知
 3. **Badge 冒泡**：終端縮圖 badge → Workspace 頁籤 badge（跨 workspace 可見）
+
+BAT **`>= 0.7.3-pre.8`** 起（BAT BUG-196／T0788），塔台停在權限對話框、AskUserQuestion 或 elicitation 時，Worker 通知會延後送進塔台輸入框，
+塔台分頁縮圖顯示「待送通知 N」；塔台離開等待後才依序送出。這是 BAT 的送出時機，Worker 的 exit code 判讀與塔台收單規則都不變；
+限制與相容性見 [yolo-mode.md](yolo-mode.md) § Worker 向塔台提問 › 塔台端、§ BAT / Worker 版本相容。
 
 ### 路由優先級
 
@@ -1261,7 +1302,7 @@ BAT 路由插入現有降級鏈的**最高優先位置**：
 | codex 分頁的 OSC 7501：`blockedDetection: osc`、`blockedReason: input`、codex 的 `--wait-started` / `agentStarted` | v5.8.0+；需 **BAT `>= 0.7.0-pre.9`**（T0621）且 codex `>= 0.163.0`。舊 BAT（≤ `0.7.0-pre.8`）或較舊 codex → `none` / `null` / `started: unknown`，行為同 v5.7.2。見 § Worker 啟動確認 與 [yolo-mode.md](yolo-mode.md) § 斷點 D |
 | `bat-notify.mjs --ask` / `--wait-answer` / `--cancel-question`、`bat-terminal.mjs --answer`、MCP `bat_wait_question` / `bat_list_questions`、`blockedReason: tower` / `pendingQuestions` | v5.7.0+ yolo Worker 問塔台的 BAT 通道；需 BAT **`>= 0.7.0-pre.7`**（CT-T019／T0607／T0608／T0611）。更舊的 BAT 降級回工單檔往返。參數、exit code、欄位與版本判定見 [yolo-mode.md](yolo-mode.md) § Worker 向塔台提問 › BAT 通道 |
 | ListAgents 上的 claude 分頁名稱（`--name`）、MCP `claudeSessionName` / `claudeSessionId`、`bat_list_terminals` `scope: towers`、「以塔台開啟 Claude」 | v5.9.0+ 跨 session 選收件人與面板提示；需 BAT **`>= 0.7.1-pre.1`**（CT-T021／PLAN-050／T0641–T0644）。舊 BAT（≤ `0.7.0-pre.9`）沒有名稱、沒有這兩個鍵、`scope: towers` 回 `INVALID_ARGS`，行為同 v5.8.1。見 § BAT MCP 唯讀 tool 與 [cross-project-coordination.md](cross-project-coordination.md) § 跨 session 選收件人 |
-| BAT 對 Codex 依安裝方式組呼叫字串（`--skill` 派工與面板一鍵派工） | v5.14.2+ Codex 用 plugin 安裝也能接受 BAT 派工；需 BAT **`>= 0.7.2-pre.1`**。更舊的 BAT 對 Codex 一律送 `$ct-exec`，Codex 端只能用 zip 手動安裝；派工命令不變。見 § 依安裝方式的 skill 呼叫字串 |
+| BAT 對 Codex 依安裝方式組呼叫字串（`--skill` 派工與面板一鍵派工） | v6.0.0-beta.6+ Codex 用 plugin 安裝也能接受 BAT 派工；需 BAT **`>= 0.7.2-pre.1`**。更舊的 BAT 對 Codex 一律送 `$ct-exec`，Codex 端只能用 zip 手動安裝；派工命令不變。見 § 依安裝方式的 skill 呼叫字串 |
 | RemoteServer | BAT 啟動後自動運行的 WebSocket server |
 | `terminal:created-externally` | 外部建立的終端 → UI 同步（縮圖 + xterm） |
 | `terminal:notify` | 通知事件 → Toast + Badge 冒泡 |
@@ -1385,8 +1426,10 @@ stdout **最後**多一行 `started:`；塔台取 stdout 中最後一個符合 `
 - 可能是誤報：專案設定（`<cwd>/.claude/settings[.local].json`）、MDM／server-managed policy 等 BAT 讀不到的 hooks 關閉，會讓
   `agentStarted` 永遠 `false`、期限到時 exit `8`，但 Worker 其實正常執行（BAT 已知限制）。這正是 exit `8` 不能重派的另一個原因。
 - codex Worker（v5.8.0+）最常見的 exit `8` 原因是 codex 卡在啟動前畫面：未信任的 git repo 的「Trust this folder?」、「Hooks need review」，
-  或可能的更新提示（BAT 權威）；這些畫面不送 OSC 7501，所以也不會變成 `blocked`／斷點 D。處理照上方：不重派，有 MCP 看 `bat_read_output`，
-  否則請使用者看分頁標題對應的分頁。另一個誤報來源：BAT 以主行程的 PATH 判定 codex 版本，分頁 shell 實際跑到較舊的 codex 時也可能 exit `8`
+  或可能的更新提示（BAT 權威）；這些畫面不送 OSC 7501，所以也不會變成 `blocked`／斷點 D。「Hooks need review」的常見成因是裝了帶 hook 的外掛
+  （例：pstack）且 hook 未信任，或外掛升版後 hook 已變更（v6.0.0-pre.1，V2a）：這不是偶發，使用者處理 review 之前每次派 codex Worker 都會停在這裡；
+  hook 信任的規則與派工前的提示見 [methodology-adapters.md](methodology-adapters.md) § 與 hook／session 路由的相處規則 第 5 點。
+  處理照上方：不重派，有 MCP 看 `bat_read_output`，否則請使用者看分頁標題對應的分頁。另一個誤報來源：BAT 以主行程的 PATH 判定 codex 版本，分頁 shell 實際跑到較舊的 codex 時也可能 exit `8`
   （BAT 已知限制），同樣不重派。
 - 斷點 D 不受影響：exit `8` 不是 yolo 的斷點，不暫停 yolo 流程。
 
@@ -1472,7 +1515,7 @@ BAT 內部終端（BAT_SESSION=1）
 - **僅限白名單指令**：不得執行任何其他 Bash 操作
 - **`BAT_REMOTE_TOKEN` 的值**（v5.2.4+）：不得輸出、記錄或作為參數傳遞（helper 自行從環境變數讀取）；需要記錄時只寫「已設定」。見 § BAT 內部終端路由 › 範圍權杖與分頁角色 第 2 點
 - **helper 執行檔**（v5.2.1+）：BAT helper 列的開頭只允許 `"${BAT_HELPER_NODE:-node}"`（或 PowerShell 等價的 `$n`），即 `BAT_HELPER_NODE` 的值或字面 `node`，規則見 § 執行方式 的「Node 解析」；不得以其他執行檔或使用者輸入取代
-- **僅限工單指令內容**：指令參數僅包含 `/ct-exec T####` 或 `/ct-done T####`，或依 § BAT 內部終端路由 › 依安裝方式的 skill 呼叫字串（v5.14.0+）替換後的 Codex 寫法（`$ct-exec T####`、`$ct:ct-exec T####`，`ct-done` 同理，一律單引號）；BAT 內部終端僅傳 `--skill ct-exec|ct-done --workorder <工單 ID>`（另可依下方規則加 `--isolation worktree`、`--wait-started 30000`）；回收 Worker 分頁僅傳 `--close-worker <工單 ID>`（v5.1.0+）
+- **僅限工單指令內容**：指令參數僅包含 `/ct-exec T####` 或 `/ct-done T####`，或依 § BAT 內部終端路由 › 依安裝方式的 skill 呼叫字串（v6.0.0-beta.5+）替換後的 Codex 寫法（`$ct-exec T####`、`$ct:ct-exec T####`，`ct-done` 同理，一律單引號）；BAT 內部終端僅傳 `--skill ct-exec|ct-done --workorder <工單 ID>`（另可依下方規則加 `--isolation worktree`、`--wait-started 30000`）；回收 Worker 分頁僅傳 `--close-worker <工單 ID>`（v5.1.0+）
 - **防注入**：不得傳入任意使用者輸入作為參數。工單編號**僅允許符合 [work-order-system.md](work-order-system.md) § 工單 ID 格式（權威定義）之權威正則的值，其餘一律拒絕**——不正規化、不截斷、不修補，直接拒絕派工並回報。本處不複述該正則，以免與權威定義漂移（v5.0.6 收斂前正是複述導致全庫立場牴觸）。⚠️ 合法值**包含帶前綴的 ID**（如 `CP-T0113`），拒絕帶前綴 ID 是錯誤實作
 - `--mode` 參數值僅允許 `yolo` / `ask` / `off` / `on`（正則 `^(yolo|ask|off|on)$`），防注入
 - `--interactive` / `--no-interactive` 為 flag（無參數），僅用於研究型工單互動旗標；v5.5.0+ yolo 派工固定 `--no-interactive`、不帶 `--interactive`（見 [yolo-mode.md](yolo-mode.md) § 啟動詢問（G3 互動旗標））

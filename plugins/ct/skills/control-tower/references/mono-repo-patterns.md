@@ -22,11 +22,11 @@
 
 ```
 parent-dir/
-├── AGENTS.md                ← 專案上下文（BMad v6.11+：bmad-project-context 寫的區塊）
+├── AGENTS.md                ← 專案上下文（例：bmad v6.11+ 由 bmad-project-context 寫的區塊）
 ├── _ct-workorders/          ← 工單統一管理
-├── docs/                    ← BMad 共用文件
+├── docs/                    ← 共用文件（例：bmad 的產物）
 │   ├── prd.md
-│   └── sprint-status.yaml
+│   └── sprint-status.yaml   ← 主方法論 tracker（bmad 時）
 ├── app-a/
 │   ├── .git/
 │   └── docs/                ← app-a 專屬文件
@@ -35,17 +35,17 @@ parent-dir/
     └── docs/                ← app-b 專屬文件
 ```
 
-> BMad v6.11+ 不再產出 `project-context.md`，專案上下文改寫在 repo 根目錄 `AGENTS.md` 的區塊；子專案（含巢狀 repo）可以有自己的
-> `AGENTS.md`（條件見下述 reference），由上層列指標。舊專案留下的 `project-context.md` 不會自動載入。以已安裝 `bmad-guide` 的 `references/brownfield.md` 為準（v5.14.1+）。
+> 主方法論是 bmad 時：BMad v6.11+ 不再產出 `project-context.md`，專案上下文改寫在 repo 根目錄 `AGENTS.md` 的區塊；子專案（含巢狀 repo）可以有自己的
+> `AGENTS.md`（條件見下述 reference），由上層列指標。舊專案留下的 `project-context.md` 不會自動載入。以已安裝 `bmad-guide` 的 `references/brownfield.md` 為準（v6.0.0-beta.6+）。其他方法論照它自己的專案上下文檔。
 
 > 子專案各有自己的 `.git`（巢狀的獨立 repo）時，上層要不要是 git repo、`repo` 填什麼、Worker 在哪裡執行、子 repo 怎麼 commit，
-> 見下方 § 巢狀的獨立 repo（v5.14.3+）。
+> 見下方 § 巢狀的獨立 repo（v6.0.0-beta.7+）。
 
 ## 巢狀的獨立 repo（一個塔台、多個共用 repo）
 
-> **本節是這個配置的唯一權威定義**（v5.14.3+）。判斷表（[multi-tower-protocol.md](multi-tower-protocol.md) § 決策：一個塔台還是多個）、
+> **本節是這個配置的唯一權威定義**（v6.0.0-beta.7+；穩定版 5.14.3 也有同一節）。判斷表（[multi-tower-protocol.md](multi-tower-protocol.md) § 決策：一個塔台還是多個）、
 > 工單模板（[work-order-template.md](work-order-template.md)）與安裝指南都只引用本節，不複述。
-> 這是**寫法與配置**，不是新規則：CT 的落點檢查、commit 規則、派工命令都沒有改，CT 5.14.2 起就能這樣用（實機結果見本節最後）。
+> 這是**寫法與配置**，不是新規則：CT 的落點檢查、commit 規則、派工命令都沒有改，穩定版 5.14.2、v6.0.0-beta.6 起就能這樣用（實機結果見本節最後）。
 
 ### 適用情況
 
@@ -178,6 +178,8 @@ ct-exec § Commit rules 的「`git commit --only` 或精準 staging」在每個 
 
 ### 實機驗證（CT 5.14.2、BAT 0.7.2-pre.1）
 
+> 驗證版本是穩定版 CT 5.14.2；本節涉及的落點檢查、commit 規則與派工命令在 v6（預發行的 beta、RC 與正式版 6.0.0）相同，結果照抄。
+
 在拋棄式目錄照本節配置（上層 `git init`＋兩個沒有 remote 的子 repo，上層 `.gitignore` 排除兩者），塔台用 BAT 派 Worker 在上層執行一張同時改兩個子 repo 的工單：
 
 | 項目 | 結果 |
@@ -199,8 +201,8 @@ ct-exec § Commit rules 的「`git commit --only` 或精準 staging」在每個 
 ## 文件同步衛生
 
 塔台在以下時機提醒檢查文件與程式碼一致性：
-- 每個 Story 完成後：「本次改動是否影響 `AGENTS.md` 的專案上下文區塊（舊專案：`project-context.md`）或 architecture.md？」
-- Sprint 結束時：派發「文件同步檢查」工單
+- 每個工作項（例：bmad 的 story）完成後：「本次改動是否影響專案上下文（bmad v6.11+：`AGENTS.md` 的專案上下文區塊；舊專案：`project-context.md`）或 architecture.md？」
+- 迭代結束時（例：bmad 的 Sprint）：派發「文件同步檢查」工單
 - 發現回報的程式碼結構與文件描述不符時：主動標記 ⚠
 
 ## 跨子專案重複需求

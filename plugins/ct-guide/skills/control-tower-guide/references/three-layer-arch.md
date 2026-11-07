@@ -13,7 +13,7 @@ Layer 1: Core（唯讀，升級時整份覆蓋）
   ├ ct-exec/  ct-done/  ct-status/
   ├ ct-evolve/  ct-help/  ct-insights/  ct-fieldguide/
   └ （Codex 端對應 ~/.codex/skills/）
-  ${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}/、$CODEX_HOME/plugins/ …  ← plugin 安裝位置（v5.14.0+），同樣是 Layer 1
+  ${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}/、$CODEX_HOME/plugins/ …  ← plugin 安裝位置（v5.14.0+／v6.0.0-beta.5 條文；v6 自 6.0.0 起上架），同樣是 Layer 1
 
 Layer 2: Global（使用者級，跨專案，升級不碰）
   ~/.claude/control-tower-data/
@@ -45,25 +45,32 @@ Layer 3: Project（專案級，每個專案各一份）
 
 | 層級 | 生命週期 | 寫入者 | 升級影響 |
 |------|---------|--------|---------|
-| **Layer 1 Core** | 隨 skill 版本 | **無人可在日常運作中寫入**；唯一例外是工單明文授權的安裝／升級 | 會被覆蓋 |
+| **Layer 1 Core** | 隨 skill 版本 | **無人可在日常運作中寫入**；唯一例外是工單明文授權的安裝／升級（v6.0.0-beta.10 條文起含使用者逐項決定的手動安裝 skill 移除） | 會被覆蓋 |
 | **Layer 2 Global** | 跨專案永久 | 塔台／`ct-evolve`（學習萃取、設定修改） | 不受影響 |
 | **Layer 3 Project** | 專案級永久 | 塔台／Worker（工單執行、學習紀錄） | 不受影響 |
 
 ## Layer 1 寫入規則
 
-Layer 1 的規則只有一句話：**Layer 1 安裝路徑（zip 手動安裝的 `~/.claude/skills/` 與 `~/.codex/skills/`，以及 v5.14.0 起 plugin 安裝的目錄）底下，除了被明文授權安裝的 skill 定義檔，什麼都不准寫。**
+Layer 1 的規則只有一句話：**Layer 1 安裝路徑（zip 手動安裝的 `~/.claude/skills/` 與 `~/.codex/skills/`，以及 v5.14.0／v6.0.0-beta.5 條文起 plugin 安裝的目錄）底下，除了被明文授權安裝的 skill 定義檔，什麼都不准寫。**
 
-### plugin 安裝路徑也是 Layer 1（v5.14.0）
+### plugin 安裝路徑也是 Layer 1（v5.14.0／v6.0.0-beta.5 條文）
 
-v5.14.0 起 CT 也能用 plugin 安裝（見 `governance.md` § plugin marketplace：另一種安裝方式），skill 就不在 `skills/` 底下，而在 plugin 目錄：
+v5.14.0 起 CT 也能用 plugin 安裝（見 `governance.md` § plugin marketplace：另一種安裝方式；v6 自正式版 6.0.0 起上架，預發行版（beta、rc）不提供），skill 就不在 `skills/` 底下，而在 plugin 目錄：
 
 | Agent | plugin 安裝路徑 |
 |---|---|
-| Claude Code | `${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}/`（含 `installed_plugins.json`、`known_marketplaces.json`、`cache/`、`marketplaces/`；只有這一處，都沒設時是 `~/.claude/plugins/`；v5.14.4 依實測改寫） |
+| Claude Code | `${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}/`（含 `installed_plugins.json`、`known_marketplaces.json`、`cache/`、`marketplaces/`；只有這一處，都沒設時是 `~/.claude/plugins/`；v5.14.4／v6.0.0-beta.8 依實測改寫，beta.5～beta.7 曾兩處都算，見下） |
 | Codex | `$CODEX_HOME/plugins/`、`$CODEX_HOME/.tmp/marketplaces/`（`CODEX_HOME` 預設 `~/.codex`） |
 
 這些路徑和 `skills/` 一樣受保護，而且更嚴：連 skill 定義檔本身都只能由 plugin 指令寫入。plugin 目錄由 plugin manager 管理，
 手改的檔案在下一次更新就被蓋掉，而且沒有人會知道它曾經被改過。完整路徑清單以 CT `data-layer-architecture.md` § 寫入規則為準。
+
+**v6 的路徑解析：從兩處都算到只有一處（beta.5～beta.7 → beta.8）。** v6 的 CT 文件寫 `~/.claude/…` 時一律照 `${CLAUDE_CONFIG_DIR:-~/.claude}/…` 解讀（`preview-methodology.md` § 全域路徑：`CLAUDE_CONFIG_DIR`／`CODEX_HOME`）。
+beta.5 寫這張對照時，`CLAUDE_CONFIG_DIR` 會不會連 plugin 目錄一起搬走還沒有驗證過。照一般規則只取一處，萬一猜錯，真正的 plugin 目錄就落在保護範圍外；
+所以當時保守地把 `~/.claude/plugins/` 與 `${CLAUDE_CONFIG_DIR}/plugins/` **兩處都當 Layer 1**——多保護一個目錄的代價只是不能往那裡寫，本來就不該寫。
+之後實測確認：只設 `CLAUDE_CONFIG_DIR` 時，plugin 清單、cache、marketplace 全在 `${CLAUDE_CONFIG_DIR}/plugins/`。beta.8 照穩定版 5.14.4 改成單一路徑
+`${CLAUDE_CODE_PLUGIN_CACHE_DIR:-${CLAUDE_CONFIG_DIR:-~/.claude}/plugins}`：多算的那一處不再保護任何東西，反而讓偵測多查一份不屬於本 session 的清單。只改了 CT `data-layer-architecture.md` § 路徑解析 那一列與 § 寫入規則 的寫法。
+beta 本身不提供 plugin，但同一台機器可能裝了穩定版的 plugin，所以這條規則在 beta 環境照樣適用。
 
 ### 範圍是「整個路徑」，不是「skill 定義檔」
 
@@ -81,16 +88,21 @@ v5.14.0 起 CT 也能用 plugin 安裝（見 `governance.md` § plugin marketpla
 所以一份放在旁邊的備份，會帶著**舊版的 description** 進入路由候選。
 舊 description 與現役版本高度重疊，路由時可能命中舊版，答出已被新版推翻的內容——而且沒有任何錯誤訊息，是靜默答錯。
 
-以上是 Claude Code 掃描器的機制。Codex 端（`~/.codex/skills/`）比照辦理；Codex 掃描器是否同樣第一層即註冊**未經實測**，CT 保守視為相同。
+以上是 Claude Code 掃描器的機制。Codex 端（`~/.codex/skills/`）更嚴（v6.0.0-beta.10 條文起寫成已證實）：Codex 掃描器會**往下遞迴**，
+任何深度的子目錄只要有 `SKILL.md` 就註冊，底線開頭也一樣（Codex 0.166.0 以暫存 `CODEX_HOME` 實測，`codex debug prompt-input` 列出 skill 清單、不呼叫模型）。
+所以在 Codex 端，連「備份放成父目錄、根層沒有 `SKILL.md`」也逃不過，備份一律放 `~/.codex/skills/` 以外。
 
 ### 唯一例外與備份落點
 
 - **唯一例外**：使用者在**工單內**明文授權、指名具體版本、具體 skill **與目標路徑**的安裝／升級；只指名其中一處的授權不及於另一處。塔台模式本身沒有這個例外，安裝一律另開工單由 Worker 執行；Worker 也不得自行認定已取得授權
+- **手動安裝 skill 的移除**（v6.0.0-beta.10 條文）：**出建議 → 使用者逐項決定 → 依決定自動執行**。塔台或 Worker 先列建議清單
+  （agent、skill、路徑、版本、建議處置與理由；處置是 `移出`＝搬到 `skill-backups/_removed-<skill>-<版號>-<時間戳>/`、`刪除`、`保留`，預設 `移出`），
+  使用者每一項分別選，沒回答的不動；逐項的決定寫進工單就是那一項的授權，Worker 照做不再逐項確認。yolo 下清單經塔台轉給使用者，塔台不代決任何一項
 - **例外不擴及備份**：即使有安裝授權，備份也不能放進 `~/.claude/skills/` 或 `~/.codex/skills/`
 - **備份落點**（皆為對應 `skills/` 的**同層兄弟目錄**，不在其下）：
   - `~/.claude/skills/` → `~/.claude/skill-backups/`
   - `~/.codex/skills/` → `~/.codex/skill-backups/`
-- **plugin 安裝不備份**（v5.14.0）：回退方式是用 plugin 指令移除，再把 zip 手動安裝裝回來
+- **plugin 安裝不備份**（v5.14.0／v6.0.0-beta.5 條文）：回退方式是用 plugin 指令移除，再把 zip 手動安裝裝回來
 
 這條規則在 CT 中只有一處權威定義（`data-layer-architecture.md` § 寫入規則），其他文件一律交叉引用。
 規則的實證案例（一份備份被註冊成現役 skill）、安裝流程（備份 → 安裝 → 逐檔複驗 → 回報回退方式），以及「為什麼要單一權威定義」，詳見 `governance.md`。
@@ -251,11 +263,11 @@ _playbooks/
 **倒序**（最新在最前）且 **append-only**：塔台不刪除、不修改已有紀錄。每筆必填背景、至少兩個選項、決定與理由、影響、相關工單；
 `*sync` 會驗證索引表與詳細紀錄的筆數一致。塔台不主動建立此檔，偵測到不存在時只提示可建立。
 
-**格式為什麼要嚴格（v5.13.0）**：BAT 指揮塔的「決策」頁直接解析這個檔，所以索引表頭是 `ID`、每列以 `|` 開頭與結尾、格子裡不放 `|`、
+**格式為什麼要嚴格（v5.13.0／v6.0.0-beta.3）**：BAT 指揮塔的「決策」頁直接解析這個檔，所以索引表頭是 `ID`、每列以 `|` 開頭與結尾、格子裡不放 `|`、
 詳細紀錄標題固定 `### D### YYYY-MM-DD — 標題`。這些寫法對人來說差不多，對解析器卻是讀得到與讀不到的差別——
 少一個列尾 `|`，表格就在那一列結束，後面的決策全部看不到。`*sync` 的格式驗證會指出這類問題（見 `bat-integration.md` § BAT 塔台面板讀取契約）。
 
-**收斂（v5.13.0）**：append-only 的檔只會變大。超過 400 KB 預算時塔台只提示、不自動動手，由使用者決定時機，
+**收斂（v5.13.0／v6.0.0-beta.3）**：append-only 的檔只會變大。超過 400 KB 預算時塔台只提示、不自動動手，由使用者決定時機，
 把最舊的一段詳細紀錄**原文**搬到 `_archive/decisions/_decision-log-D###-D###.md`（不摘要、不改字）。兩個設計重點：
 
 - **索引表不搬**：熱檔的索引表仍涵蓋全部決策，BAT 的決策清單才完整；搬走的只是詳情
@@ -279,7 +291,7 @@ _playbooks/
 v5 起它們帶有 `schema_kind: index` 的 frontmatter，表明自己是生成物——因此可以整檔重寫；
 反過來，人類維護的 BUG／PLAN 單據本身，就算 metadata drift 也不會被自動覆寫。
 
-v5.13.0 起兩個索引的格式有唯一權威（CT `bug-plan-system.md` § 索引格式），其中兩件事最常被問：
+v5.13.0／v6.0.0-beta.3 起兩個索引的格式有唯一權威（CT `bug-plan-system.md` § 索引格式），其中兩件事最常被問：
 
 - **嚴重度／優先級寫 `🔴 High`，不只寫 `🔴`**：BAT 只認含 `High`／`Medium`／`Low` 的字串，只寫 emoji 的格子會被當成 Unknown，
   按等級篩選時就漏掉。單據本身的 frontmatter 照舊可以寫 `critical`，索引格子寫成 `🔴 High（critical）`（BAT `>= 0.7.1-pre.9` 讀到只寫 `critical` 也算 High，但更舊的 BAT 是 Unknown，所以格子照舊這樣寫，新舊 BAT 都讀得對）
@@ -307,7 +319,7 @@ v5.13.0 起兩個索引的格式有唯一權威（CT `bug-plan-system.md` § 索
 **恢復驗證**：重啟時檢查各必要區段，缺少的提示補齊。YOLO 歷程在非 YOLO 模式下不存在，不算缺失。
 **更新時機**：處理工單回報後、做出決策後、派發緊急工單後、使用者說「存檔」時、session 即將結束時。
 
-**機器可讀摘要（v5.13.0）**：`_tower-state.md` 開頭多一段 YAML frontmatter（`schema_kind: tower-state`、`summary_version: 1`、
+**機器可讀摘要（v5.13.0；v6 自 6.0.0-pre.1 起）**：`_tower-state.md` 開頭多一段 YAML frontmatter（`schema_kind: tower-state`、`summary_version: 1`、
 `updated_at`、`session`、`next_ids`、`todo`），塔台每次寫這個檔都同步更新。本文是寫給塔台自己讀的，格式可以隨專案調整；
 摘要是寫給外部讀者（BAT 指揮塔總覽）讀的，所以是一份欄位固定的契約——BAT 總覽靠它顯示待辦與下一個編號，沒有它就只能顯示「沒有機器可讀摘要」。
 兩個設計選擇：
@@ -317,3 +329,5 @@ v5.13.0 起兩個索引的格式有唯一權威（CT `bug-plan-system.md` § 索
   單方面改等於讓對方的面板默默壞掉（跨專案協調見 `advanced-patterns.md` § 跨專案協調）
 
 舊專案沒有摘要不算錯，塔台下次寫入時補上。欄位、取值慣例與 YAML 寫法以 CT `memory-protocol.md` § 機器可讀摘要（YAML frontmatter）為準。
+
+> **v6**：這份摘要 v6 自 `6.0.0-pre.1` 起就有，beta.3～6.0.0 都沒有改（beta.10 的塔台 session id 記在開工條目，不加摘要欄位）；穩定版到 5.13.0 才補進同一份契約 v1。v6 預覽時的說明與 BAT 版本門檻見 `preview-methodology.md` § `_tower-state.md` 機器可讀摘要。

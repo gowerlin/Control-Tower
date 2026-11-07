@@ -15,7 +15,7 @@ description: 標準工單之外的三種單據各有自己的狀態機，彼此�
 - **想法與規劃**：一個想法可能要很久之後才做，也可能永遠不做；它做的時候通常會拆成好幾張工單。它需要的是「還在想、已規劃、執行中、完成或放棄」這種長週期狀態。
 - **實驗**：結果不確定，而且「這條路不通」本身就是有價值的結論。用 `FAILED` 表示一個證明了某方案不可行的實驗，等於把知識記成失敗。
 
-所以 CT 在標準工單之外加了三種單據。它們**預設關閉**，用 `*config` 個別啟用：
+所以 CT 在標準工單之外加了三種單據。6.0.0 起它們**預設開啟**（5.x 預設關閉），啟用時塔台就產生空的索引檔 `_bug-tracker.md`、`_backlog.md`；不需要的類型用 `*config` 個別關閉（例如 `*config enable_experiments false --save project`），設定明寫 `false` 的照舊：
 
 | 類型 | 檔名格式 | 用途 | 啟用設定 |
 |---|---|---|---|
@@ -126,7 +126,7 @@ EXP 建議搭配 git worktree，讓失敗的實驗可以零污染丟棄。塔台
 
 ## 延伸閱讀 {#further-reading}
 
-- `control-tower/references/bug-plan-system.md` § 類型總覽、§ 索引格式、§ 編號管理、§ BUG 單據（§ 結案判準、§ 未結 BUG 清理提示）、§ PLAN 單據、§ EXP 實驗單據、§ 跨類型關聯、§ 未啟用時的行為
+- `control-tower/references/bug-plan-system.md` § 類型總覽、§ 啟用與索引檔、§ 索引格式、§ 編號管理、§ BUG 單據（§ 結案判準、§ 未結 BUG 清理提示）、§ PLAN 單據、§ EXP 實驗單據、§ 跨類型關聯、§ 未啟用時的行為
 - `control-tower/references/research-workorder.md` § 觸發條件、§ Worker 行為規格（research 類型專屬）、§ 塔台決策流程
 - `control-tower-guide/references/work-order-lifecycle.md` § BUG 生命週期、§ PLAN 生命週期、§ EXP 生命週期、§ 研究型工單
 - `control-tower/references/work-order-template.md` § BUG 單模板、§ PLAN 單模板、§ EXP 實驗單模板、§ 研究型工單模板

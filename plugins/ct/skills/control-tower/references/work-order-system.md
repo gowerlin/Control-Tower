@@ -76,7 +76,7 @@
 
 > BUG / PLAN / EXP 單據不適用本正則，其編號規則見 [bug-plan-system.md](bug-plan-system.md)。
 
-### 回報與通知用的工單 ID（完整 ID，v5.13.1+）
+### 回報與通知用的工單 ID（完整 ID，v6.0.0-beta.4+）
 
 > 🔴 本節是「Worker 回報、通知、提問時工單 ID 怎麼寫」與「送出前比對」的**唯一權威**。
 > `ct-exec`、`ct-done`、[auto-session.md](auto-session.md)、[yolo-mode.md](yolo-mode.md) 與安裝指南的通知範本一律引用本節，不複述。
@@ -132,30 +132,33 @@ your-project/
 │   ├── _cross-references.md      ← 跨專案參照
 │   ├── _playbooks/               ← 自動生成的操作範本
 │   └── _tower-config.yaml        ← 專案設定
-├── _bmad-output/                 ← BMad 產出（若使用）
+├── _bmad-output/                 ← 方法論產物（例：bmad；實際位置依 adapter `artifacts.writes`，若使用）
 ├── src/
 └── ...
 ```
 
 ## 工單粒度原則
 
-每張工單 = 一個 BMad 工作流程（或一個明確交付物）：
-- 單一職責：不合併多個工作流程到同一工單
+每張工單 = 一層的一個方法論工作流程（或一個明確交付物）：
+- 單一職責：不合併多個工作流程到同一工單；層與方法論工作流程的定義見 [methodology-adapters.md](methodology-adapters.md) § 層次
+- 沒有方法論 adapter（`methodology: none` 或未安裝）時，以「一個明確交付物」切分
 - 完整可交付：sub-session 完成後有明確產出
 - 可中斷可恢復：PARTIAL 時可基於已完成部分產生接續工單
 - 已驗證有效：6 工單 / 90 分鐘 / 44 檔產出（Keenbest 逆向工程實測）
 
-## Story → Dev 之間的品質檢查點
+## 規劃產物 → 執行之間的品質檢查點
 
-Story 產生後、Dev 實作前，塔台根據以下條件決定是否插入獨立審查：
+規劃層的產物（例：bmad 的 story spec）交給執行層之前，塔台根據以下條件決定是否插入獨立審查。
+跨層交接的規則（`handoff.produces`／`consumes`、回寫）見 [methodology-adapters.md](methodology-adapters.md) § 分層疊加。
 
 | 條件 | 塔台動作 |
 |------|---------|
-| 使用 BMad `bmad-create-story` 或 `bmad-build` | `bmad-create-story` 是保留的 shim；Story 拆分走 `bmad-spec` Story Breakdown，審查在 `bmad-build` 的 Review Triage——**不能因為用了 story 就省略審查**。用 `bmad-build` 時看 Review Triage 是否有跑（spec 的 `## Review Triage Log`），沒跑就照下列條件另派審查工單 |
-| 高風險 Story（涉及安全、金流、資料遷移） | 派發**獨立審查工單**（Adversarial Review），用不同 session 交叉驗證 |
-| Story 跨多個子專案或影響共用模組 | 派發**獨立審查工單**，確認跨專案影響已涵蓋 |
-| 無 BMad 的自訂流程 | 塔台**主動提議** review 步驟：「Story 已產生，建議先審查再開發，要派審查工單嗎？」 |
-| 使用者明確跳過 | 記錄到 `_decision-log.md`，標注「使用者選擇跳過 Story Review」 |
+| 執行層的方法論工作流程內建審查（例：bmad `bmad-build` 的 Review Triage，story 由 `bmad-spec` 拆出） | 審查已內建，**不需額外工單** |
+| 執行層換成另一個方法論（分層疊加），審查層 `inherit` 主方法論 | 派工摘要提示「原方法論內建在執行流程裡的審查不會跑」（`methodology-adapters.md` § 分層疊加 第 5 點）；依審查層 adapter 的 `routing.<需求類型>.review` 決定要不要派審查工單 |
+| 高風險工作項（涉及安全、金流、資料遷移） | 派發**獨立審查工單**（Adversarial Review），用不同 session 交叉驗證 |
+| 工作項跨多個子專案或影響共用模組 | 派發**獨立審查工單**，確認跨專案影響已涵蓋 |
+| 沒有方法論 adapter 的自訂流程 | 塔台**主動提議** review 步驟：「規劃產物已產生，建議先審查再實作，要派審查工單嗎？」 |
+| 使用者明確跳過 | 記錄到 `_decision-log.md`，標注「使用者選擇跳過規劃產物審查」 |
 
 ### 審查工單的 Session 原則
 
@@ -163,14 +166,19 @@ Story 產生後、Dev 實作前，塔台根據以下條件決定是否插入獨�
 
 ### 搭配品質閘門
 
-若獨立審查回報包含 CRITICAL/HIGH 發現 → 強制派發修正工單，修正完成後才派發開發（`bmad-build`）工單。（同「審查→修正→交付」三步驟規則）
+若獨立審查回報包含 CRITICAL/HIGH 發現 → 強制派發修正工單，修正完成後才派發執行層工單。（同「審查→修正→交付」三步驟規則）
 
 ## 派發流程
 
 每次派發任務時，塔台：
 
 1. **學習查詢**（靜默）：讀取 `_learnings.md`，比對決策模式的觸發條件
-2. **工作流程選擇**：若有外部 `bmad-guide` skill（去哪裡找見 [enhancement-integration.md](enhancement-integration.md) § Level 2 › 偵測）→ 自動查 `workflow-map.md` / `supplementary-workflows.md` / `ecosystem-modules.md`；無 → 使用者手動指定
+2. **方法論工作流程選擇**：依 [methodology-adapters.md](methodology-adapters.md) § 解析步驟，解析本單每一層由哪個 adapter 負責，再查該 adapter 的 `routing.<需求類型>.<層>` 取得 workflow（bmad 的 `routing.*.reference` 指向 `bmad-guide` 的 reference 檔，相對於偵測到的 skill 根目錄；去哪裡找 `bmad-guide` 只定義在 [adapters/bmad.yaml](adapters/bmad.yaml) `detection.probes`）；找不到 adapter、未安裝或沒有入口 → 照該檔 § 降級（通常是使用者手動指定或自由文字）。結果寫進工單 frontmatter `methodology` 與 `### 方法論工作流程` 段（[work-order-template.md](work-order-template.md) § 填寫方法論欄位指引）。
+   已建立、尚未派出（`PENDING`）的工單要派出時，先照 [methodology-adapters.md](methodology-adapters.md) § 解析步驟 › 何時解析 重新解析一次：工單覆寫保留，其他層依當下設定重算；
+   與 frontmatter 不同 → 以新值為準、更新工單，並在派工摘要列出差異（見下方範例）。已派出的工單不重算。
+2.4. **方法論注入檢查**（v6.0.0-pre.1，V1 後 D342）：照 [methodology-adapters.md](methodology-adapters.md) § 與 hook／session 路由的相處規則 第 2 點 套 `methodology_guard`。
+   `warn`（預設）偵測到注入開著 → 工單**自動加** `### 方法論邊界`（範本：[work-order-template.md](work-order-template.md) 標準模板的 `### 方法論邊界`；
+   注入的方法論不負責本單任何一層用【不使用】變體，負責某層用【只允許】變體），沒有 `methodology` 的工單也加；`block` → 不派；`off` → 略過。
 2.5. **派發前 overlap check**（v4.4.0+）：比對本次工單的 `affects_files` 與目前 IN_PROGRESS 工單的 `affects_files`，依交集嚴重度決定 BLOCK / WARN / 放行（見下方「派發前 overlap check」）
 3. **產生工單檔案**：寫入 `_ct-workorders/T<編號>-<描述>.md`（見 work-order-template.md）
 4. **畫面顯示摘要**：
@@ -178,7 +186,7 @@ Story 產生後、Dev 實作前，塔台根據以下條件決定是否插入獨�
 ```
 📋 工單已建立：T0001-create-project-context
    任務：建立專案上下文
-   工作流程：bmad-project-context（setup intent）
+   方法論：planning → bmad/bmad-project-context（bmad-guide v6.12.4 / adapter 0.2.0，來源：內建）
    預期產出：`AGENTS.md` 的專案上下文區塊
    工單路徑：_ct-workorders/T0001-create-project-context.md
 
@@ -195,18 +203,35 @@ Story 產生後、Dev 實作前，塔台根據以下條件決定是否插入獨�
 - `ask`：互動式提問（開新分頁 / 複製到剪貼簿 / 自己來）
 - `off`：僅顯示文字複製提示（傳統行為）
 
+**派工摘要的方法論行**（格式依 `methodology-adapters.md` § 解析步驟 第 7 步）：每層一行，
+`方法論：<層> → <adapter>/<workflow>（<upstream 版本> / adapter <adapter_version>，來源：<內建／外部 skill／專案本地>）`；
+只用到一層就只有一行。降級、能力落差、常駐注入（`methodology_guard`、`always_on_tokens`）在同一區塊多一行提示。
+工單沒有任何層由 adapter 負責時，不顯示方法論行；但第 2.4 步自動加了邊界段時，仍顯示那一行提示
+（例：`⚠️ pstack SessionStart 注入開著（~4328 tokens）：已加方法論邊界（不使用 pstack:*）`）。多層範例：
+
+```
+   方法論：execution → pstack/pstack:poteto-mode（Feature playbook；pstack 0.9.103 / adapter 0.2.5，來源：外部 skill）
+   方法論：review    → bmad/bmad-code-review（bmad-guide v6.12.4 / adapter 0.2.0，來源：內建）
+   ⚠️ 執行層不是 bmad：bmad-build 內建的 Review Triage 不會跑；pstack SessionStart 注入開著（~4328 tokens），工單已寫方法論邊界
+```
+
+PENDING 工單派工前重新解析、結果與工單不同時，方法論行用新值，另加 🔄 行列出差異（改變的層、舊值 → 新值、原因）：
+
+```
+   方法論：execution → pstack/pstack:poteto-mode（pstack 0.9.103 / adapter 0.2.5，來源：外部 skill）
+   方法論：review    → bmad/bmad-code-review（bmad-guide v6.12.4 / adapter 0.2.0，來源：內建）
+   🔄 重新解析：execution team-x → pstack（建單後 session 改了 methodology_execution）；review 為工單覆寫，保留
+```
+
 5. **更新進度表**
 6. **更新 _tower-state.md**（最大工單編號、進度快照）
 
-### BMad v6.10+ workflow 派發注意
+### 方法論的派發規則
 
-| Workflow | Tower 派發規則 |
-|----------|----------------|
-| `bmad-architecture` | 新工單使用此名稱；`bmad-create-architecture` 僅視為舊名 / compatibility shim |
-| `bmad-build-auto` | 視為 autonomous single-iteration；工單必須要求 durable artifact、spec frontmatter terminal status、`baseline_revision`、commit 範圍 `baseline_revision..HEAD`（多個 story：`baseline_revision..下一個 story 的 baseline_revision`） |
-| `bmad-loop` | 不直接當一般工單 workflow；先確認 opt-in module 已安裝且 `bmad-loop-setup` 已完成 |
-| `bmad-investigate` | 不派發；v6.10.0 retired，改開 CT research workorder 或一般調查 |
-| `bmad-automator` | 不建議新工單；deprecated，提示遷移到 `bmad-loop`（循環）或 `bmad-build-auto`（無人值守單次迭代） |
+各方法論 workflow 的派發限制（退役／改名、必要段落、CT 覆寫規則）不寫在本檔，以該 adapter 描述檔為準。
+bmad 見 [adapters/bmad.yaml](adapters/bmad.yaml)：`retired_names`（舊名 → 新名）、`workorder.required_when`
+（例：`bmad-build-auto` 要加 `### Autonomous Contract`）、`worker.ct_overrides`（例：`bmad-loop` 不當一般工單 workflow 派發）。
+workflow 名稱查不到時的處理見 [methodology-adapters.md](methodology-adapters.md) § 降級。
 
 ## 派發前 overlap check（v4.4.0+）
 
@@ -312,8 +337,8 @@ T0106（即將派發）affects_files：
 > 收到 `T#### 提問`（yolo，v5.5.0+）不是回報：工單仍在執行，不走本流程，改照 [yolo-mode.md](yolo-mode.md) § Worker 向塔台提問 › 塔台端。
 
 0. **對工單**：用回報的 ID 找熱區工單；找不到完全相同的，照下方 § 回報 ID 對不上時
-1. **讀取工單檔案**回報區：完成狀態、產出摘要、遭遇問題
-2. **複查 sprint-status.yaml**：未更新則塔台補更新
+1. **讀取工單檔案**回報區：完成狀態、產出摘要、遭遇問題；有 `### 方法論執行紀錄` 時一併看 `methodology_ambient` 與方法論 skill 使用表（工單沒宣告卻用了方法論 skill → 記入決策日誌，之後同類工單確認有邊界段；格式見 [methodology-adapters.md](methodology-adapters.md) § 工單欄位）
+2. **複查主方法論 tracker**（bmad 時為 `sprint-status.yaml`；位置見 adapter `tracker`）與 `### 方法論狀態回寫`：該回寫沒回寫則塔台補更新；主方法論沒有 `tracker` 就跳過（§ 主方法論 tracker 同步）
 3. **品質閘門檢查**：若為審查類工單且回報包含 CRITICAL/HIGH 發現 → 強制派發修正工單
 4. **更新進度表**
 5. **學習記錄**（靜默）：追加觀察到 `_learnings.md`
@@ -328,12 +353,12 @@ T0106（即將派發）affects_files：
 ```
 ✅ T0001 已確認完成
    產出：`AGENTS.md` 專案上下文區塊已建立
-   sprint-status.yaml：已同步
+   方法論狀態回寫：已同步（sprint-status.yaml）
    學習：已記錄（工作量/結果）
    下一步：準備派發 T0002-create-prd
 ```
 
-### 回報 ID 對不上時（v5.13.1+）
+### 回報 ID 對不上時（v6.0.0-beta.4+）
 
 > 🔴 本節是塔台端「回報 ID 缺前綴」容錯的**唯一權威**；Worker 端的規則見上方 § 回報與通知用的工單 ID。
 > 回報可能是 `完成`／`部分完成`／`需要協助`／`失敗`，也可能是 yolo 的 `提問`（[yolo-mode.md](yolo-mode.md) § Worker 向塔台提問 › 塔台端）；對工單的方式都照本節。
@@ -349,9 +374,55 @@ T0106（即將派發）affects_files：
 - 🔴 本節只保住**塔台收單**。BAT 能不能把 Worker 分頁標成 Done，仍取決於 Worker 送的 `--source`；
   塔台在這裡對到工單，不會讓 BAT 那邊對上。根本修法是 Worker 端的完整 ID 規則與送出前比對（上方 § 回報與通知用的工單 ID）。
 
+### 收單補記 session id（v6.0.0-beta.10+）
+
+> 本節是塔台收單時補記 Worker session id 的**唯一權威**（PLAN-004 ⑥ 第 6 點，D517；BAT D197）。Worker 自己寫的是主要來源
+> （`ct-exec/SKILL.md` § Phase 4 › Session id），本節是備援；統計怎麼用見 `ct-insights/references/analysis-rules.md` § Session 用量統計。
+
+處理 Worker 回報（`完成`／`部分完成`／`需要協助`）時，在輸出確認區塊之後、**任何** `--close-worker`（下方 § 收單後回收 Worker 分頁、
+§ 重派前回收舊 Worker 分頁）**之前**做一次。分頁關掉之後就讀不到了。不論 `worker_auto_close` 是什麼都做。
+
+1. **找 Worker 分頁**：BAT MCP `bat_list_terminals`（`scope: mine`）裡 `workorder` 等於這張工單完整 ID 的列；**恰好一列**才繼續，零列或多列就跳過。
+2. **讀值**：對那一列的 terminal id 呼叫 `bat_get_state`，取 `claudeSessionId`（BAT `>= 0.7.1-pre.1` 才有這個鍵）。
+3. **寫入**：值符合 `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`、而且不在工單 frontmatter `session_ids` 裡 → 追加到清單末尾
+   （YAML block list、加引號；清單只有 `unavailable` 時換掉它；沒有這個欄位就新增）。只改 frontmatter，不改回報區（回報區由 Worker 填）；隨塔台本來的收單 commit 一起提交。
+4. **跳過**（都不是錯誤、不提示、不重試）：不在 BAT（`BAT_SESSION` 不是 `1`）、MCP 不可用或回錯誤、`claudeSessionId` 鍵不存在（舊 BAT）、
+   值是 `null`（🔴 不代表沒有 session：還沒回報、hooks 沒注入或被關、headless 重開）、值不是 UUID。
+- 只用 MCP 讀，不用 helper CLI（helper 沒有對應查詢，也不要為此讀 `bat-scripts.log`，它不是契約，D517）。
+- `/clear` 後同一分頁換了新 session，BAT 只記最後一個 id；之前的 id 只能靠 Worker 自己寫的 `session_ids`。
+- session id 不是秘密，可以寫；權杖一律不寫（[auto-session.md](auto-session.md) § BAT 內部終端路由 › 偵測條件）。
+
+### 收單快照（v6.0.0-beta.10+）
+
+> 本節是塔台收單時寫統計快照的**唯一權威**；快照格式與併入規則見 `ct-insights/references/analysis-rules.md` § Session 用量統計 › 快照，
+> 存放位置的歸屬見 [data-layer-architecture.md](data-layer-architecture.md) § `_ct-workorders/_insights/`。
+
+Claude Code 預設只留 session 紀錄 30 天，所以收單當下（紀錄一定還在）就留一份只有數字的快照。在上方 § 收單補記 session id **之後**做
+（讓這次補記的 id 也能用來歸屬），處理每一次 Worker 回報都做（同一張工單再寫一次時，腳本依併入規則取代或保留，不會重複）：
+
+```bash
+python "<ct-insights>/scripts/ct-session-stats.py" --workorders-dir _ct-workorders --workorders <工單 ID> \
+  --snapshot-append _ct-workorders/_insights/session-stats/<YYYY-MM>.json
+```
+
+- 在 repo 根目錄執行。`<ct-insights>` 的解析、直譯器名稱、Git Bash 路徑轉換同 `ct-insights/references/analysis-rules.md` § 預篩腳本；
+  `<YYYY-MM>` 是寫入當下的月份（本機時間）；目錄不存在時腳本會建立。stdout 的表格不必貼給使用者，看 stderr 的 `snapshot:` 一行即可。
+- **隔離工單**（`isolation: worktree`）：Worker 的 session 紀錄在 worktree 路徑對應的專案目錄下，另加一個 `--project <編碼後的 worktree 路徑>`
+  （編碼規則同上述 § Session 用量統計 的 `--project`）。
+- exit code（判斷只看 exit code）：
+
+| exit | 處理 |
+|---|---|
+| `0` | 靜默；確認區塊可加一行「session 快照：已寫」 |
+| `4`（資料不可用） | 跳過，確認區塊加一句「session 快照：資料不可用」 |
+| `3`（隱私自檢不通過，未寫檔） | 跳過，確認區塊加一句「session 快照：自檢不通過，未寫」；不手動改快照 |
+| 其他、找不到 Python 3 | 跳過，確認區塊加一句「session 快照：腳本不可用」 |
+
+🔴 快照失敗不影響收單結果、工單狀態與下一步判斷，也不重試。快照檔隨塔台本來的收單 commit 一起提交（只有數字）。
+
 ### 收單後回收 Worker 分頁（`worker_auto_close`，v5.1.0+）
 
-輸出上方 `✅ T#### 已確認完成` **之後**才做這一步。選項的有效值與預設見
+輸出上方 `✅ T#### 已確認完成` **之後**才做這一步（v6.0.0-beta.10+：在 § 收單補記 session id、§ 收單快照 之後）。選項的有效值與預設見
 [tower-config.md](tower-config.md) § 可用選項，本節不複述。
 
 **條件（全部成立才執行；任一不成立，本節整段跳過）**：
@@ -458,7 +529,7 @@ stderr 含 `Forbidden` 時同一行多一句原因提示，規則同上一節 ex
 
 ### PARTIAL 當下收尾（含 resolved `PARTIAL` 補正）
 
-本節是塔台處理 `PARTIAL` 工單的**唯一權威定義**（v5.13.0 起把收尾時點從歸檔前提前到裁示當下）。
+本節是塔台處理 `PARTIAL` 工單的**唯一權威定義**（v6.0.0-beta.3 起把收尾時點從歸檔前提前到裁示當下）。
 [archive-system.md](archive-system.md) § 最終態與日期欄位來源 的歸檔前覆核只是最後防線，照本節做就不會走到那裡。
 
 `PARTIAL` 是 point-in-time incomplete 狀態，不應永久代表仍有未完成工作。Worker 依停止條件回報 `PARTIAL` 是對的；收尾是塔台的事。
@@ -479,8 +550,70 @@ stderr 含 `Forbidden` 時同一行多一句原因提示，規則同上一節 ex
 1. 保留原始回報區與 evidence，不覆寫歷史結論。
 2. 在原工單文末新增 `## 塔台收尾補記`（舊稱 post-resolution note）：時間（取系統時間）、裁示（決策編號）、剩餘部分由誰完成（接手單編號）或為何不需再做。
 3. 改 frontmatter `status`（與本文元資料鏡像）；`completed_at` 保留 Worker 的值，`updated_at` 取系統時間。
-4. 同步更新 `sprint-status.yaml`、`_tower-state.md`、`_decision-log.md`、ct-status active tracking 與 BAT active tracking，避免 resolved partial 繼續顯示為 active work。
+4. 同步更新主方法論 tracker（bmad 時為 `sprint-status.yaml`）、`_tower-state.md`、`_decision-log.md`、ct-status active tracking 與 BAT active tracking，避免 resolved partial 繼續顯示為 active work。
 5. **接手單完成後回頭確認**：收接手單時，在原工單的〈塔台收尾補記〉追加一行「T#### 已完成（D###）」；接手單沒完成剩餘部分時，在補記寫明剩下的由誰接。
+
+## 執行中補充工單（v6.0.0-beta.11+）
+
+> 🔴 本節是「Worker 還在 `IN_PROGRESS` 時，塔台往工單補充或修正指示」的**唯一權威**（PLAN-005 P2，D545）。
+> Worker 端怎麼讀到（三個固定節點各 grep 一次段落標題）只定義在 `ct-exec/SKILL.md` § Tower Addenda Check；
+> 塔台用跨 session 訊息提醒自己的 Worker（選用）只定義在 [cross-project-coordination.md](cross-project-coordination.md) § 通知自己的 Worker 重讀工單。
+> Renew（`BLOCKED`／`FAILED` 之後重派、研究型工單多輪）仍以 [research-workorder.md](research-workorder.md) § Renew 機制 為準，本節不改它。
+
+**何時用**：工單 `status: IN_PROGRESS`、Worker 還在跑，塔台要補充事實或修正指示。例：BAT 或使用者給了新事實、塔台答覆提問後衍生的範圍調整、
+發現工單本文寫錯。以下情況**不用**本節：
+
+| 情況 | 改用 |
+|---|---|
+| Worker 已回報 `BLOCKED`／`FAILED`（含 yolo 提問備援），要重派 | Renew：`## 塔台補充（Renew #N）`（[research-workorder.md](research-workorder.md) § Renew 機制） |
+| 回答 Worker 的 `#### Q-n` | `### 待塔台決策` 的 `- **塔台答覆 Q-n**` 行（[yolo-mode.md](yolo-mode.md) § 塔台端 第 3 點）；執行中補充段裡的答覆行**不算**答覆 |
+| Worker 已回報完成（`DONE`／`PARTIAL` 等） | 收單後開接手單，或依 § PARTIAL 當下收尾 裁示 |
+| 方向完全不同 | 開新工單（[research-workorder.md](research-workorder.md) § Renew vs 開新工單的判斷） |
+
+寫之前先看一次工單 `status`：已不是 `IN_PROGRESS` 就不寫本段，照上表。
+
+**段落格式**：在工單回報區 `---` 分隔線**之前**插入（與 Renew 同一位置）；已有 `## 塔台補充（…）` 段時，插在最後一段之後。
+編號 `#N` 只數執行中補充（#1、#2…），與 Renew 各自遞增。
+
+```markdown
+## 塔台補充（執行中 #N）
+
+**時間**：<系統時間，ISO 8601 含時區>
+**補充內容**：
+> <新事實或修正，附來源（決策編號、BAT 回覆、使用者原話）>
+
+**新指示**：
+> <Worker 要做的事；不改原指示就寫「無，僅供參考」>
+
+**範圍與驗收**：<無變更／列出：`affects_files` 增減、驗收條件改了哪幾條>
+**已完成部分**：<不影響／要推翻或重做的部分，逐項寫明>
+```
+
+- **時間**取系統時間（`date "+%Y-%m-%dT%H:%M:%S%z"`），不憑印象。
+- **改了範圍或驗收**：同一次寫入就改 frontmatter `affects_files` 與工單的驗收段，並在〈範圍與驗收〉列出改了什麼。只寫在補充段、frontmatter 沒改的範圍擴大，
+  Worker 會當成範圍外而提問或停下（`ct-exec/SKILL.md` § Tower Addenda Check）。擴大範圍前照派工時的 overlap check（§ 派發前 overlap check）再比一次新增的路徑。
+- **已完成部分**：要推翻或重做 Worker 已完成（尤其已 commit）的工作，必須在〈已完成部分〉逐項明寫；不得用補充段默默改掉已完成的工作。
+- **不改的東西**：工單 `status` 維持 `IN_PROGRESS`；元資料的 `Renew 次數` **不加**（執行中補充不是 Renew，不觸發斷點 B-1）；不重派、不回收 Worker 分頁。
+- **只寫自己的段落**：不改回報區、不改 Worker 已寫的內容。Worker 可能同時在寫回報區，塔台寫完後不要再反覆改同一段；要再補就加下一個 `#N`。
+
+**commit**：Worker 讀的是工作目錄裡的工單檔，**可見性不依賴 commit**——塔台寫完存檔，Worker 下一個檢查節點就看得到，不 commit 也一樣。
+塔台照 `auto_commit` 慣例 commit 這張工單檔即可，只 commit 該檔（`git commit --only _ct-workorders/<file>`）。Worker 收尾 commit 同一檔時會一併帶入塔台已寫、
+未 commit 的段落，屬預期行為（同 [yolo-mode.md](yolo-mode.md) § Worker 端 3-B 對答覆行的說明）。隔離工單的工單檔本來就只在主 checkout
+（`ct-exec/SKILL.md` § Worktree Isolation 第 1 點），塔台照常改主 checkout 的那一份，不碰 worktree 裡的副本。
+
+**Worker 什麼時候讀到**：Worker 在**驗證前、產品 commit 前、寫回報前**三個節點各 grep 一次段落標題，發現開工後新增的 `## 塔台補充（…）` 段才讀
+（`ct-exec/SKILL.md` § Tower Addenda Check）。所以補充最晚在 Worker 寫回報前被讀到；三個節點之間的長步驟中途**不會**讀到。要它更早讀到：
+
+1. Claude Code 塔台＋Claude Code Worker：可選用跨 session 訊息提醒（[cross-project-coordination.md](cross-project-coordination.md) § 通知自己的 Worker 重讀工單）；
+   沒送到也沒關係，節點檢查會兜底。
+2. 其他情況：請使用者回 Worker 分頁說「重讀工單」（Worker 把它當成一次額外的節點檢查）。塔台不得自己寫入 Worker 分頁（BAT 範圍權杖；BUG-196）。
+
+**記錄**：決策日誌照常記裁示；yolo 時在 `_tower-state.md` 的 `## YOLO 歷程` 寫一筆 `[補充]` 條目（格式與寫入時機見 [yolo-mode.md](yolo-mode.md) § `_tower-state.md` 新增 `## YOLO 歷程` 區段）。
+
+**收單時核對**：收到這張工單的回報時，確認回報區 `### 互動紀錄` 有每個執行中補充段的讀入紀錄（Worker 記一行：哪一段、哪個節點、做了什麼）。
+有段落沒有讀入紀錄（例：塔台寫入時 Worker 已過了寫回報前的節點）→ 視為**沒讀到**：照上方表格，以 Renew 重派或開接手單處理，不當作已執行。
+Claude Code Worker 讀過的工單在磁碟上被改時，下一個回合會收到「檔案已變更」的提示，所以常會讀到過了寫回報前的節點才寫的段落：**有讀入紀錄就照常認定**，
+沒有紀錄的才照上面的規則處理。Codex Worker 沒有這個提示，只靠三個節點。
 
 ## 中斷復原
 
@@ -492,10 +625,14 @@ stderr 含 `Forbidden` 時同一行多一句原因提示，規則同上一節 ex
    - **產生新工單**：可能調整策略或拆分
 3. 原工單標記 `INTERRUPTED`
 
-## sprint-status.yaml 同步
+## 主方法論 tracker 同步（原 § sprint-status.yaml 同步）
+
+主方法論 tracker = 主方法論 adapter 的 `tracker`（`file`、`search`、`optional`；契約見 [methodology-adapters.md](methodology-adapters.md) § 描述檔格式）。
+bmad 時為 `sprint-status.yaml`（[adapters/bmad.yaml](adapters/bmad.yaml) `tracker`）。主方法論沒有 `tracker`（`tracker: {}`）或 `methodology: none` → 本節不適用。
+分層疊加時，別家 adapter 執行了上游產物（例：bmad 的 story），上游狀態依產生產物的 adapter 的 `handoff.writeback` 回寫，同樣由下面的雙重保障複查。
 
 **雙重保障**：
-1. Sub-session 主力更新（工單指示中明確要求）
+1. Sub-session 主力更新（工單指示中明確要求，結果寫在回報區 `### 方法論狀態回寫`；舊工單的 `### sprint-status.yaml 已更新` 段照讀）
 2. 塔台複查補漏（每次回報處理時自動檢查）
 
 **觸發全局同步**：使用 `*sync` 內建命令。
@@ -503,7 +640,7 @@ stderr 含 `Forbidden` 時同一行多一句原因提示，規則同上一節 ex
 同步流程（`*sync` 執行時）：
 1. Glob 列出 `_ct-workorders/T*.md`
 2. 讀取每張工單元資料（狀態、開始/完成時間）
-3. 交叉比對三方（塔台記憶 / 工單檔案 / sprint-status.yaml）
+3. 交叉比對三方（塔台記憶 / 工單檔案 / 主方法論 tracker）；tracker 找不到且 `optional: true` → 只比對前兩方
 4. 以工單檔案為 single source of truth 修正差異
 5. 量熱檔大小，超過預算時在摘要加提示（[memory-protocol.md](memory-protocol.md) § BAT 塔台面板讀取契約 › 大小預算）；
    啟用 BUG 追蹤時，加未結 BUG 清理提示（[bug-plan-system.md](bug-plan-system.md) § BUG 單據 › 未結 BUG 清理提示）

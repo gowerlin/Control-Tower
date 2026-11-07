@@ -21,7 +21,7 @@ CT 是 8 個 skill，裝在你電腦上 Agent CLI 的 skill 目錄裡：可以�
 - **一個 git repo**：工單、塔台狀態與決策日誌都寫在專案的 `_ct-workorders/` 底下，和程式碼一起進版控。
 - **可選：BAT**。有 <BatLink>Better Agent Terminal</BatLink> 時，塔台可以直接開 Worker 分頁、Worker 做完自動通知塔台；沒有也能用，塔台改給你剪貼簿或一行指令。
 - **可選：BMad Guide Skill**。`bmad-guide` 是 BMad-Method 的互動式學習指南，有兩種用法：當 CT 的外部依賴，塔台偵測到它就啟用 Level 2，依專案階段查出該走哪一套 BMad 流程；也可以單獨裝，當作學 BMad-Method 的指南。見 [BMad Guide Skill](/guide/bmad-guide)。
-- **可選：其他增強**。ECC、mem0，偵測到才啟用，見[功能總覽的能力等級](/features#levels)。
+- **可選：其他增強**。mem0，偵測到而且專案的本地規則記了例外才啟用（6.0.0 起；ECC 的整合在 6.0.0 退場），見[功能總覽的能力等級](/features#levels)。
 
 ## 兩種安裝方式 {#methods}
 
@@ -78,7 +78,7 @@ BMad Guide 裝在同一層：Claude Code 是 `~/.claude/skills/bmad-guide/`，Co
 
 ## 確認現行版號 {#check-version}
 
-版號寫在每個 `SKILL.md` 正文的第一個註解（例如 `<!-- control-tower-version: 5.15.0 -->`），frontmatter 不放版號。下面是 zip 手動安裝的查法；用 plugin 安裝的看 `plugin list --json`，見[確認 plugin 版號](#plugin-version)。
+版號寫在每個 `SKILL.md` 正文的第一個註解（例如 `<!-- control-tower-version: 6.0.0 -->`），frontmatter 不放版號。下面是 zip 手動安裝的查法；用 plugin 安裝的看 `plugin list --json`，見[確認 plugin 版號](#plugin-version)。
 
 ::: code-group
 
@@ -93,6 +93,21 @@ grep -h -o "[a-z-]*-version: [0-9.]*" ~/.codex/skills/{control-tower,ct-*}/SKILL
 :::
 
 8 行的版號應該一致。v5.0.2 以前的舊版把版號放在 frontmatter 的 `version:`。
+
+## 從 5.15.0 升級到 6.0.0 {#upgrade-600}
+
+6.0.0 是 v6 系列的第一個正式版，取代 5.15.0 成為穩定版；5.15.0 成為上一個穩定版，發行檔仍在 Release `ct-v5.15.0`（見[更版紀錄 v5.15.0](/versions/releases#v5-15-0)）。升級的做法和平常一樣：zip 手動安裝照下一節的四步，plugin 照[用 plugin marketplace 安裝](#plugin)更新。從 5.15.0 升上來，先知道這幾件事：
+
+- **BUG／PLAN／EXP 預設改成開啟**。`enable_bug_tracking`、`enable_plan_tracking`、`enable_experiments` 的預設由 `false` 改 `true`，塔台啟用時就產生空的 `_bug-tracker.md`、`_backlog.md`。設定明寫 `false` 的照舊；不想啟用的專案，升級前先在設定明寫 `false`（見 [BUG／PLAN／EXP 與研究型工單](/deep/features/record-types)）。
+- **新增 9 個方法論設定鍵，不用改設定檔**。`methodology` 等 9 個鍵缺省就是 5.x 的行為（`methodology: auto`）。升級後在塔台輸入 `*config methodology` 看每一層的解析結果（見[功能總覽 › 方法論轉接](/features#methodology)）。
+- **塔台與 Worker 同一批換**。6.0.0 的塔台可以在 Worker 執行中補充工單，舊版 Worker 讀不到這種段落；8 個 skill 照常一起升級。
+- **用 plugin 的**：marketplace 更新後，把 `ct@control-tower`（有裝的話連同 `ct-guide@control-tower`）從 5.15.0 升到 6.0.0，指令見 [Claude Code](#plugin-claude)、[Codex](#plugin-codex)；升級後開新 session，用 `plugin list --json` 確認 `version` 是 `6.0.0`（見[確認 plugin 版號](#plugin-version)）。
+- **已經在用 pstack 的**：另外下載 Release 的 `ct-adapter-pstack` zip，和 8 個 skill 一樣放進 `skills/`；沒用 pstack 就不用裝。plugin 不含它。
+- **用過 ECC 或 mem0 的**：CT 不再寫 ECC 的 observation（Level 1 退場）；mem0 Level 3 要在專案的本地規則記錄例外才啟用。沒用過的不受影響。
+- **BAT 不必升級**：最低版本仍是 `>= 0.7.0-pre.7`，派工命令不變（見[相容版本對照](/versions/compatibility)）。
+- **要退回 5.15.0**：zip 手動安裝照[回退](#rollback)還原備份；5.15.0 的發行檔仍在 Release `ct-v5.15.0`。
+
+試用過預發行版（Beta、RC）的：從 6.0.0-rc.1 升級只換 skill 檔案，規則與設定都沒變。各預發行版的改動保留在「實驗功能」的[方法論轉接](/preview/methodology-adapters)專章。
 
 ## 升級：四步（zip 手動安裝） {#upgrade}
 
@@ -204,14 +219,14 @@ done
 
 ## 用 plugin marketplace 安裝（v5.14.0 起） {#plugin}
 
-v5.14.0 起，CT 也可以用 Claude Code 與 Codex 的 plugin marketplace 安裝，之後的更新交給 Agent CLI。zip 手動安裝照舊支援，同一個 Agent 上兩種擇一。
+v5.14.0 起，CT 也可以用 Claude Code 與 Codex 的 plugin marketplace 安裝，之後的更新交給 Agent CLI。zip 手動安裝照舊支援，同一個 Agent 上兩種擇一。v6 系列從正式版 6.0.0 起上架；從 5.15.0 升到 6.0.0 的注意事項見[從 5.15.0 升級到 6.0.0](#upgrade-600)。
 
 | 項目 | 內容 |
 |---|---|
 | marketplace | `control-tower`，放在本站的公開 repo <code>{{ mkt }}</code> |
 | plugin | `ct`：CT 的 8 個 skill，一定一起裝；`ct-guide`：CT Guide，可不裝；`bmad-guide`：[BMad Guide Skill](/guide/bmad-guide)，可不裝 |
 | 版號 | `ct` 的版號 = CT 版號，`ct-guide` 的版號 = CT Guide 版號；`bmad-guide` 的版號跟 BMad-Method 走（例如 6.12.4），不跟 CT |
-| beta | 不上架，beta 照舊用 zip 手動安裝 |
+| 預發行版 | 不上架：v6 的 beta、rc 照舊用 zip 手動安裝；v6 從正式版 6.0.0 起上架（`ct`、`ct-guide` 6.0.0） |
 
 ::: warning 從 zip 手動安裝改用 plugin：先移除手動安裝
 同名的手動安裝還留在 `skills/` 裡時，`/ct-exec`、`$ct-exec` 都會用手動那份，plugin 版不生效，而且看不出差別。所以先照[升級：四步](#upgrade)的 Step 1 把 8 個 skill（有裝 CT Guide、BMad Guide 的話加上 `control-tower-guide`、`bmad-guide`）備份到 `skill-backups/`、逐檔確認備份完整，再把它們從 `~/.claude/skills/`（Codex：`~/.codex/skills/`）**移**到備份目錄，不要直接刪除。之後才裝 plugin。
@@ -378,7 +393,7 @@ CT 不預先判斷你的 BAT 是哪一版：照常呼叫，失敗時依結束碼
 
 ## 延伸閱讀 {#further}
 
-- CT 安裝與使用指南 § 4. 安裝（4.1 安裝／升級（現行流程，含〈用 plugin marketplace 安裝／升級〉）、4.2 Agent CLI 選擇、4.3 Skill 架構（v5.15.0））、§ 2.56、§ 2.57、§ 2.58
+- CT 安裝與使用指南 § 4. 安裝（4.1 安裝／升級（現行流程，含〈用 plugin marketplace 安裝／升級〉）、4.2 Agent CLI 選擇、4.3 Skill 架構（v6.0.0））、§ 2.56、§ 2.57、§ 2.65
 - `control-tower/references/version-governance.md` § 安裝／升級流程（含 plugin 安裝／升級）、§ 版號事實來源
 - `control-tower/references/data-layer-architecture.md` § 寫入規則（Q1～Q4：Layer 1 路徑（含 plugin 安裝路徑）、備份落點、唯一例外）
 - `control-tower/references/auto-session.md` § BAT 內部終端路由（Better Agent Terminal），派工指令的權威；§ 依安裝方式的 skill 呼叫字串

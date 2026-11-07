@@ -1,19 +1,111 @@
 ---
 title: 更版紀錄
-description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.15.0），更早的版本見演進史。
+description: BMad Control Tower 近 10 版的更版紀錄（最新 v6.0.0），更早的版本見演進史。
 ---
 
 <!-- 本頁由 scripts/sync-ct-release.mjs 從 CT CHANGELOG 產生，請勿手改；要改內容請改來源後重跑。 -->
 
 # 更版紀錄
 
-目前版本 **v5.15.0**（2026-11-01）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 61 版（v2.1.1 ～ v5.12.6）請看[演進史](./evolution)。
+目前版本 **v6.0.0**（2026-11-07）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 62 版（v2.1.1 ～ v5.12.7）請看[演進史](./evolution)。
+
+本頁只列正式版。預發行版 v6.0.0-pre.1 ～ v6.0.0-rc.1（14 版）的改動已彙整在 v6.0.0 的段落，逐版說明保留在「實驗功能」的[預發行專章](../preview/methodology-adapters)作為歷史參考。
 
 ::: tip 摘要不具權威
 本頁照錄 CT 的 CHANGELOG，只拿掉工單、決策、驗收回函等內部編號與出處註記。規則的權威定義在 CT 各 skill 與 references，兩者有出入時以 CT 本體為準。
 :::
 
 ::: v-pre
+
+## 6.0.0 <small>2026-11-07</small> {#v6-0-0}
+
+
+> **正式版：v6 系列的第一個正式版，取代 5.15.0 成為穩定版。** v6 的主軸是方法論轉接：塔台把 BMAD 等開發方法論當成可抽換、可分層疊加的 adapter（內建 `bmad`，官方外部 adapter `ct-adapter-pstack` 選用），沒有任何設定時行為與 5.x 相同。
+> 另含 BUG／PLAN／EXP 預設開啟、session 用量統計 `*insights sessions` 與工單 `session_ids`、執行中補充工單、工具清單建議 `*insights tools`。這些功能在 `6.0.0-pre.1`～`6.0.0-rc.1` 預發行期間逐版加入與修正，逐版說明保留在本站「實驗功能」的預發行專章作為歷史參考。
+> 本版相對 `6.0.0-rc.1` **沒有功能或規則變更**：RC 期間沒有回報要修的問題，只改版號與標示（RC → 正式版）。
+> **plugin**：正式版 6.0.0 起上架 marketplace `control-tower`（`ct@control-tower`、`ct-guide@control-tower` 6.0.0）；預發行版（beta、rc）仍不提供 plugin。zip 手動安裝照舊支援。
+> **下載**：GitHub Release `ct-v6.0.0`（Latest）；5.15.0 成為上一個穩定版，Release `ct-v5.15.0` 仍可下載。
+> BAT 最低版本不變（`>= 0.7.0-pre.7`）。方法論契約仍 `ct-methodology-adapter/v1`，**契約不變**；內建 `bmad.yaml` 0.2.1、`ct-adapter-pstack` 0.2.6（內容都沒改，只改註解與標示）。
+
+### 升級說明
+
+**從 `6.0.0-rc.1` 升級**：只換 skill 檔案；沒有新設定鍵、新的 frontmatter 欄位或新命令，舊工單與快照照常。8 個 skill 的版本註解都變了；內容有改的只是標示：`control-tower`、`ct-help` 的方法論說明摘要，`control-tower/references` 的版號標記（`v6.0.0-rc.1 RC` → `v6.0.0+`）與 plugin 說明句。建議 8 個一起換；`ct-adapter-pstack` 規則內容沒變，用 pstack 的可一併換。
+
+**從 `5.15.0` 升級**（v6 預發行期間的改動彙整；細節見安裝指南 § 2.65 與本站「實驗功能」的預發行專章）：
+
+1. **方法論轉接（新功能）**：契約唯一權威 `control-tower/references/methodology-adapters.md`、內建 `adapters/bmad.yaml`、檢查腳本 `control-tower/scripts/validate-adapter.py`；Level 2 由「外部 bmad-guide」改為「方法論轉接」。工單 frontmatter 加選用的 `methodology`；工單模板的 `### BMad 工作流程` 換成 `### 方法論工作流程`＋`### 方法論邊界`，回報區 `### sprint-status.yaml 已更新` 換成 `### 方法論執行紀錄`＋`### 方法論狀態回寫`（舊段照讀、不回寫）。`ct-exec` § Methodology 帶入各層、自查方法論注入、記錄每次方法論 skill 呼叫、方法論子代理預設只能唯讀、交付層預設關；compact／resume 後先重讀整張工單。官方外部 adapter `ct-adapter-pstack` 另出 zip，已在用 pstack 才裝。
+2. **新設定鍵 9 個**（缺省即 5.x 行為，升級不需要改設定檔）：`methodology`（預設 `auto`）、`methodology_planning`／`methodology_execution`／`methodology_review`／`methodology_verification`（`inherit`）、`methodology_delivery`（`none`）、`methodology_subagent_writes`（`deny`）、`methodology_guard`（`warn`：塔台派工時自動加 `### 方法論邊界`）、`methodology_adapters_path`（空）；`*config methodology` 看解析結果。
+3. **預設值改變**：`enable_bug_tracking`、`enable_plan_tracking`、`enable_experiments` 預設由 `false` 改 `true`，啟用時（含預設啟用）立即產生空的 `_bug-tracker.md`／`_backlog.md`；設定明寫 `false` 的照舊。不想啟用的專案請在升級前明寫 `false`。
+4. **新命令**：`*insights sessions`（依工單彙總 token 用量，`ct-insights/scripts/ct-session-stats.py`＋`pricing.json`，只讀）、`*insights tools`（找出一直載入卻很少用到的 skill、plugin、MCP server、agent 類型與內建工具，只建議、不改設定）、`/ct-evolve --facts-from`（把統計產生的候選事實接進學習流程）。
+5. **新的選填欄位與段落**：工單 `session_ids`（Worker 收尾寫、`ct-done` 補救時寫、塔台收單補記；收單補記需 BAT `>= 0.7.1-pre.1` 與 BAT MCP，沒有就跳過）；塔台開工時記自己的 session id；塔台可在 Worker 執行中寫 `## 塔台補充（執行中 #N）`，Worker 在驗證前、產品 commit 前、寫回報前各看一次段落標題。
+6. **外部增強外掛治理**：ECC Level 1 退場（CT 不再寫 observation）；mem0 Level 3 改成要在本地規則記錄例外才啟用。用過的請看安裝指南 § 2.61〈從 ECC 升級〉與〈mem0 Level 3：要有例外紀錄才啟用〉。
+7. **同批換**：塔台（`control-tower`、`ct-insights`、`ct-evolve`）與 Worker（`ct-exec`、`ct-done`）一起換；只換一邊時，塔台寫的新段落舊版 Worker 讀不到。新增 5 檔（`methodology-adapters.md`、`adapters/bmad.yaml`、`validate-adapter.py`、`ct-session-stats.py`、`pricing.json`），沒有刪除的檔。
+8. **相容性**：BAT 最低版本與介面、CT 派工命令（`--skill` + `--workorder`）、exit code、狀態值不變。穩定版 5.13.0～5.15.0 的規則（狀態衛生、BAT 塔台面板讀取契約、通知用完整工單 ID、plugin 安裝就緒、巢狀的獨立 repo、一批提問只叫醒塔台一次）v6 都已移植，條文相同。
+9. **plugin 使用者**：marketplace 更新後把 `ct@control-tower`（與 `ct-guide@control-tower`）從 5.15.0 升到 6.0.0，步驟照 `version-governance.md` § plugin 安裝／升級（安裝指南 § 4.1〈用 plugin marketplace 安裝／升級〉第 4 步）；升級後開新 session 確認 `version` 是 `6.0.0`。
+
+### Changed
+
+- 版號與標示：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表（加 6.0.0 列）、`methodology-adapters.md` 版本歷史（加 6.0.0 列，契約不變）、`bmad.yaml` 與 `ct-adapter-pstack` 註解改 `6.0.0`；
+  現行版本的 RC 標示改成正式版：`methodology-adapters.md` 檔頭改「v6.0.0 正式版（取代 5.15.0 成為穩定版）」，方法論相關段落的版號標記 `v6.0.0-rc.1 RC` 改 `v6.0.0+`（`tower-config.md`、`work-order-template.md`、`enhancement-integration.md`、`onboarding.md`、`control-tower/SKILL.md`、`ct-help/SKILL.md`、自助擴充指南）；`ct-help` § Methodology Adapters 開頭的 RC 提醒改成「6.0.0 起屬正式版」
+- plugin 說明句：「plugin 在 v6 正式版上架後才適用」改成「v6 正式版 6.0.0 起上架」（`version-governance.md`、`auto-session.md`）；規則本身不變：帶 `-` 的版號不上架 marketplace，預發行版（beta、rc）不提供 plugin
+- `bmad.yaml` 的 `adapter_status` 註解改成「CT 正式版 6.0.0 仍維持 prototype（要不要改 stable 另行評估）」；值不變（`prototype`）。`ct-adapter-pstack` 同樣維持 `prototype`
+- 安裝指南：標題、版本行與 § 1〈目前版本一覽〉改正式版（加一列；§ 1 表格內現行功能的「Beta」標示拿掉，引入版號保留）；新增 § 2.65 本版變更（含從 5.15.0 升級）；§ 4.1 版號（`OLD=6.0.0-rc.1`、`VER=6.0.0`）、發行物檔名、提示框、plugin 說明（6.0.0 起上架）與 plugin 升級第 4 步加「從 5.15.0 升到 6.0.0」；§ 4.3、§ 13、§ 14 標題；§ 13／§ 14 逐列檢查（結果見 § 2.65）
+- Known unverified：RC 期間沒有新驗證到的項目，41 項照列、編號同 `[6.0.0-rc.1]`（見下方）
+
+### Unchanged
+
+- 設定鍵與預設值、狀態值、frontmatter 欄位、命令、派工命令（`--skill` + `--workorder`）、exit code、BAT 最低版本（`>= 0.7.0-pre.7`）、BAT 介面同 `[6.0.0-pre.1]`
+- 方法論契約 `ct-methodology-adapter/v1`、adapter 描述檔、probe 搜尋順序、`validate-adapter.py`；`methodology-adapters.md` § Beta 實作狀態 的章節名沿用（避免斷連），內容是現行版本
+- `ct-session-stats.py`（0.2.0）與快照 `ct-session-stats-snapshot/0.2`、單元測試（43 個）
+- 機器可讀摘要與 BAT 塔台面板讀取契約 v1
+- zip 手動安裝流程與發行物版面（全量 zip、8 個單一 skill zip、`ct-adapter-pstack` zip、Guide zip），不含 `scripts/tests/`
+- 歷史段落（本檔 `[6.0.0-rc.1]` 以前的段落、版號表舊列、安裝指南 § 2.64 以前的章節）與「v6.0.0-beta.N+」等引入標記不改
+
+### Known unverified（已知未驗：正式版仍未實機驗證的路徑）
+
+RC 期間沒有新驗證到的項目；下列 41 項與 `[6.0.0-rc.1]` 相同，編號不變。
+
+1. Codex 互動 TUI 的「Hooks need review」畫面、`hooks.state.<key>.enabled`
+2. Codex `resume`／`compact` 後的重注入
+3. 引入方式 ③：已實測（mattpocock/skills 3 支本地副本：模型 0 次自動叫用、塔台照規則寫【只允許】、Worker 以路徑讀並 3/3 記入 `### 方法論執行紀錄`）。未實測：Codex 端 `policy.allow_implicit_invocation: false`、引入方式 ②、③ 副本在 BAT worktree 隔離派工下的可見性（副本放在被 `.gitignore` 排除的目錄時 worktree 讀不到）。沒有 hook 的描述觸發（C1 ⑤）：標準安裝時塔台 0/1 被叫用，風險未排除
+4. Superpowers HARD-GATE：`methodology_guard: off`＋沒有 `methodology`、yolo 下 2/2 未觸發（Worker 不採用不負責任何層的注入）；工單明確指名 `superpowers:brainstorming` 時的表現未實測
+5. ③ 副本裡「先問使用者」的步驟在 yolo 下改問塔台：實測時被試用工單預先回答，這條路徑沒有出現
+6. yolo 的 headless 提問備援（沒有可用的等待工具時直接 `BLOCKED`）：實測中 Worker 都判斷沒有要問塔台的決策，未觀察到
+7. 方法論疊加：已驗一般疊加與雙注入＋疊加；未驗跨層 story-spec 交接與 `writeback` 回寫
+8. 工單沒寫「不開分支／不 push」時 `poteto-mode` 會不會委派或開 PR：沒有邊界段時 frontmatter `delivery: none`／`subagent_writes: deny` 仍讓 poteto-mode 跳過 PR 與委派（n=1）；frontmatter 也沒有的情況未驗
+9. 啟用即產生空索引、塔台語言規則、暫存目錄退路、子代理回報要求，以及 `6.0.0-beta.2` 的環境偵測新寫法，都是文件規則，尚未實機跑過
+10. BAT 塔台面板讀取契約：`6.0.0-beta.3` 的範本只以 BAT `0.7.1-pre.8` 的解析器實測（決策、BUG、待辦含 Dropped 全讀到，索引格子無 Unknown），沒有在 BAT 實機面板逐頁看過。`6.0.0-beta.4` 寫入的 BAT `0.7.1-pre.9` 表現（「無法讀取 &lt;檔名>」提示、`critical` 在任何讀取路徑都算 High）依 BAT 的通知，CT 端沒有實測，BAT 端的實機驗收也還沒做；更舊的 BAT 在 `_backlog.md` Completed／Dropped 讀 PLAN 檔補值時，frontmatter `priority: critical` 仍顯示 Unknown
+11. `customer_acceptance_gate: on`：開單初列、Worker 逐案判定、會改變就停下、部署後走場必跑、已完成修正回溯核對，整條工單流程都是文件規則，尚未實機跑過
+12. 決策日誌收斂：只在一個專案實作過（熱檔 583,571 → 188,989 bytes，BAT 決策頁 408 筆全讀到）；在其他專案（決策數、標題格式不同）的實作未驗
+13. 未結 BUG 清理提示、熱檔大小提示、PARTIAL 當下收尾、`closed_reason` 與延後 BUG 的重開：文件規則，尚未實機跑過
+14. 有前綴專案的實機回報：新範本與送出前比對之後，Worker 是否每次都送完整 ID（收尾通知、`--ask`、手動備援訊息）、BAT 是否每次都能用 `--source` 對到 Worker 分頁並標 Done，尚未在有前綴的專案實機觀察
+15. 塔台端缺前綴容錯（熱區恰好一張「前綴 + 同號」時當作那一張、多張或找不到時問使用者、yolo 屬斷點 A）：文件規則，尚未實際觸發
+16. 「已安裝但讀不到 → 本 session 提示一次」（`methodology-adapters.md` § 降級）：文件規則，尚未實際觸發
+17. Codex 用 plugin 安裝、接 BAT `>= 0.7.2-pre.1` 派工的端到端流程（BAT 依安裝方式送 `$ct:ct-exec`）：尚未實機驗證
+18. 巢狀的獨立 repo 配置（`mono-repo-patterns.md` § 巢狀的獨立 repo）下的 BAT 面板一鍵派工：要另開一個指向上層的 BAT workspace，cwd = workspace 根是依 BAT 的行為推得，尚未實機驗證（穩定版 5.14.3 同樣未驗；這個配置本身以穩定版 CT 5.14.2＋BAT 0.7.2-pre.1 實機驗過）
+19. 依 runtime 的新搜尋順序（`methodology-adapters.md` § 描述檔格式 › probe 怎麼解析 skill 根目錄 第 1 點）：塔台先試本 runtime 的 probe、另一個 runtime 的只當讀檔來源並註明一次，這個順序本身尚未實機跑過（穩定版 5.14.4 的 bmad-guide 偵測同樣未驗）；`bmad.yaml` 0.2.1、`ct-adapter-pstack` 0.2.6 改過的 probe 也還沒在塔台實際跑過
+20. 塔台 context 壓縮後仍不重複提醒（`yolo-mode.md` § Worker 向塔台提問 › § 塔台端 第 2 點）：已升級給使用者、還在等回答的題，塔台 context 被壓縮後是否仍依 YOLO 歷程的等待條目判斷、不再出 `⏸ YOLO PAUSED`，尚未實機跑過（重複通知一行結束、⏸ 只出現一次、升級後的重複通知不重出 ⏸ 已驗；穩定版 5.15.0 同樣未驗）
+21. 塔台收單補記 session id：BAT 的 `claudeSessionId` 與工單 `session_ids` 不同時的追加，還沒實際觸發（從 BAT MCP 找到 Worker 那一列、`bat_get_state` 讀值、與工單比對、寫收單快照，已在實機收單跑過多次，每次工單都已含該值、不需追加）
+22. 塔台對話依決策日誌切到各工單的方向（上一筆到這一筆、+60 秒寬限、限同一個塔台 session）未經結果驗證
+23. 卡住訊號門檻（最近 10 次呼叫失敗 ≥ 3 次）未校準：樣本工單全是 `DONE`
+24. 隔離工單（worktree）另加 `--project <編碼後的 worktree 路徑>` 還沒實機跑過（多個 `--project` 只以合成資料測過）
+25. plugin 安裝時 `/<plugin>:ct-exec` 的工單歸屬只以合成資料測過
+26. 估算成本與 `cost-state` 的差距（約 −10%）沿用原型的量測，正式腳本沒有再對帳
+27. Worker 寫 `session_ids`：Renew 時在新 session 追加、單獨的 `unavailable` 被真實值取代，這兩種情況還沒實際觀察到（一般收尾寫入已有多張工單、Codex Worker 寫 `unavailable` 已實測）
+28. `ct-evolve --facts-from` 還沒對真實快照實跑過一輪：候選事實寫進 `_learnings.md`、同一個 `fact_id` 重跑時更新原條目、`⏸ 撤回候選` 的恢復都未實測
+29. 候選事實目前只有一條規則（最近 10 次呼叫失敗 ≥ 3 次），所以「環境事實 → Tactical」的路徑只能經人工整理才會出現，還沒有實例
+30. `ct-done` 寫 `session_ids` 尚未在實際補救收尾跑過
+31. BAT `--settings` 條文的症狀描述（`blockedDetection: none`、`started: unknown`、`claudeSessionId: null` 同時出現）來自 BAT 的回覆，CT 端沒有實機重現
+32. mem0 Level 3 的啟用條件（`enhancement-integration.md` § Level 3 › 啟用條件）：沒有例外紀錄時不啟用並提示一次、有紀錄時照常啟用，都是文件規則，尚未實際觸發（發版時本機沒有安裝 memsync）
+33. 沒有新段落時不記錄：不讀全文、檢查次數正確已驗；「不在 `### 互動紀錄` 寫『沒有新段落』」在隔離 `claude -p` 驗證與實際 BAT 派工合計 8 次中有 7 次仍寫一行（含 Codex），加了例子之後實際派工的 4 張也都寫了；規則不改
+34. 收單時核對的「沒有讀入紀錄」：Claude Code Worker 透過檔案變更提示，常會讀到過了寫回報前節點才寫的段落（已觀察 2/2）；「沒有讀入紀錄」只會在 Worker 最後一個回合之後才寫入時出現（例：工單已 commit、session 已結束），這條路徑還沒實機跑過
+35. BAT `--settings` 的第二個理由（工作區 ⚠️ 不出現、通知保留失效）與 BAT `>= 0.7.3-pre.8` 的待送通知（「待送通知 N」、8 筆上限）都依 BAT 的通知寫成，CT 端沒有實機重現
+36. 同步 skill 用 `skillOverrides`（完整前綴名）、同步 plugin 用 `enabledPlugins`（`<plugin>@synced`）關閉：CLI 2.1.316 實測有效，但官方文件沒寫，Claude Code 改版可能失效；發版前可用 `claude -p … --output-format stream-json --verbose` 的 `system/init` 重驗（`analysis-rules.md` § 工具清單建議 › 已知限制 1）
+37. `permissions.deny` 的單向性：`enableArtifact` 在任一設定檔設 `false` 之後沒有檔案能再打開；裸工具名寫進 `permissions.deny` 之後能不能由其他設定檔再打開，未驗證
+38. `syncClaudeAiSkills: false` 放在 `.claude/settings.local.json` 的效果未實測（放在專案 `.claude/settings.json` 會被忽略），所以報告不寫成建議
+39. claude.ai connector 在專案層的停用方式未驗證，報告只建議在 claude.ai 帳號的 connector 設定處理
+40. 關掉 `Artifact`（`enableArtifact: false`）之後有沒有移出清單，只能在互動 session 用 `/context` 或下一次 `*insights tools` 確認（`claude -p` 的清單沒有 `Artifact`），還沒有實際套用確認過
+41. 使用者層／專案層 agent 定義的移除手段（刪除 agent 定義檔）照寫但未驗證
 
 ## 5.15.0 <small>2026-11-01</small> {#v5-15-0}
 
@@ -291,33 +383,12 @@ description: BMad Control Tower 近 10 版的更版紀錄（最新 v5.15.0），
 - BAT 介面不變、CT 最低 BAT 版本不變；設定的值域與預設、工單 metadata 不變。
 - 歷史段落（本檔舊段落、版號表舊列、安裝指南舊章節）不改。
 
-## 5.12.7 <small>2026-10-27</small> {#v5-12-7}
-
-
-> **PATCH：BAT／CT 環境偵測改成只列變數名稱、不輸出值。**
-> 舊的偵測寫法（`Get-ChildItem Env:BAT*`、`Get-ChildItem Env:CT_*` 不接 `Select-Object -ExpandProperty Name`）會把變數值（含 BAT 範圍權杖 `BAT_REMOTE_TOKEN`）印進 session transcript；Worker 依這個思路自組 `env | grep …` 時也一樣。
-
-### Fixed
-
-- 偵測指令改成只列名稱——PowerShell `Get-ChildItem Env:BAT* | Select-Object -ExpandProperty Name | Sort-Object`（`CT_*` 同理），bash `env | cut -d= -f1 | grep -E '^BAT_' | sort`：
-  - `control-tower/references/auto-session.md`:93（決策樹 Step 0 註記）、:171（虛擬碼註解）、:244（`env | grep -iE …` → `env | cut -d= -f1 | grep -iE …`）、:754（§ 偵測條件 PowerShell 範例）
-  - `control-tower/references/yolo-mode.md`:43、`control-tower/SKILL.md`:89、`ct-exec/SKILL.md`:39、:56（`Env:CT_*`）、安裝指南 :1774（§ 4.2 Codex 端 `AGENTS.md` 塔台派工段落範例；v5.12.6 為 :1757）
-  - 同類敘述（沒有指令、但會讓 Worker 自組列值指令）補一句只列名稱並引用權威：`ct-done/SKILL.md`:121、`ct-help/SKILL.md`:106
-- 新增唯一權威規則 `auto-session.md` § BAT 內部終端路由 › 偵測條件（:756～:764）：偵測 `BAT_*`／`CT_*` 只判斷有無、任何 helper 或手動檢查只列名稱；`BAT_REMOTE_TOKEN` 任何時候只記「已設定」（呼應 § 範圍權杖與分頁角色 第 2 點）；例外是規則明定的單一非祕密變數只讀那一個（`CT_MODE`、`CT_INTERACTIVE`、`ct-exec` 落點檢查記錄的 `BAT_WORKSPACE_ID`、worktree 的 `CT_HOME`／`CT_WORKTREE_*` 證據）。其他檔只放一句並引用。
-- 版號：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表；安裝指南新增 § 2.52，§ 4.1 版號範例同步（`OLD=5.12.6`、`VER=5.12.7`、發行物檔名）。
-
-### Unchanged
-
-- 判讀邏輯：`shell env visibility mismatch`、塔台派工五個必要變數、Worker notify 三個必要變數、helper exit code、落點檢查（含記錄 `BAT_WORKSPACE_ID`）與 worktree SHA 證據都不變。
-- BAT 介面不變、CT 最低 BAT 版本不變；設定的值域與預設、工單 metadata 不變。
-- 歷史段落（本檔舊段落、版號表舊列、安裝指南舊章節）不改。
-
 :::
 
 ## 延伸閱讀 {#further-reading}
 
-- CT `CHANGELOG.md`（共 71 個版本；本頁列最近 10 版）
+- CT `CHANGELOG.md`（共 72 個版本；本頁列最近 10 版）
 - CT `version-governance.md` § 歷史版號表
-- [演進史](./evolution)：更早的 61 版與八個世代
+- [演進史](./evolution)：更早的 62 版與八個世代
 
 Portal 是摘要，不具權威；與 CT reference 有出入時，以 reference 為準。

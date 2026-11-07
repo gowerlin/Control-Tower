@@ -11,7 +11,7 @@ description: 目前的 CT、CT Guide 與 BMad Guide 版本、SemVer 慣例、版
 
 <VersionBadge variant="block" />
 
-這組數字由同步腳本從 CT 的發行目錄讀出：CT 和 Guide 的版號不一致時，腳本會報錯並停止，不會寫出一組對不上的版本。每一版改了什麼見[更版紀錄](./releases)，八個世代的來龍去脈見[演進史](./evolution)，各功能需要的 BAT 與 codex 版本見[相容版本對照](./compatibility)。
+這組數字由同步腳本從 CT 的發行目錄讀出：CT 和 Guide 的版號不一致時，腳本會報錯並停止，不會寫出一組對不上的版本。每一版改了什麼見[更版紀錄](./releases)，九個世代的來龍去脈見[演進史](./evolution)，各功能需要的 BAT 與 codex 版本見[相容版本對照](./compatibility)。
 
 BMad Guide Skill 是例外：它的版號跟 BMad-Method 走，不跟 CT，所以不歸同步腳本管，版本資料另外讀 `data/bmad-guide.json`。為什麼這樣定、怎麼更新，見 [BMad Guide Skill › 版本](/guide/bmad-guide#version)。
 
@@ -29,14 +29,14 @@ CT 採 Semantic Versioning，`MAJOR.MINOR.PATCH`：
   caption="CT 的 SemVer 慣例"
 />
 
-到目前為止，CHANGELOG 記錄的 71 個版本裡只有一次 MAJOR，就是 5.0.0。
+到目前為止，CHANGELOG 記錄的 72 個正式版本裡有兩次 MAJOR：5.0.0（工單 metadata 的事實來源改成 YAML frontmatter）與 6.0.0（方法論轉接；BUG／PLAN／EXP 預設改開啟、工單模板的方法論段落改名，沒有任何方法論設定時其他行為與 5.x 相同）。
 
 ## 版號寫在哪裡
 
 Skill 的 YAML frontmatter 只放執行時需要的欄位（至少 `name` 和 `description`），**不放 `version:`**。原因是 Codex 的 skill 驗證會把不認得的欄位當成錯誤。版號的事實來源改成內文的第一個註解：
 
 ```markdown
-<!-- control-tower-version: 5.15.0 -->
+<!-- control-tower-version: 6.0.0 -->
 ```
 
 8 個 CT skill 各自有一行，名稱換成 skill 自己的（例如 `ct-exec-version`），Guide 是 `control-tower-guide-version`。同一個版號還會出現在幾個地方，發版時要一起改：
@@ -84,6 +84,6 @@ grep -h -o "[a-z-]*-version: [0-9.]*" ~/.claude/skills/{control-tower,ct-*}/SKIL
 
 - CT `version-governance.md` § 版號事實來源、§ SemVer 慣例、§ 歷史版號表、§ 相容性注意
 - CT 安裝與使用指南 § 4.1 安裝／升級（現行流程）：確認現行版號、Codex 端
-- CT `CHANGELOG.md`（71 個版本）
+- CT `CHANGELOG.md`（72 個正式版本）
 
 Portal 是摘要，不具權威；與 CT reference 有出入時，以 reference 為準。

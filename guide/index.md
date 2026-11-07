@@ -50,7 +50,7 @@ BMad-Method、CT、BAT 由上往下疊成一套：方法、編排、執行環境
 />
 
 - [CT Guide Skill](./ct-guide)：是什麼、安裝、三種回應模式、怎麼問、17 種圖表
-- [CT Guide 學習路線](./learning-path)：CT Guide 十份教材依讀者分流的閱讀順序
+- [CT Guide 學習路線](./learning-path)：CT Guide 十一份教材依讀者分流的閱讀順序
 - [BMad Guide Skill](./bmad-guide)：是什麼、和 CT 的關係、什麼時候問它、版本檢查與 `*update`、安裝
 
 兩個 skill 的版號各走各的：CT Guide 永遠和 CT 同號，BMad Guide 和 BMad-Method 同號。所以裝 CT v{{ theme.ctRelease.ctVersion }} 時，CT Guide 是 v{{ ctGuideVersion }}，BMad Guide 則看你用的 BMad-Method 版本，本站內容以 BMad Guide v{{ bmadGuide.version }} 為準。
@@ -79,6 +79,6 @@ BMad-Method、CT、BAT 由上往下疊成一套：方法、編排、執行環境
 
 - CT Guide `SKILL.md` § Positioning、§ When to use、§ Response modes
 - bmad-guide `SKILL.md` § When To Use、§ Response Modes、§ Built-In Commands
-- CT `enhancement-integration.md` § Level 2：外部 bmad-guide
+- CT `enhancement-integration.md` § Level 2：方法論轉接（methodology adapter）
 
 Portal 是摘要，不具權威；與各 skill 的 `SKILL.md`／references 有出入時，以 skill 為準。

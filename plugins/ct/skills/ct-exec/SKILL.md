@@ -2,7 +2,7 @@
 name: ct-exec
 description: "Control Tower Worker skill for executing a work order end to end from any sub-session. Use when the user invokes $ct-exec or /ct-exec with a T#### work order, asks a worker to start or resume scoped execution, or needs the full lifecycle of reading the work order, marking IN_PROGRESS, implementing only the listed scope, validating, writing the report, committing when required, and notifying Tower or providing a fallback completion message."
 ---
-<!-- ct-exec-version: 5.15.0 -->
+<!-- ct-exec-version: 6.0.0 -->
 
 # ct-exec
 
@@ -22,7 +22,15 @@ Use Traditional Chinese for user-facing discussion unless the work order or user
 2. Locate the file under `_ct-workorders/` (under `$CT_HOME/_ct-workorders/` when `CT_HOME` is set; see § Worktree Isolation); if multiple match, stop and ask for the exact target.
 3. Read project instructions first when present: `AGENTS.md`, `_ct-workorders/_local-rules.md`, and product guidance such as `CLAUDE.md`.
 4. Read the complete work order, including frontmatter, body metadata table, execution steps, validation gates, exclusions, and report template.
+   Note the `## 塔台補充（…）` headings already there: they are the baseline of § Tower Addenda Check (v6.0.0-beta.11+).
 5. Record the real current time with timezone before editing.
+6. Check the context for methodology injection markers (§ Methodology › Injection self-check). This only records evidence; it never blocks.
+
+**After a compact or a resume (v6.0.0-pre.1+, every work order).** When this session was compacted (`/compact`, auto-compact), resumed
+(`--resume`, `/resume`), or continued from an interrupted run, re-read the complete work order (step 4, including `### 方法論邊界` when present)
+before the next action, then continue from where the report and git state say the work stands. The compact summary is not the work order:
+V1 (T0299) measured a Worker acting on the summary alone after a compact. Log the re-read in `### 互動紀錄`; rationale and log format are in
+`references/session-guardrails.md` § compact／resume 後重讀工單. A session that is never compacted or resumed is unaffected.
 
 ## Mode And Environment
 
@@ -32,11 +40,20 @@ Runtime mode is passed by Tower. Worker must not read Tower config to decide dis
 - `CT_INTERACTIVE`: `1` allows research interaction; `0` forbids it; missing means follow work order metadata.
   With `CT_MODE=yolo` (v5.5.0+) the Worker never asks the user, whatever `CT_INTERACTIVE` says; it asks Tower instead (§ Questions For Tower).
 - `interaction.mode_hint` in work order frontmatter is informational only.
-- Reading `_tower-config.yaml` or `~/.claude/control-tower-data/config.yaml` is allowed only for worker tuning values such as retry limits or commit policy, not for runtime mode.
+- Reading `_tower-config.yaml` or `${CLAUDE_CONFIG_DIR:-~/.claude}/control-tower-data/config.yaml` is allowed only for worker tuning values such as retry limits or commit policy, not for runtime mode.
 
 BAT detection rules:
 
-- Check the real owning shell. If a bash-backed helper cannot see `BAT_*`, verify on Windows with native PowerShell, listing names only: `Get-ChildItem Env:BAT* | Select-Object -ExpandProperty Name | Sort-Object`. Detection lists variable names only and never prints values; `BAT_REMOTE_TOKEN` is recorded only as "set" (single authoritative rule: `control-tower/references/auto-session.md` § 偵測條件).
+- Check the real owning shell. If a bash-backed helper cannot see `BAT_*`, verify on Windows with native PowerShell, listing names only:
+  `Get-ChildItem Env:BAT* | Select-Object -ExpandProperty Name | Sort-Object` (bash: `compgen -e | grep -E '^(BAT|CT)_' | sort`).
+  To read a named exception, run one command per variable (`printenv CT_MODE`, then `printenv CT_INTERACTIVE`); never put several names in
+  one `printenv`, and never chain a value read onto the name listing.
+  v6.0.0-beta.10+: `CLAUDE_CODE_SESSION_ID` is the one variable whose value is written into the work order; how and where is
+  § Phase 4 › Session id only.
+- Detection checks presence only: never use a command that lists a whole group of variables with their values. `BAT_REMOTE_TOKEN` is
+  always recorded only as 「已設定」. Named exceptions, each read as a single variable: `CT_MODE` / `CT_INTERACTIVE` (mode), `BAT_WORKSPACE_ID`
+  (§ Landing Zone Check › Recording), `CT_HOME` / `CT_WORKTREE*` (§ Worktree Isolation evidence). Single authoritative rule:
+  `../control-tower/references/auto-session.md` § BAT 內部終端路由 › 偵測條件 (BUG-001, D377).
 - Treat PowerShell-visible but helper-shell-empty BAT vars as `shell env visibility mismatch`, not as non-BAT.
 - Worker notify requires `BAT_TOWER_TERMINAL_ID`, `BAT_REMOTE_PORT`, and `BAT_REMOTE_TOKEN`.
 - Use helper path order: `BAT_HELPER_DIR\bat-notify.mjs`, then `C:\Program Files\BetterAgentTerminal\resources\scripts\bat-notify.mjs`.
@@ -303,8 +320,9 @@ Follow the work order literally:
 - Load only the documents required by the work order and project guidance.
 - For frontend/UI work in this repo family, read the relevant FIELDGUIDE and design standards before editing.
 - Preserve unrelated dirty files; never revert user changes.
-- When the work order has a `### 相關通過案例` section (v5.13.0+, customer acceptance gate), judge each passed case before editing, stop on any case that would change, and fill `### 相關通過案例判定` in the report; the rule lives only in `../control-tower/references/work-order-template.md` § 撰寫〈相關通過案例〉.
+- When the work order has a `### 相關通過案例` section (v6.0.0-beta.3+, customer acceptance gate), judge each passed case before editing, stop on any case that would change, and fill `### 相關通過案例判定` in the report; the rule lives only in `../control-tower/references/work-order-template.md` § 撰寫〈相關通過案例〉.
 - Use existing repo patterns before inventing new abstractions.
+- Frontmatter `methodology`, a `### 方法論邊界` section, a detected methodology injection, or any call to a methodology skill → § Methodology.
 - If user input redirects the work, record it in the report and obey the newest instruction unless it makes the work order impossible.
 - If the request becomes out of scope, stop and ask whether to finish current scope, record for Tower, or explicitly expand scope.
   With `CT_MODE=yolo`, that question goes to Tower (§ Questions For Tower), not to the user.
@@ -340,18 +358,22 @@ The single authoritative definition is `../control-tower/references/yolo-mode.md
 - BAT channel (v5.7.0+, BAT `>= 0.7.0-pre.7`; authority § Worker 端 3-A, with the commands, exit codes, result fields and the
   version/fallback table in § BAT 通道): unless `worker_question_timeout = 0`, send each question with `bat-notify.mjs --ask`, question
   text on stdin only (never in argv), then keep calling `bat_wait_question` (fallback `--wait-answer --timeout-ms`) until it ends.
-  The 120 s lease counts per question (v5.15.0): every question needs its own first wait within 120 s of its `--ask`, and no gap over
+  The 120 s lease counts per question (v6.0.0-beta.9): every question needs its own first wait within 120 s of its `--ask`, and no gap over
   120 s between two of its waits; waiting on one question never renews another. Each wait's timeout is `min(45, floor(90 / K))` s for
   K questions still waiting; wait on all of them each round, at the same time when the platform can (at most 8), otherwise in turn,
   doing nothing else in between. `answered` → log it in `### 互動紀錄` and continue. Any failure of the channel (`--ask` fails, `lost`, `cancelled`, the wait
   tools fail) drops that question to the work order wait below; `expired` goes to the fallback. `--ask` carries the notification itself:
   never send a plain one for a question whose `--ask` succeeded.
-- Several questions (v5.15.0, authority § Worker 端 3-A steps 1–2): only the last notification of a batch of N wakes Tower.
+  Reading the helper's stdout (v6.0.0-beta.10, authority § Worker 端 3-A step 2): the `question:` / `expires:` / `notified:` lines, and the
+  `status:` line of `--cancel-question`, start with two spaces, so allow leading whitespace when parsing (never anchor on `^question:`).
+  `--ask` exit `0` but no id parsed → the question is registered: do not treat it as a failure; find its id at once with MCP
+  `bat_list_questions` (`status: all`) by `workorder` and the `Q-n：` prefix, then start waiting.
+- Several questions (v6.0.0-beta.9, authority § Worker 端 3-A steps 1–2): only the last notification of a batch of N wakes Tower.
   a. Send questions 1 … N-1 with `--ask --no-pty-write` (no `--submit`; the two flags are mutually exclusive: both → exit `1`,
      `ask: USAGE`, nothing registered). Each one that fails gets a line `- **通道**：工單` at the end of its `#### Q-n`.
   b. If any got the marker, commit the work order.
   c. Send question N with `--ask --submit`. Success → no plain `提問`.
-  d. Question N fails → mark it, commit, then send one plain `<工單 ID> 提問` — right after each other, nothing in between (v5.15.0):
+  d. Question N fails → mark it, commit, then send one plain `<工單 ID> 提問` — right after each other, nothing in between (v6.0.0-beta.9):
      questions 1 … N-1 are still pending in BAT and Tower is not awake yet. BAT `>= 0.7.2-pre.4` also prints `ask: NOTIFY_STEP <step>`; optional,
      record it if you like, but never let it change the flow (older BAT does not print it).
   Then start waiting at once (every question within 120 s of its own `--ask`). One question: just `--ask --submit`, as before.
@@ -412,9 +434,154 @@ in `../control-tower/references/workflow-engine.md` § 同意治理; the authori
 | Workflow | 1 | 授權表 #1 | 是 | 548k（事後上限 450k，超出） | `runId` wf_…；dropped 70 |
 ```
 
+### Methodology (v6.0.0-pre.1+)
+
+This subsection is the single authoritative definition of how a Worker carries a methodology (BMAD, pstack, …) inside one work order.
+The contract it implements (adapter fields, layers, tracker, status table, conflict IDs C1–C16) and the formats of the report lines it
+requires live in `../control-tower/references/methodology-adapters.md` (formats: § 工單欄位); the boundary section template lives in
+`../control-tower/references/work-order-template.md` (standard template, `### 方法論邊界`). The Worker never reads config to decide a
+methodology, same as runtime mode (§ Mode And Environment): Tower resolved it and wrote it into the work order.
+
+**Scope (hard constraint).** A work order without frontmatter `methodology` is not carried: it runs as in v5.12.6. A legacy
+`### BMad 工作流程` section is followed as a written instruction, as before; the Worker never rewrites old sections. Only three rules apply to
+every work order, and each fires only on an event: methodology injection seen (Injection self-check), a methodology skill called (Record every
+methodology skill call), and a compact or resume (§ Startup). With none of these events, behavior is exactly v5.12.6.
+
+**Priority.** CT wins, in the order of the contract's § 分層疊加 point 2: ① CT core rules (lifecycle, landing check, `affects_files`, report
+format, commit / push, yolo questions, BAT notify, strikeout) > ② this work order's `### 方法論邊界` > ③ the flow of the adapter that owns the
+layer, with its `worker.ct_overrides` applied > ④ ambient injection from any other installed methodology, which is not adopted for a layer
+it does not own. A methodology step that conflicts with ①–③ is skipped and written in the skill-use table with the reason; it is not a
+reason to stop the work order.
+
+**Injection self-check (Startup step 6).** Look at what the session start put into context: SessionStart hook output that names a
+methodology or tells the session to call a skill before working (for example pstack's `You have pstack.`). In Codex the injection is one
+developer message placed before the user prompt, opening with the same marker strings (V2a, T0307). Record it as the
+`methodology_ambient` line of `### 方法論執行紀錄`, in the format and with the required-when rule of the contract's § 工單欄位 ›
+`### 方法論執行紀錄` 的內容 (always written when the work order has frontmatter `methodology` or a `### 方法論邊界` section, `none` if nothing
+is seen; otherwise written only when something is seen). Check again after a compact or resume and add the event. Never block on it.
+The event is `SessionStart:` plus the sub-event, exactly; never 「SessionStart hook 注入」 or 「SessionStart startup」 (P1 and P1b got this
+wrong 5 times):
+
+```markdown
+- **methodology_ambient**：pstack（SessionStart:startup；標記「You have pstack.」）
+- **methodology_ambient**：pstack（SessionStart:startup、compact；標記「You have pstack.」）、unknown（事件不明；標記「<注入文字第一句>」）
+- **methodology_ambient**：none
+```
+
+**Record every methodology skill call (every work order).** Every call to a methodology skill in this session, whether the work order
+declared it or not and including one an injection steered you into, gets a row in the skill-use table of `### 方法論執行紀錄`: skill, at which
+step, what it did, what was skipped and why, declared or not. "Methodology skill" means any skill a methodology adapter covers (for example
+`bmad-*`, `pstack:*`), any skill a SessionStart injection tells the session to use, and any skill this work order names in its
+`### 方法論邊界` section or execution steps, including a local copy under option ③ of the contract's § 引入方式 that has no adapter (G2,
+PLAN-002). This sentence is the single definition; other files refer here. V1 (T0299) measured a Worker entering
+`pstack:poteto-mode` and leaving no trace in the report. Codex has no Skill tool: reading a methodology skill's `SKILL.md` and following it
+counts as a call and gets a row the same way (V2a measured a Codex Worker entering poteto-mode this way and not reporting it in 1 of 2 runs).
+A local copy under option ③ carries `disable-model-invocation: true`, so in Claude Code it cannot go through the Skill tool either:
+reading its `SKILL.md` by path and following it counts as a call and gets a row the same way (P3 measured 3/3 Workers recording it so).
+With a `### 方法論邊界` section and no call, write the one-line statement the contract gives. Skills called **inside** a sub-agent that a
+methodology skill started also get a row each, with the step written as `<parent skill> 的子代理內（背景／前景）`; the sub-agents themselves
+(count, background or not, read-only or not) go in `### 子代理與 Workflow 使用` (Q-1: P1b reported counts only, twice).
+
+**Carrying the layers (frontmatter `methodology`).** In Phase 2, before the work order's own steps:
+
+1. Read `methodology`: `request_kind`, `layers.<layer>` (`adapter`, `workflow`, `detail`), `inputs`, `writeback`, `versions`,
+   `subagent_writes`, `delivery`. `resolved_from` is evidence only: accept a mapping (one source per layer) or the early single value (same
+   source for every layer); never re-resolve or rewrite it. Frontmatter and `### 方法論工作流程` drift → frontmatter wins, record the drift
+   (§ Frontmatter Rules).
+2. Find each layer's adapter by id in the contract's search order (§ 散布與搜尋順序). Reading `methodology_adapters_path` from Tower config
+   only to locate that directory is a lookup and is allowed; which adapter to use is never taken from config. Adapter not found or broken,
+   or the workflow skill not installed → that layer degrades to free text: do the work order's own steps without the methodology, record it
+   in `### 遭遇問題` and the skill-use table, and never invent the methodology's behavior.
+3. Run the layers in order `planning` → `execution` → `review` → `verification`. Call each `workflow` the way the adapter's
+   `worker.invoke.<runtime>` says, inline in this session (`run_mode: inline`; never a new session), passing `detail` and `inputs[].path` as
+   the adapter's `handoff.consumes[].how` describes. The work order's own steps, exclusions and validation gates still apply.
+4. Questions the methodology wants to ask the user (adapter `worker.asks_user`) follow this file: with `CT_MODE=yolo` they go to Tower
+   (§ Questions For Tower); otherwise as for any in-scope question. A methodology gate that waits for the user's approval before going on
+   (for example a design-approval gate) is handled the same way: never stop and wait on the gate itself.
+5. Files the methodology writes stay in `affects_files` or the Worker scratchpad (contract C7). Without a scratchpad (headless `claude -p`,
+   Codex, a plain terminal) use `ct-<work order id>/` under the system temp directory (`$TMPDIR` / `%TEMP%`) and delete it at closeout;
+   nothing is left outside the repo (wording: `### 方法論邊界` template). The closeout `git status` rule is unchanged.
+
+**Methodology sub-agents.** Sub-agents a methodology starts on its own (for example pstack's background agents) follow
+`methodology.subagent_writes`. They are not the Workflow tool (contract C4); § Workflow And Sub-Agents still governs Workflow runs and the
+sub-agents you start yourself.
+
+- `deny` (default, also when the key is missing): methodology sub-agents may only read. A step that needs a writing sub-agent is done by
+  the main Worker itself or skipped, and written in the skill-use table. Read-only review sub-agents that an allowed workflow starts on its
+  own (adapter `session.subagents.only_in` / `background`; for example `pstack:thermos`, `pstack:interrogate`) may run, background ones
+  included; report each as below, with whether it ran in the background and the skills it called.
+- `authorized`: only together with a 〈方法論子代理授權〉 block in the work order (`work-order-template.md` § 撰寫方法論子代理授權). Do only the
+  listed rows, within each row's sub-agent cap and write scope (inside `affects_files`); a sub-agent commits only where its row says it may.
+  No methodology-made worktree or branch: isolation is BAT `--isolation worktree` only. `authorized` without the block, or the block with
+  `deny` → treat as `deny` and record the mismatch in `### 遭遇問題`.
+- Anything beyond the block (another adapter or workflow, more sub-agents, writes outside the scope, a raised cap): stop before it and ask
+  Tower (yolo: § Questions For Tower; otherwise as a scope question).
+- Report: rows in `### 子代理與 Workflow 使用` with 種類 `方法論子代理（<adapter>/<workflow>）`, count, purpose, whether it wrote and which
+  files, and the authorization row number.
+
+**Delivery layer.** `methodology.delivery` is `none` by default and when missing: no PR, no release, deploy or publish, no landing, no
+branch; push only under § Phase 4 › Commit rules. A methodology step that would deliver is skipped and written in the skill-use table. Only
+when `layers.delivery` names an adapter does the Worker run delivery steps, and then only the actions the work order lists; push still
+needs the work order to say the user authorized it.
+
+**Status and writeback.** Phase 3 runs the work order's gates; then map the methodology's result with the adapter's `status_mapping`
+inside the contract's § 狀態對應總則 (methodology "done" with a failing gate is never `DONE`) and fill the adapter's `required_report` items
+in `### 方法論執行紀錄`. With `methodology.writeback`, or a main methodology tracker sync the work order's steps ask for, write back as the
+adapter's `handoff.writeback` / `tracker` says (the target is in `affects_files`) and record what changed in `### 方法論狀態回寫`.
+
+**Report sections.** Fill `### 方法論執行紀錄` and `### 方法論狀態回寫` when the work order has them. When the self-check or a methodology
+skill call requires `### 方法論執行紀錄` and the work order lacks it, add it after `### 遭遇問題`. A work order whose report still has the
+legacy `### sprint-status.yaml 已更新` keeps it: fill that section as the writeback record and do not add or rename sections.
+
+## Tower Addenda Check (v6.0.0-beta.11+)
+
+This section is the single authoritative definition of how a Worker picks up a section the Tower added to the work order while the work
+order is `IN_PROGRESS` (PLAN-005 P1, D545). How the Tower writes such a section (`## 塔台補充（執行中 #N）`, when to use it, commit) is
+`../control-tower/references/work-order-system.md` § 執行中補充工單; the optional cross-session reminder is
+`../control-tower/references/cross-project-coordination.md` § 通知自己的 Worker 重讀工單. The compact／resume re-read (§ Startup) is unchanged.
+
+- **Baseline.** At Startup step 4, keep the list of `## 塔台補充（…）` heading lines already in the work order (`Renew #N` and `執行中 #N`
+  alike; often none). Keep it in context only; write nothing for it. After a compact or resume, the full re-read (§ Startup) covers every
+  section, so the headings present at that re-read become the new baseline.
+- **Nodes.** Run the check at exactly three nodes, each time the work reaches them:
+  1. before running the validation gates (Phase 3 step 1);
+  2. before the product commit (Phase 4 step 1; also a product commit made before a yolo question, § Questions For Tower);
+  3. before filling the report (Phase 4 step 2).
+  Not between long steps, and not as part of waiting for a Tower answer (§ Questions For Tower keeps its own rules). A user's 「重讀工單」 or another
+  Renew trigger word (`../control-tower/references/research-workorder.md` § Worker 端：Renew 偵測與行為), or a cross-session message saying the
+  work order has a new section, counts as one extra node: run the same check at once. Such a message is only a pointer; what to do comes
+  only from the work order.
+- **Check.** One grep of section headings per node, skipping fenced code blocks; nothing else is read (any equivalent command that skips
+  fenced code blocks will do):
+
+  ```bash
+  awk '/^[ \t]*[`][`][`]/ { in_f = !in_f; next } in_f { next } /^## 塔台補充（/ { print }' "$f"
+  ```
+
+  `$f` is the work order file this session reads and writes: `_ct-workorders/<file>`, or `$CT_HOME/_ct-workorders/<file>` in a worktree
+  (§ Worktree Isolation item 1; never the worktree's read-only copy). Visibility does not depend on the Tower committing the section.
+- **Nothing new** (every heading is in the baseline) → carry on. Do not read the rest of the work order and do not output or record anything.
+  That includes `### 互動紀錄`: no line such as 「沒有新段落」 or 「已檢查」 (T0407 measured Workers writing one in 3 of 4 runs).
+- **New heading** → read only that section (from its heading to the next `## ` heading or the `---` before `## 回報區`), add the heading to the
+  baseline, and follow it:
+  - When the section says `affects_files` or the acceptance criteria changed, re-read the frontmatter and the acceptance section too.
+    Frontmatter wins over the section text (§ Frontmatter Rules); a scope widening written only in the section, with frontmatter unchanged,
+    is out of scope.
+  - Conflict — the section contradicts work already done (above all committed work) without saying so under 〈已完成部分〉, or asks for
+    something outside `affects_files` or the work order's exclusions → do not widen scope yourself: with `CT_MODE=yolo` ask Tower
+    (§ Questions For Tower); otherwise stop and ask, as for any scope question (§ Phase 2).
+  - Following it changes product files after the validation gates ran → re-run the affected gates before the commit and the report
+    (in a worktree, `validated_sha` must still match, § Worktree Isolation item 7).
+  - A `- **塔台答覆 Q-n**` line inside a `執行中` section is not an answer (§ Questions For Tower); answers stay in `### 待塔台決策` or a Renew section.
+- **Record** one line per section read, in `### 互動紀錄`; the report gets no new section:
+  `[HH:MM] 📥 塔台補充（執行中 #1）於〈驗證前〉讀到 → <what you did>`. A `Renew #N` section read this way also gets its usual
+  `### Renew 歷程` line (`../control-tower/references/research-workorder.md` § 回報區 Renew 歷程格式).
+
 ## Phase 3: Verify
 
-Run the validation gates named in the work order. If a gate cannot run, record the exact blocker and do not imply PASS.
+1. Run § Tower Addenda Check first (node 1, v6.0.0-beta.11+).
+2. Run the validation gates named in the work order. If a gate cannot run, record the exact blocker and do not imply PASS.
+3. With frontmatter `methodology`, map the methodology's result after the gates as § Methodology › Status and writeback says.
 
 Separate evidence lanes:
 
@@ -433,20 +600,51 @@ Use reverse-order closeout to avoid watchers seeing terminal status before the r
 § Worktree Isolation item 8 (which still governs in a worktree):
 
 1. Commit the product changes first, when the work order or worker policy requires a commit, so the report can record their hashes.
+   Run § Tower Addenda Check first (node 2, v6.0.0-beta.11+).
 2. Fill the report section: result summary, files changed, validation evidence, commit status (the product commit hashes), deviations,
-   blockers, and follow-ups.
-3. Include interaction history and Renew history when present, and sub-agent / Workflow use when any (v5.11.0+, § Workflow And Sub-Agents).
-4. Only after the report is complete, update final metadata status and completion timestamps.
+   blockers, and follow-ups. Run § Tower Addenda Check first (node 3, v6.0.0-beta.11+); a section it reads may still change steps 1–2.
+3. Include interaction history and Renew history when present, sub-agent / Workflow use when any (v5.11.0+, § Workflow And Sub-Agents),
+   and the methodology sections when § Methodology requires them (v6.0.0-pre.1+).
+4. Only after the report is complete, update final metadata status and completion timestamps, and the frontmatter `session_ids`
+   (v6.0.0-beta.10+, § Session id below; its mirror line goes into 〈完成狀態〉 in step 2).
    Then self-check the work order before step 5 (v5.7.1; checks only, the formats themselves are unchanged):
    (a) every `#### Q-n：` heading under `### 待塔台決策` carries the question text and is followed by its 「提問時間」 line;
    (b) the report section has no template placeholder text left, such as 「（Worker 填寫）」;
-   (c) there is exactly one `### 互動紀錄` section.
-   (b) or (c) fails: fix it, then continue. (a) fails (v5.8.1): do not edit a question already sent, since Tower may have answered it
+   (c) there is exactly one `### 互動紀錄` section;
+   (d) (v6.0.0-pre.1+) every methodology skill this session called has a row in `### 方法論執行紀錄`, and the `methodology_ambient` line is
+   there whenever § Methodology › Injection self-check requires it.
+   (b), (c) or (d) fails: fix it, then continue. (a) fails (v5.8.1): do not edit a question already sent, since Tower may have answered it
    as written; record under `### 遭遇問題` which question and what is missing, then continue.
 5. Commit the work order file (report and final metadata), when a commit is required, before any notify.
 6. Then notify Tower (§ BAT Notify And Fallback).
 
 With no commit required, skip steps 1 and 5 and say so in the report.
+
+### Session id (v6.0.0-beta.10+)
+
+This subsection is the single authoritative definition of the Worker writing its own session id. Tower's closeout backup
+(reading the Worker tab's `claudeSessionId` before `--close-worker`) is `../control-tower/references/work-order-system.md`
+§ 收單補記 session id; the statistics that read it are `../ct-insights/references/analysis-rules.md` § Session 用量統計 (attribution ⓪).
+
+- **Value.** Read exactly one variable, `CLAUDE_CODE_SESSION_ID`, with a command that prints only its value
+  (bash: `printf '%s' "$CLAUDE_CODE_SESSION_ID"`; PowerShell: `$env:CLAUDE_CODE_SESSION_ID`). Before writing, check it against
+  `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`. Not set or not matching (Codex, an older Claude Code, another
+  runtime) → write `unavailable`. Never fail closeout over it.
+- **The only value exception to "list environment variable names only".** A session id is not a secret, so this one value may be
+  written, and only in the two places below. Do not list or print any other variable for it, never in the same command as another
+  variable, and never write any token. The names-only rule itself is `../control-tower/references/auto-session.md` § BAT 內部終端路由 › 偵測條件.
+- **Frontmatter** (machine SoT): a YAML block list, quoted.
+
+  ```yaml
+  session_ids:
+    - "<value of CLAUDE_CODE_SESSION_ID>"
+  ```
+
+  Renew or resume in a new session: append, never overwrite; skip a value already in the list. Do not append `unavailable` when the
+  list already has a value, and replace a lone `unavailable` once a real id is known.
+- **Mirror line** in the report's 〈完成狀態〉: `- **session_id**：<value>` (the value of this session; for a Renew, the new session's value).
+- In a worktree (`CT_HOME` set) the work order is the one under `$CT_HOME`, as for every other report field (§ Worktree Isolation item 1).
+- Closeout via `ct-done` from another session: write that session's id the same way; do not guess the original Worker's id.
 
 Status rules:
 
@@ -485,9 +683,9 @@ manual fallback message.
    - Still `IN_PROGRESS` with open questions for Tower (`CT_MODE=yolo` only, v5.5.0+): `<工單 ID> 提問` — sent mid-execution by
      § Questions For Tower, not at closeout. The Tower-side regex is `../control-tower/references/yolo-mode.md` § 斷點 A.
      On the BAT channel (v5.7.0+) the same message is sent by `bat-notify.mjs --ask` itself; do not send it again. Within a batch only the
-     last `--ask` (the one with `--submit`) wakes Tower; the earlier ones use `--no-pty-write` (v5.15.0, § Questions For Tower).
+     last `--ask` (the one with `--submit`) wakes Tower; the earlier ones use `--no-pty-write` (v6.0.0-beta.9, § Questions For Tower).
    Before every send — closeout notify, `--ask`, or the manual fallback message — compare the id you are about to use with the
-   frontmatter `id` and use the frontmatter value if they differ (v5.13.1; steps and the report line in the authority above).
+   frontmatter `id` and use the frontmatter value if they differ (v6.0.0-beta.4; steps and the report line in the authority above).
 2. If `CT_MODE=on`, run `bat-notify.mjs` without `--submit`.
 3. If `CT_MODE=yolo`, run `bat-notify.mjs --submit`.
 4. If `CT_MODE=ask` or `off` — or `CT_MODE` is missing or invalid, which the Worker treats as `ask` (`../control-tower/references/auto-session.md` § Mode 與互動旗標協定 › Worker 側讀取規則) — never add `--submit` (`--submit` is yolo-only, see § Mode And Environment); show the exact manual Tower message as the clipboard/manual fallback. This is the same rule as `ct-done` § BAT Notify.
@@ -527,8 +725,10 @@ For v1 work orders:
 
 - `references/session-guardrails.md`: retries, scope guard, strikeout, timeout, onion-problem handling.
 - `../control-tower/references/research-workorder.md`: research work order interaction and Renew rules.
+- `../control-tower/references/work-order-system.md` § 執行中補充工單: only when § Tower Addenda Check finds a new section and its format matters (v6.0.0-beta.11+); the Worker rule itself is § Tower Addenda Check in this file.
 - `../control-tower/references/work-order-template.md`: metadata/report shape.
 - `../control-tower/references/merge-workorder.md`: only for a merge work order (frontmatter `kind: merge`, v5.3.0+) — Worker scope, guardrails, and report requirements per merge mode.
 - `../control-tower/references/auto-session.md` and `../control-tower/references/yolo-mode.md`: BAT and YOLO dispatch contracts.
 - `../control-tower/references/workflow-engine.md`: only when the work order authorizes the Workflow tool (v5.11.0+) — rules R1–R5 and the Tower-side governance; the Worker rule itself is § Workflow And Sub-Agents in this file.
+- `../control-tower/references/methodology-adapters.md`: only when § Methodology applies (v6.0.0-pre.1+) — the adapter contract, report-line formats (§ 工單欄位), status table, search order, conflicts; the Worker rule itself is § Methodology in this file.
 - `## Landing Zone Check` in this file is the single authoritative definition of the landing-zone rules; `ct-done` and `ct-status` reference it rather than restating it. Change it here only.

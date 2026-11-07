@@ -2,7 +2,7 @@
 name: ct-status
 description: "Control Tower status skill for checking work order state from any session. Use when the user invokes $ct-status or /ct-status, asks for one T#### status, all active work, a sync-style status check, frontmatter/body drift, or whether PARTIAL, BLOCKED, DONE, BUG, PLAN, or EXP records are still active."
 ---
-<!-- ct-status-version: 5.15.0 -->
+<!-- ct-status-version: 6.0.0 -->
 
 # ct-status
 
@@ -16,7 +16,7 @@ Arguments: `$ARGUMENTS`
 |---|---|
 | `T####` or path | Show one work order status and key metadata. |
 | empty or `all` | Summarize hot-zone work orders. |
-| `sync` | Compare work order files with `sprint-status.yaml` when available. |
+| `sync` | Compare work order files with the main methodology's tracker when available (bmad: `sprint-status.yaml`). |
 | `active` | Emphasize items that still require Tower or Worker action. |
 
 ## Read Order
@@ -28,7 +28,16 @@ Arguments: `$ARGUMENTS`
 5. If frontmatter and body drift, report `metadata_drift` and use frontmatter.
 6. Unknown statuses remain `UNKNOWN`; never coerce to `PENDING`.
 
-For `sync`, look for `sprint-status.yaml` in the repo root, `_bmad-output/`, and `docs/`.
+For `sync`, compare against the main methodology's tracker (v6.0.0-pre.1+): the `tracker` of the main methodology adapter (`file`, `search`,
+`optional`; contract `../control-tower/references/methodology-adapters.md` § 描述檔格式, Tower side
+`../control-tower/references/work-order-system.md` § 主方法論 tracker 同步).
+
+- Main methodology: the `methodology` key in `_ct-workorders/_tower-config.yaml`, then `~/.claude/control-tower-data/config.yaml` (read-only;
+  ct-status dispatches nothing). Unset or `auto` → `bmad` when the built-in bmad adapter is usable, the v5.12.6 behavior. Find the adapter in
+  the contract's search order (§ 散布與搜尋順序).
+- bmad: `sprint-status.yaml`, looked for in the repo root, `_bmad-output/`, and `docs/` (adapter `tracker.search`), exactly as before.
+- Adapter `tracker: {}`, `methodology: none`, or the adapter not found → no tracker comparison; say which, and still report file status.
+- Writeback evidence in a work order is `### 方法論狀態回寫`, or the legacy `### sprint-status.yaml 已更新`; read both.
 
 ## Landing Zone Check
 
@@ -69,5 +78,5 @@ For large projects, summarize first and list only active or mismatched items unl
 
 - No `_ct-workorders/`: report that Control Tower is not initialized here.
 - No matches: list nearby ids if cheap.
-- Missing `sprint-status.yaml`: complete file status report and mark yaml comparison unavailable.
+- Missing tracker file (bmad: `sprint-status.yaml`), or no tracker for the main methodology: complete file status report and mark the tracker comparison unavailable.
 - Invalid frontmatter: report the parse/validation issue and fallback only if the body metadata is parseable.

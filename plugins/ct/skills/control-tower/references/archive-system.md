@@ -222,7 +222,7 @@ _ct-workorders/
 ```
 _ct-workorders/（*sync 掃描範圍）
 ├── T####-*.md        ✅ 掃描
-├── CP-T####-*.md     ✅ 掃描（跨專案前綴工單，歸入 sprint 同步）
+├── CP-T####-*.md     ✅ 掃描（跨專案前綴工單，歸入主方法論 tracker（bmad 時為 sprint-status.yaml）同步）
 ├── BUG-###-*.md      ✅ 掃描（若啟用）
 ├── PLAN-###-*.md     ✅ 掃描（若啟用）
 ├── EXP-*-*.md        ✅ 掃描（若啟用）
@@ -246,7 +246,7 @@ _ct-workorders/（*sync 掃描範圍）
 `*archive` 執行歸檔後，自動觸發 `*sync` 重建索引：
 - 歸檔後的單據從索引中移除
 - 活躍單據的引用關係可能改變
-- 確保 sprint-status.yaml / _bug-tracker.md / _backlog.md 與熱區一致
+- 確保主方法論 tracker（bmad 時為 sprint-status.yaml） / _bug-tracker.md / _backlog.md 與熱區一致
 
 ---
 
@@ -311,7 +311,7 @@ _ct-workorders/（*sync 掃描範圍）
 若日期缺失，保留既有降級行為：以建立時間為候選天數基準，但摘要中標示 `date_fallback=created_at`。
 
 > Work Order 最終態於 v5.0.0 從 `DONE, FAILED` 擴充為 `DONE, FIXED, FAILED, PARTIAL`。
-> v5.0.2 起，`PARTIAL` 歸檔前必須先覆核 blocker 是否已由後續工單、scope decision 或 final acceptance 解除。v5.13.0 起這是**最後防線**：
+> v5.0.2 起，`PARTIAL` 歸檔前必須先覆核 blocker 是否已由後續工單、scope decision 或 final acceptance 解除。v6.0.0-beta.3 起這是**最後防線**：
 > 塔台裁示當下就該收尾，做法以 [work-order-system.md](work-order-system.md) § 回報處理流程 › PARTIAL 當下收尾 為準。歸檔時仍掛著 `PARTIAL` 的，照該節補做後再歸檔；
 > 只有仍在等外部條件、或被明確接受為部分完成結果的才保留 `PARTIAL`。
 
