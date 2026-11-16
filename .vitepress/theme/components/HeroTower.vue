@@ -19,7 +19,7 @@ const STEPS: Step[] = [
 </script>
 
 <template>
-  <figure class="hero-tower" aria-labelledby="hero-tower-caption">
+  <figure class="hero-tower" aria-labelledby="hero-tower-caption" data-no-zoom>
     <p class="ht-head">
       <span>一張工單的一生</span>
       <span aria-hidden="true">● 塔台　○ Worker</span>

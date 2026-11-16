@@ -33,7 +33,7 @@ const ENDS: State[] = [
 </script>
 
 <template>
-  <div class="ticket-states" role="group" aria-label="工單的狀態流轉">
+  <div class="ticket-states" role="group" aria-label="工單的狀態流轉" data-pl-zoom>
     <div class="ts-path">
       <template v-for="(s, i) in FLOW" :key="s.key">
         <span v-if="i > 0" class="ts-arrow" aria-hidden="true" />

@@ -1682,6 +1682,12 @@
   margin-top: 0;
 }
 
+/* 放大檢視（data-pl-zoom）的按鈕空間：上面的 padding: 0 權重和 portal-layout 的保留空間相同又比較晚載入，會把它蓋掉，
+   按鈕就壓在第 3 級卡片的右上角；這裡把保留空間加回來 */
+.vp-doc .cap-levels.pl-zoom-host.pl-zoom-html {
+  padding-top: var(--pl-zoom-reserve, 44px);
+}
+
 .cap-levels .cap-level {
   margin: 0;
   padding: 18px 20px;
@@ -2248,16 +2254,12 @@
 }
 
 .sl-svg {
-  font-family: var(--ct-font-sans);
-}
-
-/* 尺寸只套在頁面上的圖：放大檢視複製的 SVG 由 width／height 屬性決定大小，不能被 width: 100% 鎖住 */
-.shell-loop .sl-svg {
   display: block;
   width: 100%;
   max-width: 400px;
   height: auto;
   margin: 0 auto;
+  font-family: var(--ct-font-sans);
 }
 
 .sl-ring {
@@ -3222,10 +3224,13 @@
   background: var(--vp-c-bg-soft);
 }
 
+/* 主內容加寬後圖會跟著變大（2560 時約 2100px，字比內文大很多）：圖最寬 1040px（加寬前的寬度），在外框裡置中 */
 .eco-stack svg {
   display: block;
   width: 100%;
+  max-width: 1040px;
   height: auto;
+  margin: 0 auto;
   font-family: var(--vp-font-family-base);
 }
 

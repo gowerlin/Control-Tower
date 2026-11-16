@@ -35,7 +35,7 @@ const LEVELS: Level[] = [
 </script>
 
 <template>
-  <ol class="cap-levels" aria-label="四級能力">
+  <ol class="cap-levels" aria-label="四級能力" data-pl-zoom>
     <li v-for="(level, i) in LEVELS" :key="level.name" class="cap-level" :class="{ 'is-core': level.core }">
       <p class="cap-head">
         <span class="cap-num">第 {{ i }} 級</span>
