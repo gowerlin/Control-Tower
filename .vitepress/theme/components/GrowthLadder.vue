@@ -50,7 +50,7 @@ const RUNGS: Rung[] = [
 </script>
 
 <template>
-  <ol class="growth-ladder" :class="{ 'is-detailed': detailed }" aria-label="知識成熟度管線">
+  <ol class="growth-ladder" :class="{ 'is-detailed': detailed }" aria-label="知識成熟度管線" data-pl-zoom>
     <li v-for="rung in RUNGS" :key="rung.name" class="gl-rung" :class="{ 'is-tower': rung.tower, 'is-you': rung.you }">
       <span class="gl-node" aria-hidden="true" />
       <p class="gl-name">{{ rung.name }}</p>

@@ -1682,12 +1682,6 @@
   margin-top: 0;
 }
 
-/* 放大檢視（data-pl-zoom）的按鈕空間：上面的 padding: 0 權重和 portal-layout 的保留空間相同又比較晚載入，會把它蓋掉，
-   按鈕就壓在第 3 級卡片的右上角；這裡把保留空間加回來 */
-.vp-doc .cap-levels.pl-zoom-host.pl-zoom-html {
-  padding-top: var(--pl-zoom-reserve, 44px);
-}
-
 .cap-levels .cap-level {
   margin: 0;
   padding: 18px 20px;
