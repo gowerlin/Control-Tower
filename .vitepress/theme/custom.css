@@ -2248,12 +2248,16 @@
 }
 
 .sl-svg {
+  font-family: var(--ct-font-sans);
+}
+
+/* 尺寸只套在頁面上的圖：放大檢視複製的 SVG 由 width／height 屬性決定大小，不能被 width: 100% 鎖住 */
+.shell-loop .sl-svg {
   display: block;
   width: 100%;
   max-width: 400px;
   height: auto;
   margin: 0 auto;
-  font-family: var(--ct-font-sans);
 }
 
 .sl-ring {

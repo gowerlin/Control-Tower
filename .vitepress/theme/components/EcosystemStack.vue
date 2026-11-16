@@ -143,7 +143,7 @@ function brickAttrs(key: Key, label: string) {
 </script>
 
 <template>
-  <figure class="eco-stack" :class="{ 'is-live': live }">
+  <figure class="eco-stack" :class="{ 'is-live': live }" data-no-zoom>
     <p class="eco-hint">圖比畫面寬，可以左右滑動看完整張。</p>
     <div class="eco-scroll">
       <svg

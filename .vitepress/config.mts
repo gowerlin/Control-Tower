@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import { defineConfigWithTheme, type DefaultTheme, type HeadConfig } from 'vitepress'
+import { layoutHeadScript } from './theme/portal-layout/layout-state'
 
 // 🔴 寫頁面內容時不改本檔：nav、sidebar、元件、設定值有需要時以 yolo 提問請塔台裁示。
 
@@ -279,7 +280,9 @@ export default () => {
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:site_name', content: SITE_TITLE }],
     ['meta', { property: 'og:locale', content: 'zh_TW' }],
-    ['meta', { name: 'twitter:card', content: 'summary_large_image' }]
+    ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+    // 版型：首屏繪製前依 localStorage 套用左右功能表的收合狀態（portal-layout）
+    ['script', {}, layoutHeadScript]
   ]
   if (SITE_URL) {
     head.push(
