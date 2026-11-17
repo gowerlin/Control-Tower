@@ -977,8 +977,11 @@
 
 /* ---------- 對照表（CardTable）：桌面表格、窄螢幕卡片 ---------- */
 
+/* 表格不得超出主內容欄：格內的長字可以斷行（下面 td 的規則），真的放不下時在表格內捲動，
+   不讓整頁水平捲動、不壓到本頁目錄 */
 .vp-doc .card-table {
   margin: 24px 0;
+  overflow-x: auto;
 }
 
 .vp-doc .ct-grid {
@@ -1020,7 +1023,12 @@
   color: var(--vp-c-text-1);
 }
 
+/* 長識別字、檔案路徑（例：環境變數名、references/ 下的檔名）沒有斷行點時可以在字中斷行，
+   表格的最小寬才不會被最長的字撐開；min-width 讓版號這類短欄不被擠窄到把「v5.12.0」切開。
+   列標題（tbody th，寬 30%）不加：960 起都放得下，識別字維持完整 */
 .vp-doc .ct-grid td {
+  min-width: 4.5em;
+  overflow-wrap: anywhere;
   color: var(--vp-c-text-2);
 }
 
