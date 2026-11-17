@@ -4,7 +4,7 @@
 import { h } from 'vue'
 import DefaultTheme from 'vitepress/theme-without-fonts'
 import type { Theme } from 'vitepress'
-// 版型（vitepress-portal-layout v1.1.1）：主內容加寬、左右功能表收合、圖的放大檢視。
+// 版型（vitepress-portal-layout v1.1.2）：主內容加寬、左右功能表收合、圖的放大檢視。
 // portal-layout/ 是 skill 原檔，不改內容；升版時整包覆蓋。時間軸元件這一輪不套用，沒有複製。
 import LayoutToggles from './portal-layout/components/LayoutToggles.vue'
 import FigureZoom from './portal-layout/components/FigureZoom.vue'
