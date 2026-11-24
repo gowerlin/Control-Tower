@@ -2,9 +2,9 @@
 name: control-tower
 description: "BMad Control Tower project orchestrator for Tower sessions. Use when the user invokes $control-tower or /control-tower, says control tower, 塔台, 指揮塔, 工單管理, or asks to create, dispatch, sync, recover, archive, report, or coordinate file-driven work orders, BUG/PLAN/EXP records, sprint state, BAT/YOLO dispatch, or multi-agent project work. For worker execution commands such as $ct-exec, $ct-done, $ct-status, $ct-evolve, or $ct-insights, route to those dedicated skills instead of loading tower mode."
 ---
-<!-- control-tower-version: 6.0.0 -->
+<!-- control-tower-version: 6.0.1 -->
 
-# BMad Control Tower v6.0.0
+# BMad Control Tower v6.0.1
 
 $ARGUMENTS
 
@@ -34,7 +34,7 @@ On `$control-tower`, `/control-tower`, or equivalent Tower startup:
 5. In BAT, declare this tab as the Tower once (`bat-terminal.mjs --set-role tower --mode <effective auto-session>`); conditions, command, and exit-code handling live only in `references/auto-session.md` § 塔台分頁角色宣告. Non-zero exit or non-BAT never blocks startup.
 6. Show a concrete Tower status panel before dispatching or editing anything, including the `分頁標題` line from step 5. Fields and template are defined only in `references/memory-protocol.md` § 塔台狀態面板; unknown values are shown as 「未知」, never filled by an extra scan. v5.9.0+ (BAT `>= 0.7.1-pre.1`): one `bat_whoami` call may add a one-line hint suggesting BAT「以塔台開啟 Claude」 when `claudeSessionName` exists and does not end with ` · Tower`; a missing key, MCP unavailable, or non-BAT shows nothing. Conditions live only in that section.
 7. Run Full Scan only when `_tower-state.md` is missing, the environment snapshot is empty or older than 7 days, or the user runs `*rescan`.
-8. v6.0.0+: every time the Tower writes `_tower-state.md` (startup, dispatch, closeout, decision, `*pause`/`*resume`, …), it also updates the machine-readable summary frontmatter in the same write; the fields and rules live only in `references/memory-protocol.md` § 機器可讀摘要（YAML frontmatter）. v6.0.0-beta.10+: the first write of a session adds its startup entry with this Tower's own session id (or 「session id 未知」; never blocks startup, never a frontmatter field); format and value rules live only in `references/memory-protocol.md` § 塔台 session id.
+8. v6.0.0+: every time the Tower writes `_tower-state.md` (startup, dispatch, closeout, decision, `*pause`/`*resume`, …), it also updates the machine-readable summary frontmatter in the same write; the fields and rules live only in `references/memory-protocol.md` § 機器可讀摘要（YAML frontmatter）. v6.0.1+: after every frontmatter write (this file, work orders, BUG/PLAN/EXP, `_handover`/`_reply`), quote string values as that file's § YAML frontmatter 字串寫法與寫入後自檢 says (a value with a backslash goes in single quotes or uses forward slashes) and run `scripts/check-frontmatter.py` on the files written; fix and re-check before committing. Startup is never blocked by it. v6.0.0-beta.10+: the first write of a session adds its startup entry with this Tower's own session id (or 「session id 未知」; never blocks startup, never a frontmatter field); format and value rules live only in `references/memory-protocol.md` § 塔台 session id.
 9. v6.0.0-beta.3+: measure the hot files against the size budget (bytes only, no reading) and print one line per file over budget; the budget, BAT's 512 KiB limit, and the line format live only in `references/memory-protocol.md` § BAT 塔台面板讀取契約 › 大小預算. It never blocks startup.
 
 For state format and recovery rules, read `references/memory-protocol.md`. For config layering, read `references/tower-config.md`.
@@ -89,7 +89,7 @@ For new work that is not safely direct:
 1. Restate the objective and identify unknowns.
 2. Ask bounded clarification questions when needed. Prefer option-style questions for Tower alignment unless project-local rules say otherwise.
 3. Create work orders only after the scope is concrete enough to execute.
-4. Use `_ct-workorders/T####-short-title.md` with YAML frontmatter as metadata SoT.
+4. Use `_ct-workorders/T####-short-title.md` with YAML frontmatter as metadata SoT (string quoting and the post-write check: `references/memory-protocol.md` § YAML frontmatter 字串寫法與寫入後自檢, v6.0.1+).
 5. Fill `affects_files`, dependencies, validation gates, explicit exclusions, and closeout expectations.
 6. Dispatch via auto-session/BAT when configured, or show the exact Worker command for manual launch.
 

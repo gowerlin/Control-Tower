@@ -385,7 +385,7 @@ T0106（即將派發）affects_files：
 1. **找 Worker 分頁**：BAT MCP `bat_list_terminals`（`scope: mine`）裡 `workorder` 等於這張工單完整 ID 的列；**恰好一列**才繼續，零列或多列就跳過。
 2. **讀值**：對那一列的 terminal id 呼叫 `bat_get_state`，取 `claudeSessionId`（BAT `>= 0.7.1-pre.1` 才有這個鍵）。
 3. **寫入**：值符合 `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`、而且不在工單 frontmatter `session_ids` 裡 → 追加到清單末尾
-   （YAML block list、加引號；清單只有 `unavailable` 時換掉它；沒有這個欄位就新增）。只改 frontmatter，不改回報區（回報區由 Worker 填）；隨塔台本來的收單 commit 一起提交。
+   （YAML block list、加引號；清單只有 `unavailable` 時換掉它；沒有這個欄位就新增）。只改 frontmatter，不改回報區（回報區由 Worker 填）；隨塔台本來的收單 commit 一起提交。寫完照 [memory-protocol.md](memory-protocol.md) § YAML frontmatter 字串寫法與寫入後自檢 自檢（v6.0.1+）。
 4. **跳過**（都不是錯誤、不提示、不重試）：不在 BAT（`BAT_SESSION` 不是 `1`）、MCP 不可用或回錯誤、`claudeSessionId` 鍵不存在（舊 BAT）、
    值是 `null`（🔴 不代表沒有 session：還沒回報、hooks 沒注入或被關、headless 重開）、值不是 UUID。
 - 只用 MCP 讀，不用 helper CLI（helper 沒有對應查詢，也不要為此讀 `bat-scripts.log`，它不是契約，D517）。
@@ -549,7 +549,7 @@ stderr 含 `Forbidden` 時同一行多一句原因提示，規則同上一節 ex
 
 1. 保留原始回報區與 evidence，不覆寫歷史結論。
 2. 在原工單文末新增 `## 塔台收尾補記`（舊稱 post-resolution note）：時間（取系統時間）、裁示（決策編號）、剩餘部分由誰完成（接手單編號）或為何不需再做。
-3. 改 frontmatter `status`（與本文元資料鏡像）；`completed_at` 保留 Worker 的值，`updated_at` 取系統時間。
+3. 改 frontmatter `status`（與本文元資料鏡像）；`completed_at` 保留 Worker 的值，`updated_at` 取系統時間。寫完照 [memory-protocol.md](memory-protocol.md) § YAML frontmatter 字串寫法與寫入後自檢 自檢（v6.0.1+）。
 4. 同步更新主方法論 tracker（bmad 時為 `sprint-status.yaml`）、`_tower-state.md`、`_decision-log.md`、ct-status active tracking 與 BAT active tracking，避免 resolved partial 繼續顯示為 active work。
 5. **接手單完成後回頭確認**：收接手單時，在原工單的〈塔台收尾補記〉追加一行「T#### 已完成（D###）」；接手單沒完成剩餘部分時，在補記寫明剩下的由誰接。
 

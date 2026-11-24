@@ -1,13 +1,13 @@
 ---
 title: 更版紀錄
-description: BMad Control Tower 近 10 版的更版紀錄（最新 v6.0.0），更早的版本見演進史。
+description: BMad Control Tower 近 10 版的更版紀錄（最新 v6.0.1），更早的版本見演進史。
 ---
 
 <!-- 本頁由 scripts/sync-ct-release.mjs 從 CT CHANGELOG 產生，請勿手改；要改內容請改來源後重跑。 -->
 
 # 更版紀錄
 
-目前版本 **v6.0.0**（2026-11-07）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 62 版（v2.1.1 ～ v5.12.7）請看[演進史](./evolution)。
+目前版本 **v6.0.1**（2026-11-25）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 63 版（v2.1.1 ～ v5.12.8）請看[演進史](./evolution)。
 
 本頁只列正式版。預發行版 v6.0.0-pre.1 ～ v6.0.0-rc.1（14 版）的改動已彙整在 v6.0.0 的段落，逐版說明保留在「實驗功能」的[預發行專章](../preview/methodology-adapters)作為歷史參考。
 
@@ -16,6 +16,58 @@ description: BMad Control Tower 近 10 版的更版紀錄（最新 v6.0.0），�
 :::
 
 ::: v-pre
+
+## 6.0.1 <small>2026-11-25</small> {#v6-0-1}
+
+
+> **修正：CT 寫的 YAML frontmatter 可能讓外部讀者整份讀不到。** 塔台把含 Windows 路徑的文字（例 `"…\Users\…"`）寫進 `_tower-state.md` 摘要的雙引號字串時，
+> YAML 會把 `\U`、`\b`、`\m` 這類組合當成跳脫序列，不合法的跳脫是語法錯誤，**整份 frontmatter 解析失敗**；BAT 塔台面板因此讀不到該工作區的摘要（待辦、下一個編號）。
+> 6.0.0 的規則只寫「字串一律加雙引號」，沒有提到反斜線，寫的人也沒有自檢。
+> 本版補上字串寫法與寫入後自檢，並附一支只用 Python 標準函式庫的檢查腳本。**BAT 塔台面板契約 v1 不變**（`summary_version: 1`、欄位與型別都不動）；沒有新設定鍵或新命令。
+> BAT 最低版本不變（`>= 0.7.0-pre.7`）。方法論契約仍 `ct-methodology-adapter/v1`，**契約不變**；內建 `bmad.yaml` 0.2.1、`ct-adapter-pstack` 0.2.6（只改版號註解）。
+
+### 升級說明
+
+**從 `6.0.0` 升級**：只換 skill 檔案；沒有新設定鍵、新的 frontmatter 欄位或新命令，舊工單、舊快照與 `_tower-state.md` 照常。
+
+- 建議 8 個 skill 一起換（8 個 `SKILL.md` 版本註解都變了）。規則有改的是 `control-tower`（新權威節、新腳本、引用處）、`ct-exec`、`ct-done`；其餘 5 個只改版號註解。
+- 已經能正確解析的舊 frontmatter **不必改**（例：雙引號內正確寫成 `\\` 的舊值）。只有解析失敗的才要修，修的時機是下一次寫入該檔時；要一次盤點可對 `_ct-workorders/` 跑檢查腳本（見下方 Added），找到的舊檔交給塔台決定何時修。
+- Worker 端只裝 `ct-exec`、沒有 `control-tower` 時，自檢退回環境裡的 YAML 解析器，再退回 grep（見權威節）；建議塔台與 Worker 同批換，Worker 才找得到檢查腳本。
+- plugin 使用者：marketplace 更新後把 `ct@control-tower`、`ct-guide@control-tower` 升到 6.0.1（安裝指南 § 4.1〈用 plugin marketplace 安裝／升級〉）。
+
+### Added
+
+- `control-tower/references/memory-protocol.md` 新增 § YAML frontmatter 字串寫法與寫入後自檢（**唯一權威**）：
+  - **適用檔案**：`_tower-state.md`、工單 `T*.md`、`BUG-*.md`／`PLAN-*.md`／`EXP-*.md`、`_handover-*.md`／`_reply-*.md`，以及其他由 CT 寫出的 frontmatter
+  - **字串寫法**：含反斜線的值用單引號（`'%USERPROFILE%\Documents'`，單引號內只有 `'` 要寫成 `''`），或把路徑改成正斜線；**雙引號字串內不寫反斜線**。自由文字（含 `: `、` #` 或以 YAML 指示字元開頭）一律加引號；時間戳照舊用雙引號。附 6 組正反例（Windows 路徑、含單引號、含雙引號、含 `: `、以反引號開頭）
+  - **寫入後自檢**：塔台與 Worker 每次寫入或修改上述檔案的 frontmatter 後、commit 前檢查一次；方法依序是檢查腳本 → 環境裡現成的 YAML 解析器（PyYAML、node `yaml`／`js-yaml`）→ 至少 grep 雙引號內的反斜線並人工確認。失敗就當場修正再檢查，**不得 commit 解析失敗的檔**；自檢不阻擋塔台啟動；檢查失敗的訊息只寫檔名、行號、問題類型，不印檔案原文
+  - **舊檔不追改**：仍能正確解析的舊 frontmatter 不改寫
+- `control-tower/scripts/check-frontmatter.py`：frontmatter 檢查腳本，**只用 Python 標準函式庫**（環境有 PyYAML 時另做一次完整解析）。抓開頭／結尾 `---` 缺失、雙引號內不合法的跳脫（YAML 1.2 合法跳脫以外的 `\X`，含 `\x`／`\u`／`\U` 後面的十六進位位數）、引號未閉合、單引號內單獨的 `'`、雙引號字串後多出的文字、tab 縮排、沒加引號的值以 YAML 指示字元開頭或含 `: `、`[ ]`／`{ }` 未閉合、BOM、非 UTF-8。可一次檢查多個檔或一個目錄（`-r` 含子目錄）；exit `0` = 全部通過、`1` = 有問題、`2` = 用法錯誤或路徑不存在；輸出只有檔名、行號、欄號與問題類型
+- `control-tower/scripts/tests/run_tests.py` 加入 `check-frontmatter.py` 的樣本測試（好／壞樣本、含反斜線的測試資料先以 bytes 確認寫對、輸出不含原文、exit code；每個案例都以 `--no-yaml` 跑，有 PyYAML 時再跑一次）；`--only frontmatter` 只跑這部分、不需要 PyYAML。測試目錄照舊不進發行 zip
+
+### Changed
+
+- `memory-protocol.md` § 機器可讀摘要 › YAML 寫法：「字串值一律加雙引號」改成「一律加引號，不含反斜線用雙引號、含反斜線用單引號或正斜線」，並指向新的權威節（附棄用條款）；§ BAT 塔台面板讀取契約 › 共通規則 加一行指向新節
+- 改成引用新權威節（不另寫規則）：`work-order-template.md`（frontmatter 段頭、`title`）、`bug-plan-system.md`（YAML frontmatter 共通規則）、`cross-project-coordination.md`（frontmatter 欄位）、`work-order-system.md`（收單補記 `session_ids`、PARTIAL 收尾改狀態）、`control-tower/SKILL.md`（Startup 第 8 步、Request Routing 第 4 步）
+- `ct-exec/SKILL.md` § Frontmatter Rules：加字串寫法與寫入後自檢（腳本、找不到 `control-tower` 時的兩段退路、不得 commit 解析失敗的檔）；§ Phase 4 第 4 步的自檢加 (e) frontmatter 通過檢查
+- `ct-done/SKILL.md`：收尾寫 frontmatter 時照 `ct-exec` § Frontmatter Rules 自檢
+- 版號：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表（加 6.0.1 列）、`methodology-adapters.md` 版本歷史（加 6.0.1 列，契約不變）、`bmad.yaml` 與 `ct-adapter-pstack` 的版號註解
+- 安裝指南：新增 § 2.66 本版變更；§ 1、§ 4.1、§ 4.3 版號
+
+### Unchanged
+
+- BAT 塔台面板讀取契約 v1：`_tower-state.md` 摘要的欄位、型別與 `summary_version: 1` 都不變（單引號字串在 YAML 裡一樣是字串）；BAT 端不必改
+- 設定鍵與預設值、狀態值、frontmatter 欄位、命令、派工命令（`--skill` + `--workorder`）、exit code、BAT 最低版本（`>= 0.7.0-pre.7`）
+- 方法論契約 `ct-methodology-adapter/v1`、adapter 描述檔、`validate-adapter.py`；`ct-session-stats.py`（0.2.0）與單元測試
+- zip 手動安裝流程與發行物版面（全量 zip、8 個單一 skill zip、`ct-adapter-pstack` zip、Guide zip），不含 `scripts/tests/`；plugin 規則（正式版上架、預發行版不提供）
+- 歷史段落（本檔 `[6.0.0]` 以前的段落、版號表舊列、安裝指南 § 2.65 以前的章節）與「v6.0.0+」等引入標記不改
+
+### Known unverified（已知未驗）
+
+`[6.0.0]` 的 41 項不變（編號同 `[6.0.0]`）。本版另有：
+
+- 寫入後自檢在實際塔台與 Worker session 中是否每次寫完 frontmatter 都執行（含 Codex Worker），尚未實機觀察；腳本本身以樣本測試與本專案 500 多份既有 frontmatter 對照 PyYAML 驗過
+- 出事工作區的 `_tower-state.md` 在塔台換上 6.0.1、下次寫入並自檢後，BAT 塔台面板能否恢復讀取：要等該工作區實際換版後才能確認
 
 ## 6.0.0 <small>2026-11-07</small> {#v6-0-0}
 
@@ -360,35 +412,12 @@ RC 期間沒有新驗證到的項目；下列 41 項與 `[6.0.0-rc.1]` 相同，
 - 既有設定的值域與預設不變；三個新設定不設就用預設，行為與 5.12.8 相同（清理提示只多印一行）。
 - 歷史段落（本檔舊段落、版號表舊列、安裝指南舊章節）不改；安裝指南 § 2.13 只加一行 📌 註。
 
-## 5.12.8 <small>2026-10-27</small> {#v5-12-8}
-
-
-> **PATCH：BMAD 路由與工單規則裡 BMad-Method v6.11 前的舊名改成現行名稱，並修正「`bmad-create-story` 內建 Review」的說法。**
-> BMad-Method v6.12 起新安裝預設不裝舊名的 shim（要 `--shims` 才裝），照舊名開出的工單可能叫不到 skill。名稱以 BMad-Method v6.12.4（`bmad-guide` v6.12.4）為準。
-
-### Fixed
-
-- 路由與規則直接用舊名的地方換成現行名稱：
-  - `control-tower/references/enhancement-integration.md`:52（ECC 觀察範例 `bmad-create-prd` → `bmad-prd`）、:114（`bmad-quick-dev` → `bmad-build`）、:115、:133、:148（`bmad-dev-auto` → `bmad-build-auto`）、:129（補 context 改用 `bmad-project-context`（setup intent），取代 `bmad-document-project`／`bmad-generate-project-context`）、:152（`bmad-dev-auto-result-*.md` → `bmad-build-auto-result-*.md`）、:133、:154（`final_revision` → commit 範圍 `baseline_revision..HEAD`；多個 story 用 `baseline_revision..下一個 story 的 baseline_revision`）
-  - `control-tower/references/work-order-system.md`:132（`dev-story` 工單 → 開發（`bmad-build`）工單）、:147（派發摘要範例 `bmad-generate-project-context` → `bmad-project-context`（setup intent））、:172（`bmad-dev-auto` → `bmad-build-auto`、`final_revision` → commit 範圍）
-  - `control-tower/references/work-order-template.md`:62、:63、:65（`bmad-dev-auto` → `bmad-build-auto`、結果檔名、`final_revision` → commit 範圍）
-  - `control-tower/references/debug-strategies.md`:12（`dev-story` → 開發（`bmad-build`））
-- `work-order-system.md`:120 的審查說法：原本寫「使用 `bmad-create-story` 時 Story 內建 Review、不需額外工單」，已不成立。改成：`bmad-create-story` 是保留的 shim；Story 拆分走 `bmad-spec` Story Breakdown，審查在 `bmad-build` 的 Review Triage，不能因為用了 story 就省略審查；用 `bmad-build` 時看 spec 的 `## Review Triage Log` 有沒有跑，沒跑就照同一表的其他條件另派審查工單。
-- 版號：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表；安裝指南新增 § 2.53，§ 4.1 版號範例同步（`OLD=5.12.7`、`VER=5.12.8`、發行物檔名）。
-
-### Unchanged
-
-- 已經寫明「舊名 → 新名」的退役對照保留：`enhancement-integration.md`:129～:131、`work-order-system.md`:171、:174、:175。
-- `control-tower/SKILL.md` 的「退役名要經外部 `bmad-guide` 確認才路由」原則不變；其他規則、旗標、exit code、步驟不變。
-- BAT 介面不變、CT 最低 BAT 版本不變；設定的值域與預設、工單 metadata 不變。
-- 歷史段落（本檔舊段落、版號表舊列、安裝指南舊章節）不改。
-
 :::
 
 ## 延伸閱讀 {#further-reading}
 
-- CT `CHANGELOG.md`（共 72 個版本；本頁列最近 10 版）
+- CT `CHANGELOG.md`（共 73 個版本；本頁列最近 10 版）
 - CT `version-governance.md` § 歷史版號表
-- [演進史](./evolution)：更早的 62 版與八個世代
+- [演進史](./evolution)：更早的 63 版與九個世代
 
 Portal 是摘要，不具權威；與 CT reference 有出入時，以 reference 為準。

@@ -105,6 +105,8 @@ local_workorder: CP-T0113              # 受理後建立的 DELEGATE 工單編�
 created_at: "2026-09-01T20:48:28+0800"
 ```
 
+字串值的引號寫法與寫入後自檢（v6.0.1+）：唯一權威是 [memory-protocol.md](memory-protocol.md) § YAML frontmatter 字串寫法與寫入後自檢；`title` 這類自由文字寫到路徑時特別注意（含反斜線用單引號或正斜線）。
+
 `status` 語意：
 
 | 值 | 意義 |

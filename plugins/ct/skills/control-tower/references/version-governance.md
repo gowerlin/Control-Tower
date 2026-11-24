@@ -12,7 +12,7 @@ Skill YAML frontmatter 僅放 runtime 需要的欄位，至少包含 `name` 與 
 版本事實來源改用 body 內第一個註解：
 
 ```markdown
-<!-- control-tower-version: 6.0.0 -->
+<!-- control-tower-version: 6.0.1 -->
 ```
 
 同步點：
@@ -304,6 +304,7 @@ codex plugin list --json         # ct@control-tower 的 version
 | v6.0.0-beta.12 | 2026-11-05（**Beta**：只打包、不安裝；與穩定版 5.15.0 並行、不取代，D364） | Beta（工具清單建議 PLAN-006，T0419～T0424／D577～D582；本版改動穩定版 5.15.0 沒有）：ct-insights 新命令 `*insights tools`（`ct-session-stats.py --tools`，腳本 0.2.0；只讀、只出建議、不改設定；權威 `ct-insights/references/analysis-rules.md` § 工具清單建議）：依 session 紀錄的附件找出已載入但少用或沒用的 skill、plugin、MCP server、agent 類型與內建工具，依工單類型分組，各項標層級（專案、使用者、claude.ai 帳號）與設定鍵，核心內建工具（`TOOLS_CORE_BUILTIN`）一律 `keep`，內建工具使用率的分子只計同時在載入分母內的 session；`skills_invoked` 計入使用者 slash command、新增 `agents_invoked`、快照 `ct-session-stats-snapshot/0.2`（`0.1` 照常可讀）；`control-tower/SKILL.md` 命令表、`ct-help`、`data-layer-architecture.md` 同步摘要。本檔 § 發布流程 第 3 步加打包檢查：`SKILL.md` 的 `description` 不得含 `<`、`>`（BUG-003）。方法論契約仍 `ct-methodology-adapter/v1`、**契約不變**；`bmad.yaml` 只改版號註解（0.2.1）、`ct-adapter-pstack` 內容不變（0.2.6）。新命令 1，沒有新設定或新的 frontmatter 欄位；從 beta.11 升級只換 skill 檔案。已知未驗見 `docs/CHANGELOG.md` `[6.0.0-beta.12]`。BAT 介面同 v6.0.0-pre.1，沒有新的最低版本 |
 | v6.0.0-rc.1 | 2026-11-05（**RC**（正式版候選）：只打包、不安裝；與穩定版 5.15.0 並行、不取代，D586） | RC（正式版候選；beta 回饋期結束，功能凍結、只修錯，T0427、T0428／D586、D587）：`ct-exec/SKILL.md` § Phase 3 的塔台補充檢查（節點 1）改成驗證段落第 1 步、§ Tower Addenda Check 節點清單改指「Phase 3 step 1」；`ct-done/SKILL.md` 第 6 步的節點 3 檢查改成先寫；`ct-insights/references/analysis-rules.md` § 工具清單建議 › 報告格式 的 JSON `items[]` 欄位補 `use_rate`、`saving_max_chars`、`plugin_verdict`（腳本不變）。現行標示 Beta 改 RC；「beta 不提供 plugin」的現行規則句改成「預發行版（beta、rc）不提供 plugin」（本檔、`auto-session.md`、`data-layer-architecture.md`；規則不變）。方法論契約仍 `ct-methodology-adapter/v1`、**契約不變**；`bmad.yaml` 只改註解（0.2.1）、`ct-adapter-pstack` 內容不變（0.2.6）。沒有新命令、新設定或新的 frontmatter 欄位；從 beta.12 升級只換 skill 檔案。已知未驗見 `docs/CHANGELOG.md` `[6.0.0-rc.1]`（41 項）。BAT 介面同 v6.0.0-pre.1，沒有新的最低版本 |
 | v6.0.0 | 2026-11-07（**正式版**：取代 5.15.0 成為穩定版，D666） | MAJOR 正式版（v6 系列：方法論轉接、BUG／PLAN／EXP 預設開啟、session 用量統計與 `session_ids`、執行中補充工單、工具清單建議，各版內容見 `[6.0.0-pre.1]`～`[6.0.0-rc.1]`；T0464／D666）：相對 rc.1 沒有功能或規則變更，只改版號與標示（RC → 正式版）；plugin 6.0.0 起上架 marketplace（預發行版仍不提供）；方法論契約仍 `ct-methodology-adapter/v1`，內建 `bmad.yaml` 0.2.1、`ct-adapter-pstack` 0.2.6。BAT 最低版本不變（`>= 0.7.0-pre.7`） |
+| v6.0.1 | 2026-11-25（**正式版** PATCH） | PATCH（T0549／D851）：新增 `memory-protocol.md` § YAML frontmatter 字串寫法與寫入後自檢（唯一權威）——CT 寫的 frontmatter（`_tower-state.md`、工單、BUG／PLAN／EXP、`_handover`／`_reply` 等）含反斜線的值用單引號或正斜線、雙引號內不寫反斜線，自由文字加引號，每次寫入後自檢、解析失敗不得 commit，已能解析的舊檔不追改；新檢查腳本 `control-tower/scripts/check-frontmatter.py`（只用標準函式庫）；`work-order-template.md`、`bug-plan-system.md`、`cross-project-coordination.md`、`work-order-system.md`、`control-tower/SKILL.md`、`ct-exec`、`ct-done` 改成引用。BAT 塔台面板契約 v1 不變（`summary_version: 1`、欄位與型別不動）；沒有新設定鍵或命令；方法論契約不變。BAT 最低版本不變 |
 
 > v4.x ~ v5.0.2 各列以 `docs/CHANGELOG.md` 對應版本段為準。
 >

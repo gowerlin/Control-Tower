@@ -43,8 +43,9 @@
 
 **YAML 寫法**：
 
-- 字串值一律加雙引號（含 `updated_at`、`next_ids` 的值、每則 `todo`），避免 `:`、`#`、全形符號或時間格式被誤解析；`summary_version` 是整數不加引號。
-- 寫完必須能被一般 YAML parser 解析（例：`uv run --no-project --with pyyaml python -c "…yaml.safe_load(…)"`）。
+- 字串值一律加引號（含 `updated_at`、`next_ids` 的值、每則 `todo`），避免 `:`、`#`、全形符號或時間格式被誤解析；`summary_version` 是整數不加引號。
+  不含反斜線時用雙引號；**含反斜線 `\`（例：Windows 路徑）時用單引號或改成正斜線**（v6.0.1+）。
+- 寫完必須能被一般 YAML parser 解析，每次寫入後自檢。字串寫法、正反例與自檢方法的唯一權威是下方 § YAML frontmatter 字串寫法與寫入後自檢。
 
 範例：
 
@@ -291,6 +292,124 @@ BUG 狀態值：CT 的 BUG enum（[bug-plan-system.md](bug-plan-system.md) § BU
 - **frontmatter 從檔案第一個位元組開始**（第一行就是 `---`）。檔案開頭不要 BOM：除了 `_tower-state.md`，BAT 遇到 BOM 開頭的檔不認 frontmatter。
 - `_tower-state.md` 的摘要欄位與 `tower-config.md` 的 `### 可用選項` 標題與欄序是 BAT 依賴；要改先依 [cross-project-coordination.md](cross-project-coordination.md) 通知 BAT。
 - 本節以外改到上表任一檔的格式時，先對照本節；會影響 BAT 讀法的改動同樣先通知 BAT。
+- frontmatter 的字串寫法與寫入後自檢見下方 § YAML frontmatter 字串寫法與寫入後自檢。
+
+## YAML frontmatter 字串寫法與寫入後自檢
+
+> v6.0.1 新增。本節是 CT（塔台與 Worker）寫 YAML frontmatter 時**字串怎麼加引號**與**寫完怎麼自檢**的**唯一權威定義**。
+> 工單範本、BUG／PLAN／EXP、跨塔台文件、`ct-exec`、`ct-done` 與其他寫 frontmatter 的地方只引用這裡，不另寫規則。
+> 起因：BAT 塔台面板讀某個工作區的 `_tower-state.md` 時連續解析失敗，原因是 frontmatter 的雙引號字串裡寫了 Windows 路徑
+> （例 `"…\Users\…"`）。YAML 雙引號字串把 `\U`、`\b`、`\m` 這類組合當跳脫序列，不合法的跳脫是語法錯誤，**整份 frontmatter 都讀不到**
+> （外部讀者照 § 機器可讀摘要 › 相容規則 當作沒有摘要）。BAT 塔台面板契約 v1 不因本節改變：單引號字串在 YAML 裡一樣是字串，欄位與型別都不變。
+
+> **棄用條款**（v6.0.1 起）：
+> v6.0.0 的 § 機器可讀摘要 › YAML 寫法 只寫「字串值一律加雙引號」，沒有提到反斜線。自 v6.0.1 起，**含反斜線 `\` 的值不得寫在雙引號裡**，
+> 改用單引號或把路徑改成正斜線（下方 § 字串寫法），而且每次寫完都要自檢（下方 § 寫入後自檢）。
+> 若 memory 中有「字串一律雙引號」的舊慣例，以本節為準；塔台可在工單 `memory_overrides` 欄位再明示一次。
+
+### 適用檔案
+
+CT 寫入或修改 frontmatter 的每一個檔：
+
+| 檔 | 欄位與格式的權威段 |
+|---|---|
+| `_tower-state.md` | 上方 § 機器可讀摘要（YAML frontmatter） |
+| 工單 `T*.md`（含專案前綴，例 `LB-T0184-*.md`） | [work-order-template.md](work-order-template.md) § PLAN-034 Sprint 2 transition |
+| `BUG-*.md`、`PLAN-*.md`、`EXP-*.md` | [bug-plan-system.md](bug-plan-system.md) § PLAN-034 Sprint 2 transition |
+| `_handover-*.md`、`_reply-*.md`（含 ADVISORY） | [cross-project-coordination.md](cross-project-coordination.md) § frontmatter 欄位 |
+| 其他由 CT 寫出的 frontmatter（例：`*evolve --skill` 產生的 skill 候選 `SKILL.md`） | 各自的權威段 |
+
+各檔的欄位、型別與必填仍以右欄為準；本節只管字串值怎麼寫與寫完怎麼檢查。
+
+### 字串寫法
+
+| 值的內容 | 寫法 |
+|---|---|
+| 含反斜線 `\`（Windows 路徑、跳脫字元、正規表示式等） | **單引號**：`'%USERPROFILE%\Documents\proj'`。單引號內不處理跳脫，只有 `'` 本身要寫成兩個 `''`。是路徑的話也可以把分隔改成正斜線後照常用雙引號：`"%USERPROFILE%/Documents/proj"`。**雙引號字串內不寫反斜線** |
+| 含雙引號 `"` | 單引號：`'他說 "好" 了'` |
+| 其他自由文字（`title`、`todo`、`session`、`delivered` 這類人寫的句子） | **一律加引號**，不含 `\` 和 `"` 時用雙引號（照現行範本）。不加引號時哪些寫法會被 YAML 當成語法，見表下 |
+| 時間戳（`created_at`、`updated_at` 等） | 照舊雙引號：`"2026-11-25T00:44:38+0800"`（不含反斜線，安全） |
+| 整數（`schema_version`、`summary_version`、`renew_count` 等）、範本規定不加引號的列舉值與 ID（`status: IN_PROGRESS`、`id: T0549`） | 照各檔範本，不加引號 |
+
+- 不加引號會被 YAML 當成語法的自由文字：含 `: `（冒號加空白）或以冒號結尾、含 ` #`（空白加井號，後面會被當成註解而消失），
+  或以 `` ` ``、`*`、`&`、`!`、`[`、`{`、`>`、`|`、`%`、`@`、`'`、`"`、`,`、`- `、`? ` 開頭。
+- 同一個值裡同時有 `\`、`"` 和 `'`：用單引號，`'` 寫成 `''`，`\` 和 `"` 照原樣。
+- **舊檔不追改**：已經存在、而且仍能正確解析的 frontmatter（例：雙引號內正確寫成 `\\` 的舊值）不必改寫。只有**解析失敗**的才要修；
+  修的時機是下一次寫入該檔時（照下方 § 寫入後自檢），不另開全面改寫。
+
+正反例：
+
+| # | ❌ 會解析失敗或讀錯 | 為什麼 | ✅ 正確寫法 |
+|---|---|---|---|
+| 1 | `- "改 %USERPROFILE%\Documents\proj 的設定"` | `\D` 不是合法跳脫，整份 frontmatter 讀不到（`\U` 開頭的 `\Users\` 也一樣：`\U` 要接 8 個十六進位數字） | `- '改 %USERPROFILE%\Documents\proj 的設定'` 或 `- "改 %USERPROFILE%/Documents/proj 的設定"` |
+| 2 | `workdir: "..\repo\my-project"` | `\m` 不是合法跳脫；`\r` 雖然合法，卻被讀成歸位字元（單獨出現時**不報錯但值錯了**） | `workdir: '..\repo\my-project'` 或 `workdir: "../repo/my-project"` |
+| 3 | `title: 'Tower's 待辦'` | 單引號在 `Tower` 後就結束，後面多出文字 | `title: 'Tower''s 待辦'` 或 `title: "Tower's 待辦"` |
+| 4 | `title: "他說 "好" 了"` | 雙引號在 `他說 ` 後就結束 | `title: '他說 "好" 了'` |
+| 5 | `title: 決策: 受理` | 第二個 `: ` 被當成另一層 mapping | `title: "決策: 受理"` |
+| 6 | `` - `isolation` 不隔離 `` | `` ` `` 是 YAML 保留字元，不能當值的開頭 | `` - "`isolation` 不隔離" `` |
+
+完整範例（`_tower-state.md` 摘要的 `todo` 寫到路徑時）：
+
+```yaml
+---
+schema_kind: tower-state
+summary_version: 1
+updated_at: "2026-11-25T00:44:38+0800"
+todo:
+  - '確認 %USERPROFILE%\Documents\proj 的安裝路徑'
+  - "或改寫成正斜線：%USERPROFILE%/Documents/proj"
+  - "T0549 完成後通知 BAT 塔台"
+---
+```
+
+### 寫入後自檢
+
+**時機**：塔台與 Worker **每次寫入或修改**上述檔案的 frontmatter 之後、commit 之前，對**這次寫的檔**跑一次檢查：
+塔台寫 `_tower-state.md`、建立或修改工單、BUG／PLAN／EXP、`_handover`／`_reply`、收單改狀態或補記 `session_ids`；Worker 開工改狀態、
+寫 `tower_question`、收尾寫狀態與 `session_ids`（`ct-exec`、`ct-done`）。
+
+**方法**（依序取第一個能用的）：
+
+1. **隨 skill 附的檢查腳本**（只用 Python 標準函式庫，不需要 PyYAML）：
+
+   ```bash
+   python <control-tower>/scripts/check-frontmatter.py _ct-workorders/T0549-example.md   # 一個或多個檔
+   python <control-tower>/scripts/check-frontmatter.py _ct-workorders/                   # 整個目錄的 *.md（不含子目錄）
+   ```
+
+   `<control-tower>` 是已安裝的 `control-tower` skill 目錄（例：Claude Code `~/.claude/skills/control-tower`、Codex `~/.codex/skills/control-tower`；
+   plugin 安裝則在 plugin 的 `skills/control-tower`）。exit `0` = 全部通過、`1` = 有問題、`2` = 用法錯誤或路徑不存在。
+   檢查項目與輸出格式寫在腳本開頭的說明；環境裡有 PyYAML 時，腳本會再做一次完整解析。
+2. **腳本不在**（例：Worker 端只裝了 `ct-exec`、找不到 `control-tower`）→ 用環境裡現成的 YAML 解析器（PyYAML、node `yaml`／`js-yaml`），
+   只印問題描述與行號。PyYAML 的例子（`<檔>` 換成檔名）：
+
+   ```bash
+   python - <檔> <<'PY'
+   import sys, yaml
+   lines = open(sys.argv[1], encoding='utf-8').read().splitlines()
+   end = lines.index('---', 1)
+   try:
+       yaml.safe_load(chr(10).join(lines[1:end]))
+       print('OK')
+   except yaml.YAMLError as e:
+       mark = getattr(e, 'problem_mark', None)
+       print('FAIL', sys.argv[1], 'line', (mark.line + 2) if mark else '?', getattr(e, 'problem', ''))
+   PY
+   ```
+
+   不要直接印例外全文：PyYAML 的例外訊息會附上原文片段。
+3. **兩者都沒有** → 至少找出 frontmatter 裡「雙引號內有反斜線」的行，只印檔名與行號，再逐行人工確認（改成單引號或正斜線最省事）：
+
+   ```bash
+   awk 'NR==1 && $0 != "---" {exit} NR>1 && $0 == "---" {exit} /"[^"]*\\/ {print FILENAME ":" NR}' <檔>
+   ```
+
+**失敗時**：當場照上方 § 字串寫法 修正，再檢查一次，直到通過才繼續；**不得 commit 解析失敗的檔**。工單回報或塔台輸出提到檢查結果時，
+同樣只寫檔名、行號與問題類型。
+
+**不阻擋**：自檢只管「這次寫的檔」。塔台啟動時讀到解析失敗的 frontmatter（例：別的 session 寫壞的 `_tower-state.md`）不阻擋啟動：
+狀態照舊以本文為準（§ 機器可讀摘要 › 維護時機），下次寫入時整段重寫摘要並自檢。全面盤點（例：對整個 `_ct-workorders/` 跑腳本）找到的舊檔
+只回報給塔台，由塔台決定何時修。**檢查失敗的訊息不得印出檔案原文全文**（腳本本身只印檔名、行號、欄號與問題類型）。
 
 ## 塔台狀態面板
 

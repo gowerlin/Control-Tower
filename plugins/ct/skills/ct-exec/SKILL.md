@@ -2,7 +2,7 @@
 name: ct-exec
 description: "Control Tower Worker skill for executing a work order end to end from any sub-session. Use when the user invokes $ct-exec or /ct-exec with a T#### work order, asks a worker to start or resume scoped execution, or needs the full lifecycle of reading the work order, marking IN_PROGRESS, implementing only the listed scope, validating, writing the report, committing when required, and notifying Tower or providing a fallback completion message."
 ---
-<!-- ct-exec-version: 6.0.0 -->
+<!-- ct-exec-version: 6.0.1 -->
 
 # ct-exec
 
@@ -613,7 +613,8 @@ Use reverse-order closeout to avoid watchers seeing terminal status before the r
    (c) there is exactly one `### 互動紀錄` section;
    (d) (v6.0.0-pre.1+) every methodology skill this session called has a row in `### 方法論執行紀錄`, and the `methodology_ambient` line is
    there whenever § Methodology › Injection self-check requires it.
-   (b), (c) or (d) fails: fix it, then continue. (a) fails (v5.8.1): do not edit a question already sent, since Tower may have answered it
+   (e) (v6.0.1+) the frontmatter passes the post-write check of § Frontmatter Rules.
+   (b), (c), (d) or (e) fails: fix it, then continue. (a) fails (v5.8.1): do not edit a question already sent, since Tower may have answered it
    as written; record under `### 遭遇問題` which question and what is missing, then continue.
 5. Commit the work order file (report and final metadata), when a commit is required, before any notify.
 6. Then notify Tower (§ BAT Notify And Fallback).
@@ -711,6 +712,16 @@ For v1 work orders:
 - Write list fields as YAML block lists.
 - Write timestamps as quoted ISO 8601 with offset.
 - Do not silently fallback unknown statuses to `PENDING`.
+- v6.0.1+: quote string values as `../control-tower/references/memory-protocol.md` § YAML frontmatter 字串寫法與寫入後自檢
+  says (the single authority): a value with a backslash (`\`, e.g. a Windows path) goes in single quotes (`'` written as `''`)
+  or uses forward slashes, never inside double quotes; free text with `: ` or a leading special character is quoted.
+  Already-parseable old values are not rewritten.
+- v6.0.1+: after every frontmatter write (Phase 1 start, `tower_question`, Phase 4 closeout) check the file before committing it:
+  `python <control-tower>/scripts/check-frontmatter.py <work order>` (`<control-tower>` = the installed `control-tower` skill,
+  usually `../control-tower` next to this skill). Not found → an available YAML parser (PyYAML, node `yaml`/`js-yaml`), printing only
+  the problem and line; none either → at least list the frontmatter lines with a backslash inside double quotes and fix them by hand.
+  Commands for both fallbacks are in the authority. A failure is fixed and re-checked at once; never commit a file that fails.
+  Output and report lines name only file, line and problem type, never the file text.
 - If frontmatter/body drift exists, use frontmatter and record the drift rather than rewriting unrelated content.
 
 ## Error Handling

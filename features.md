@@ -112,7 +112,7 @@ CT 管「編排」：工單、派工、驗收、收單；方法論（BMad-Method
 
 - `control-tower/SKILL.md` § Built-In Commands、§ Hard Boundaries
 - `ct-help/SKILL.md` § Command Families
-- CT 安裝與使用指南 § 4.3 Skill 架構（v6.0.0）、§ 5. 四級能力等級、§ 13. Config 速查表（v6.0.0）、§ 14. 命令速查表（v6.0.0）、§ 2.65 v6.0.0（正式版）
+- CT 安裝與使用指南 § 4.3 Skill 架構（v6.0.1）、§ 5. 四級能力等級、§ 13. Config 速查表（v6.0.1）、§ 14. 命令速查表（v6.0.1）、§ 2.65 v6.0.0（正式版）、§ 2.66 v6.0.1（正式版 PATCH）
 - CT Guide `references/ecosystem.md` § 八個 Skill 元件、§ 三軌前綴：`*`、`/`、`$`、§ 能力等級（Level 0-3）
 - `control-tower/references/tower-config.md` § `*config` 命令、§ 可用選項、§ 作用域與持久化
 

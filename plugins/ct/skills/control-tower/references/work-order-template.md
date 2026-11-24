@@ -1009,6 +1009,7 @@ EXPLORING → CONCLUDED
 
 > v5.0.0 起，新工單模板從建立時就**雙寫** v1 YAML frontmatter 與既有 body metadata table。
 > Frontmatter = 機器 SoT；body metadata table = 人類鏡像；drift 時 `*sync` warn 不覆寫 body。
+> 字串值怎麼加引號（含反斜線的值用單引號或正斜線）與寫入後自檢（v6.0.1+）：唯一權威是 [memory-protocol.md](memory-protocol.md) § YAML frontmatter 字串寫法與寫入後自檢，本檔不另寫。
 
 ### 工單模板（含 frontmatter）
 
@@ -1091,7 +1092,7 @@ schema_kind: workorder
 #### `id` / `title`
 
 - `id` 使用 `T####`，不含檔名描述。
-- `title` 使用不含狀態 emoji 的人類標題。
+- `title` 使用不含狀態 emoji 的人類標題。它是自由文字：含 `: `、反斜線或以特殊字元開頭時照 [memory-protocol.md](memory-protocol.md) § YAML frontmatter 字串寫法與寫入後自檢 加引號（v6.0.1+）。
 - body H1 可保留既有格式，供人類掃描。
 
 #### `type`

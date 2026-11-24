@@ -1,6 +1,6 @@
 {
   "_note": "相容版本對照（/versions/compatibility 的資料）。每列 feature、ct（CT 起始版本）、bat／codex（最低版本，不需要就省略）、note、source（權威出處：檔案 § 章節）。CT 發版時相容性有變才改（CT 每次發版都要同步更新 Portal）。",
-  "ctVersion": "6.0.0",
+  "ctVersion": "6.0.1",
   "rows": [
     {
       "feature": "帶前綴的工單 ID 走結構化派工（--workorder 帶前綴）",
@@ -179,6 +179,13 @@
       "bat": ">= 0.7.1-pre.1",
       "note": "用 BAT MCP bat_get_state 回傳的 claudeSessionId 補記。BAT 太舊或沒接上 BAT MCP 時跳過補記，收單照常。Worker 自己寫 session_ids 不需要 BAT。",
       "source": "work-order-system.md § 收單補記 session id；ct-exec/SKILL.md § Phase 4 › Session id"
+    },
+    {
+      "feature": "YAML frontmatter 字串寫法與寫入後自檢（含反斜線的值用單引號或正斜線、自由文字加引號；寫完跑 check-frontmatter.py，解析失敗不 commit）",
+      "ct": "v6.0.1",
+      "bat": ">= 0.7.0-pre.7",
+      "note": "PATCH。BAT 介面同 v6.0.0，最低 BAT 版本不變，沒有新門檻；BAT 塔台面板讀取契約 v1（summary_version: 1）的欄位與型別都不變，BAT 端不必改。改的是 CT 寫入的一側：含 Windows 路徑的值寫進雙引號字串時，整份 frontmatter 解析失敗，面板讀不到那個工作區的摘要。已經寫壞的 _tower-state.md，在該工作區塔台換上 6.0.1、下次寫入並自檢時修正。檢查腳本只用 Python 標準函式庫。塔台與 Worker 同一批升級，Worker 才找得到檢查腳本。",
+      "source": "CHANGELOG.md [6.0.1]；memory-protocol.md § YAML frontmatter 字串寫法與寫入後自檢；ct-exec/SKILL.md § Frontmatter Rules"
     },
     {
       "feature": "Level 2：外部 bmad-guide 的 BMad workflow 路由",

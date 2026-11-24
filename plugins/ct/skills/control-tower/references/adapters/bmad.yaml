@@ -1,4 +1,4 @@
-# CT methodology adapter — BMAD-METHOD（CT 內建預設；v6.0.0）
+# CT methodology adapter — BMAD-METHOD（CT 內建預設；v6.0.1）
 # 契約（欄位意義、必填、組合規則、降級）：../methodology-adapters.md（唯一權威定義）
 # 本檔只放名稱、對照與連結，不含 BMad-Method 或 bmad-guide 的 skill 原文。
 # 由 spec 原型 BMad-Control-Tower/spec/方法論介接/adapters/bmad/adapter.yaml（0.1.0-prototype，T0298）轉入（T0300）。

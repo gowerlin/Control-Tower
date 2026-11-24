@@ -590,6 +590,7 @@ EXP 單據參與 `*sync` 掃描，在同步摘要中列於獨立的「🧪 實�
 新建 BUG / PLAN / EXP 單據時，檔案第一個 bytes 必須是 v1 YAML frontmatter。
 時間欄位使用 quoted ISO 8601 with offset，例如 `"2026-04-28T19:16:49+08:00"`。
 list 欄位使用 YAML block list。`_archive/**` 不參與 hot-zone sync migration。
+字串值的引號寫法（含反斜線的值用單引號或正斜線、自由文字加引號）與寫入後自檢（v6.0.1+）：唯一權威是 [memory-protocol.md](memory-protocol.md) § YAML frontmatter 字串寫法與寫入後自檢。
 
 ### BUG frontmatter template
 

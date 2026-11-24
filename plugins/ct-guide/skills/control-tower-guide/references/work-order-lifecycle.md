@@ -88,6 +88,7 @@ status: IN_PROGRESS
 `integration_worktree`、`base_main_sha`、`merge_target`——它**不是新的單據類型**，而是一張任務內容固定為「合併」的一般工單。
 
 > 欄位的完整寫法與值域以 CT 的 `work-order-template.md` 為準；本節只講每個欄位為什麼存在。
+> 字串值怎麼加引號（`title` 這類自由文字寫到 Windows 路徑時用單引號或正斜線）與寫完的自檢（v6.0.1），理由見 `three-layer-arch.md` § Tower State（`_tower-state.md`），規則以 CT `memory-protocol.md` § YAML frontmatter 字串寫法與寫入後自檢 為準。
 
 ---
 

@@ -2,7 +2,7 @@
 name: ct-done
 description: "Control Tower Worker recovery-close skill for remedially closing a work order after interruption, missed closeout, manual status correction, or Tower recovery. Use when the user invokes $ct-done or /ct-done with a T#### work order and optionally a final status such as DONE, FIXED, PARTIAL, BLOCKED, or FAILED."
 ---
-<!-- ct-done-version: 6.0.0 -->
+<!-- ct-done-version: 6.0.1 -->
 
 # ct-done
 
@@ -80,6 +80,10 @@ Preserve existing content. Add only missing closeout evidence:
 If the work order's own steps require a methodology writeback or a main methodology tracker sync (adapter `tracker`; bmad: `sprint-status.yaml`) and that step was missed, do it as part of the repair and record it in `### 方法論狀態回寫`, or in the legacy `### sprint-status.yaml 已更新` when that is the section the work order has (Tower re-checks it at intake: `../control-tower/references/work-order-system.md` § 主方法論 tracker 同步). The same repair covers a missing `### 方法論執行紀錄` entry when § Methodology of `../ct-exec/SKILL.md` required one and the evidence is available.
 
 For frontmatter work orders, frontmatter is metadata SoT and body table is a human mirror. Use quoted ISO 8601 timestamps with offset.
+v6.0.1+: quote string values and check the frontmatter after writing it, before the commit, exactly as `../ct-exec/SKILL.md`
+§ Frontmatter Rules says (script `../control-tower/scripts/check-frontmatter.py`, its two fallbacks when `control-tower` is not found,
+never commit a file that fails). The single authority is `../control-tower/references/memory-protocol.md`
+§ YAML frontmatter 字串寫法與寫入後自檢.
 
 ### Session id (v6.0.0-beta.10+)
 

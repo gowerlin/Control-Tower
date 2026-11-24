@@ -129,7 +129,7 @@ Worker 是一個全新的 session，輸入 `/ct-exec T0042`（Codex：`$ct-exec 
 
 <CardTable caption="狀態分桶" :columns="['桶', '狀態', '接下來']" :rows="bucketRows" />
 
-一張工單裡，**frontmatter 是事實來源**，body 的元資料表只是給人看的鏡像；兩者不一致時以 frontmatter 為準，並把不一致報出來。跨來源時，**工單檔 > `sprint-status.yaml` > 塔台記憶**。
+一張工單裡，**frontmatter 是事實來源**，body 的元資料表只是給人看的鏡像；兩者不一致時以 frontmatter 為準，並把不一致報出來；6.0.1 起每次寫完 frontmatter 先自檢能不能解析（見[字串寫法與寫入後自檢](/deep/principles/files-as-truth#yaml-strings)）。跨來源時，**工單檔 > `sprint-status.yaml` > 塔台記憶**。
 
 ## 7. 記下來：決策日誌與學習紀錄 {#record}
 

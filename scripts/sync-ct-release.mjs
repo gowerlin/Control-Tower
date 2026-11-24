@@ -377,7 +377,7 @@ function main() {
     '',
     ...(skipped.length
       ? [
-          `本頁只列正式版。預發行版 v${skipped.at(-1)} ～ v${skipped[0]}（${skipped.length} 版）的改動已彙整在 v${version} 的段落，` +
+          `本頁只列正式版。預發行版 v${skipped.at(-1)} ～ v${skipped[0]}（${skipped.length} 版）的改動已彙整在 v${skipped[0].replace(/-.*$/, '')} 的段落，` +
             `逐版說明保留在「實驗功能」的[預發行專章](${PREVIEW_PAGE})作為歷史參考。`,
           ''
         ]
@@ -396,7 +396,7 @@ function main() {
     '',
     `- CT \`CHANGELOG.md\`（共 ${entries.length} 個版本；本頁列最近 ${full.length} 版）`,
     '- CT `version-governance.md` § 歷史版號表',
-    `- [演進史](./evolution)：更早的 ${older.length} 版與八個世代`,
+    `- [演進史](./evolution)：更早的 ${older.length} 版與九個世代`,
     '',
     'Portal 是摘要，不具權威；與 CT reference 有出入時，以 reference 為準。',
     ''

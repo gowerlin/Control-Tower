@@ -73,9 +73,9 @@ const towerRows = [
 - **語法**：`/control-tower [一句話需求或情境]`（Codex：`$control-tower`）
 - **參數**：可選的自由文字，例如 `/control-tower 接手這個專案，前手只留了 README`。
 - **在哪用**：塔台 session。在 BAT 裡要從你自己開的一般分頁啟動；在被派出來的 Worker 分頁裡，派工類操作會被 BAT 拒絕。
-- **做什麼**：啟動或恢復塔台。依序讀專案規則（`AGENTS.md`、`_ct-workorders/_local-rules.md`、`CLAUDE.md`）→ 讀 `_tower-state.md`，有新鮮的環境快照就走快速恢復 → 讀設定（session > 專案 > 全域 > 預設）→ 計算熱區工單數 → 在 BAT 裡宣告這個分頁是塔台 → 顯示狀態面板。只有狀態檔不存在、快照空白或超過 7 天、或你輸入 `*rescan` 時，才做完整掃描。之後跟你對齊需求、開單、派工、收單；硬邊界是不實作產品程式碼、不讀原始碼與原始 log、不用背景 agent 取代工單、不寫已安裝的 skill、未經授權不 push。
+- **做什麼**：啟動或恢復塔台。依序讀專案規則（`AGENTS.md`、`_ct-workorders/_local-rules.md`、`CLAUDE.md`）→ 讀 `_tower-state.md`，有新鮮的環境快照就走快速恢復 → 讀設定（session > 專案 > 全域 > 預設）→ 計算熱區工單數 → 在 BAT 裡宣告這個分頁是塔台 → 顯示狀態面板。只有狀態檔不存在、快照空白或超過 7 天、或你輸入 `*rescan` 時，才做完整掃描。之後跟你對齊需求、開單、派工、收單；硬邊界是不實作產品程式碼、不讀原始碼與原始 log、不用背景 agent 取代工單、不寫已安裝的 skill、未經授權不 push。6.0.1 起，塔台每次寫完 frontmatter（`_tower-state.md`、工單、BUG／PLAN／EXP 等）都用附帶的腳本 `control-tower/scripts/check-frontmatter.py` 自檢，解析失敗不 commit；它是腳本，不是命令（見[字串寫法與寫入後自檢](/deep/principles/files-as-truth#yaml-strings)）。
 - **起始版本**：CT 本體。現行的「塔台與 Worker 分成獨立 skill」自 v3.1.0。
-- **權威出處**：`control-tower/SKILL.md` § Startup Protocol、§ Hard Boundaries、§ Request Routing
+- **權威出處**：`control-tower/SKILL.md` § Startup Protocol、§ Hard Boundaries、§ Request Routing；6.0.1 起 `control-tower/references/memory-protocol.md` § YAML frontmatter 字串寫法與寫入後自檢
 - **相關**：[為什麼需要 CT](/why)、[塔台不讀程式碼](/deep/principles/tower-and-workers)
 
 ### `/ct-exec T####` {#ct-exec}
@@ -84,9 +84,9 @@ const towerRows = [
 - **參數**：一個工單編號或路徑。同一個編號在 `_ct-workorders/` 下找到多張時，Worker 停下來請你指定。
 - **執行環境**：由塔台派工時傳入，Worker 不讀設定檔決定模式。`CT_MODE`：`yolo`／`ask`／`off`／`on`（沒有或不合法時當成 `ask`）；`CT_INTERACTIVE`：`1` 允許研究型互動、`0` 禁止；`CT_HOME`：在 BAT 的 worktree 隔離分頁裡才有，指向主 checkout。
 - **在哪用**：Worker session（一張工單一個新的 session）。
-- **做什麼**：執行一張工單的完整生命週期——讀專案規則與整張工單 → **落點檢查**（任何寫入之前；`repo` 不符就停）→ 標 `IN_PROGRESS` → 只在範圍內執行 → 跑驗收、證據分道記錄 → **反序收尾**（產品 commit → 回報區 → 最終狀態 → 工單 commit）→ 通知塔台。通知與提問用收到的**完整工單 ID**：`/ct-exec CP-T0113` 回的是 `CP-T0113 完成`，不會截成 `T0113`；送出前先和工單 frontmatter 的 `id` 比對，不一致就改用 `id`（v5.13.1 起）。工單原本就是 `IN_PROGRESS` 時記成接續執行。`CT_MODE=yolo` 時不問你，有問題寫進工單問塔台；一次問多題時只有最後一題叫醒塔台（v5.15.0 起）。6.0.0 起：收尾時把自己的 session id 寫進 frontmatter `session_ids`；在跑驗收前、產品 commit 前、寫回報前各看一次有沒有新的〈塔台補充（執行中 #N）〉段並照做（見[執行中補充](/deep/features/recovery#addenda)）；工單有 frontmatter `methodology` 時帶入方法論，呼叫方法論 skill 都記進回報；被 compact 或 resume 後先重讀整張工單。
-- **起始版本**：v2.1.1（獨立 skill：v3.1.0；`$` 入口：v5.0.3；落點檢查：v5.0.4；yolo 向塔台提問：v5.5.0；完整工單 ID 通知：v5.13.1；一批提問只叫醒塔台一次：v5.15.0；session id、執行中補充、方法論：6.0.0）
-- **權威出處**：`ct-exec/SKILL.md`（§ Startup、§ Mode And Environment、§ Landing Zone Check、§ Phase 1～4、§ Questions For Tower (`CT_MODE=yolo`, v5.5.0+)、§ BAT Notify And Fallback；6.0.0 起另有 § Tower Addenda Check、§ Methodology、§ Phase 4 › Session id）；`control-tower/references/work-order-system.md` § 回報與通知用的工單 ID
+- **做什麼**：執行一張工單的完整生命週期——讀專案規則與整張工單 → **落點檢查**（任何寫入之前；`repo` 不符就停）→ 標 `IN_PROGRESS` → 只在範圍內執行 → 跑驗收、證據分道記錄 → **反序收尾**（產品 commit → 回報區 → 最終狀態 → 工單 commit）→ 通知塔台。通知與提問用收到的**完整工單 ID**：`/ct-exec CP-T0113` 回的是 `CP-T0113 完成`，不會截成 `T0113`；送出前先和工單 frontmatter 的 `id` 比對，不一致就改用 `id`（v5.13.1 起）。工單原本就是 `IN_PROGRESS` 時記成接續執行。`CT_MODE=yolo` 時不問你，有問題寫進工單問塔台；一次問多題時只有最後一題叫醒塔台（v5.15.0 起）。6.0.0 起：收尾時把自己的 session id 寫進 frontmatter `session_ids`；在跑驗收前、產品 commit 前、寫回報前各看一次有沒有新的〈塔台補充（執行中 #N）〉段並照做（見[執行中補充](/deep/features/recovery#addenda)）；工單有 frontmatter `methodology` 時帶入方法論，呼叫方法論 skill 都記進回報；被 compact 或 resume 後先重讀整張工單。v6.0.1+：寫完 frontmatter 自檢——每次寫完 frontmatter、commit 前用 `control-tower/scripts/check-frontmatter.py` 檢查，解析失敗不得 commit（見[字串寫法與寫入後自檢](/deep/principles/files-as-truth#yaml-strings)）。
+- **起始版本**：v2.1.1（獨立 skill：v3.1.0；`$` 入口：v5.0.3；落點檢查：v5.0.4；yolo 向塔台提問：v5.5.0；完整工單 ID 通知：v5.13.1；一批提問只叫醒塔台一次：v5.15.0；session id、執行中補充、方法論：6.0.0；寫完 frontmatter 自檢：6.0.1）
+- **權威出處**：`ct-exec/SKILL.md`（§ Startup、§ Mode And Environment、§ Landing Zone Check、§ Phase 1～4、§ Questions For Tower (`CT_MODE=yolo`, v5.5.0+)、§ BAT Notify And Fallback；6.0.0 起另有 § Tower Addenda Check、§ Methodology、§ Phase 4 › Session id；6.0.1 起 § Frontmatter Rules 加字串寫法與寫入後自檢）；`control-tower/references/work-order-system.md` § 回報與通知用的工單 ID
 - **相關**：[一張工單的一生](/lifecycle#worker)、[落點檢查](/deep/features/landing-check)、[Worker 向塔台提問](/deep/features/worker-questions)
 
 ### `/ct-done T#### [狀態]` {#ct-done}
@@ -94,9 +94,9 @@ const towerRows = [
 - **語法**：`/ct-done T#### [DONE|FIXED|PARTIAL|BLOCKED|FAILED]`（Codex：`$ct-done …`）
 - **參數**：工單編號或路徑；可選的最終狀態。沒給狀態時，依回報區的證據判斷，判斷不了就問你。`ABANDONED` 這類退役狀態只在範圍決定要退役這張工單時使用。
 - **在哪用**：Worker session（補救用）。
-- **做什麼**：只做收尾的修補，**不做新的產品工作**——落點檢查 → 收集現況證據（`git status`、變更檔、最近的 commit）→ 先補齊回報區缺的欄位 → 再更新狀態 → commit 工單檔本身 → 通知塔台（和 `/ct-exec` 一樣用完整工單 ID）。產品改動不替你 commit，只告訴你哪些看起來還沒 commit。遇到原本是 `PARTIAL`、但卡點已經解除的工單，補一段事後註記並改成 `DONE`。不會送 `T#### 提問`。6.0.0 起寫回報前同樣檢查新的執行中補充段，並寫執行 `ct-done` 那個 session 的 id。
-- **起始版本**：v2.1.1（獨立 skill：v3.1.0；session id、執行中補充檢查：6.0.0）
-- **權威出處**：`ct-done/SKILL.md` § Workflow、§ Status Selection、§ Commit Check、§ BAT Notify；`control-tower/references/work-order-system.md` § 回報與通知用的工單 ID
+- **做什麼**：只做收尾的修補，**不做新的產品工作**——落點檢查 → 收集現況證據（`git status`、變更檔、最近的 commit）→ 先補齊回報區缺的欄位 → 再更新狀態 → commit 工單檔本身 → 通知塔台（和 `/ct-exec` 一樣用完整工單 ID）。產品改動不替你 commit，只告訴你哪些看起來還沒 commit。遇到原本是 `PARTIAL`、但卡點已經解除的工單，補一段事後註記並改成 `DONE`。不會送 `T#### 提問`。6.0.0 起寫回報前同樣檢查新的執行中補充段，並寫執行 `ct-done` 那個 session 的 id。v6.0.1+：寫完 frontmatter 自檢（同 `/ct-exec`）。
+- **起始版本**：v2.1.1（獨立 skill：v3.1.0；session id、執行中補充檢查：6.0.0；寫完 frontmatter 自檢：6.0.1）
+- **權威出處**：`ct-done/SKILL.md` § Workflow、§ Status Selection、§ Commit Check、§ BAT Notify（寫完 frontmatter 自檢照 `ct-exec/SKILL.md` § Frontmatter Rules）；`control-tower/references/work-order-system.md` § 回報與通知用的工單 ID
 - **相關**：[常見問題 › 卡在 IN_PROGRESS](/faq#in-progress)、[中斷、Renew 與補救收尾](/deep/features/recovery)
 
 ### `/ct-status [參數]` {#ct-status}
@@ -479,7 +479,7 @@ yolo 下塔台另外也接受 `T#### 失敗`。不是這些格式的訊息，會
 - `control-tower/SKILL.md` § Built-In Commands
 - `ct-help/SKILL.md` § Command Families
 - 各 skill 的 `SKILL.md`（`ct-exec`、`ct-done`、`ct-status`、`ct-evolve`、`ct-insights`、`ct-fieldguide`、`control-tower-guide`）
-- CT 安裝與使用指南 § 13. Config 速查表（v6.0.0）、§ 14. 命令速查表（v6.0.0）
+- CT 安裝與使用指南 § 13. Config 速查表（v6.0.1）、§ 14. 命令速查表（v6.0.1）
 - `control-tower/references/tower-config.md` § `*config` 命令、§ 可用選項（表下註明 `gp-prefix` 不是選項）
 - `control-tower/references/multi-tower-protocol.md` § `gp-prefix` 設定（唯一權威定義）
 - `control-tower/references/fieldguide-commands.md`

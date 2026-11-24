@@ -58,9 +58,20 @@ v5.0.0 改成在檔頭放 YAML frontmatter，所有讀取端都先讀它：
 
 為什麼 drift 時不直接覆寫 body？因為 body 裡可能有人特意寫的註記，機器自動覆寫，等於抹掉人的判斷。只警告、交給人處理，比較安全。
 
-這是 CT 唯一一次升主版號。原因不是功能變多，而是**事實來源換了位置**。這個改動先在 BAT 專案試跑了 5 個 sprint，才回寫到 CT。沒有 frontmatter 的舊工單仍然讀得到，會改走舊的表格解析並發出警告，不會直接失效。
+這是 CT 第一次升主版號（第二次是 6.0.0 的方法論轉接）。原因不是功能變多，而是**事實來源換了位置**。這個改動先在 BAT 專案試跑了 5 個 sprint，才回寫到 CT。沒有 frontmatter 的舊工單仍然讀得到，會改走舊的表格解析並發出警告，不會直接失效。
 
 Worker 端的規則也一樣：frontmatter 是機器的事實來源，清單欄位用 YAML block list，時間戳一律帶時區、加引號，未知的狀態值不得默默當成 `PENDING`。權威定義：`ct-exec/SKILL.md` § Frontmatter Rules。
+
+### 字串寫法與寫入後自檢（v6.0.1+） {#yaml-strings}
+
+frontmatter 是給機器讀的，一個值寫壞，壞掉的是**整份** frontmatter，不只那一欄。6.0.0 之後真的發生過：塔台把含 Windows 路徑的文字寫進雙引號字串（例 `"…\Users\…"`），YAML 把 `\U` 當成跳脫序列，接不上就是語法錯誤，BAT 塔台面板因此讀不到那個工作區的摘要。6.0.1 起，CT 寫的 frontmatter（`_tower-state.md`、工單、BUG／PLAN／EXP、`_handover`／`_reply` 等）都照這幾條：
+
+- **含反斜線的值用單引號**（單引號不處理跳脫，只有 `'` 要寫成 `''`，例 `'%USERPROFILE%\Documents\proj'`），或把路徑改成正斜線；**雙引號裡不寫反斜線**。時間戳照舊用雙引號。
+- **自由文字一律加引號**：含 `: `、` #`，或以反引號、`*`、`&`、`[` 這類 YAML 指示字元開頭的值，不加引號會被當成語法。
+- **寫完自檢再 commit**：塔台與 Worker 每次寫完 frontmatter，先跑 `python <control-tower>/scripts/check-frontmatter.py <檔>`（只用 Python 標準函式庫）；找不到腳本就用環境裡現成的 YAML 解析器，再沒有至少 grep 雙引號裡的反斜線。失敗當場修正，**不得 commit 解析失敗的檔**。檢查的輸出只有檔名、行號與問題類型，不印檔案原文。
+- **舊檔不追改**：已經能正確解析的舊 frontmatter 不改寫；解析失敗的在下一次寫入時修。要一次盤點，可以對 `_ct-workorders/` 跑同一支腳本（加 `-r` 含子目錄）。
+
+為什麼由寫的一方自檢，而不是要讀者放寬：讀者不只一個，在寫入點擋下最便宜。BAT 塔台面板讀取契約 v1 本身沒有變，單引號字串在 YAML 裡一樣是字串。權威定義：`control-tower/references/memory-protocol.md` § YAML frontmatter 字串寫法與寫入後自檢；Worker 端見 `ct-exec/SKILL.md` § Frontmatter Rules。
 
 ## 反序收尾：外部看到終態時，回報一定已經寫完
 
@@ -106,7 +117,7 @@ source／docs │ build／test │ runtime │ deploy │ release／安裝包 �
 - `control-tower-guide/references/work-order-lifecycle.md` § 工單的兩層 metadata：frontmatter 與 body table、§ 狀態機
 - `control-tower/references/doctrine.md` § 工單狀態機的設計依據、§ 為什麼要反序寫入？
 - `control-tower/references/work-order-template.md` § Sprint 2 transition — YAML frontmatter SoT (v5.0.0+)
-- `control-tower/references/memory-protocol.md` § _decision-log.md（決策日誌）
+- `control-tower/references/memory-protocol.md` § _decision-log.md（決策日誌）、§ YAML frontmatter 字串寫法與寫入後自檢（v6.0.1+）
 - `ct-exec/SKILL.md` § Frontmatter Rules、§ Phase 3: Verify、§ Phase 4: Report And Commit
 - 演進史 § 5.0.0：metadata 改用 frontmatter（見 [演進史](/versions/evolution)）
 
