@@ -2,7 +2,7 @@
 name: ct-evolve
 description: "Control Tower learning extraction skill for distilling work order experience into reusable patterns, anti-patterns, playbooks, or skill candidates. Use when the user invokes $ct-evolve or /ct-evolve, asks what was learned, wants to promote learnings with --playbook, --skill, --workflow, or --status, wants to feed session-statistics candidate facts with --facts-from, or needs FIELDGUIDE candidate tagging from repeated execution evidence."
 ---
-<!-- ct-evolve-version: 6.0.1 -->
+<!-- ct-evolve-version: 6.0.2 -->
 
 # ct-evolve
 
@@ -141,6 +141,9 @@ For `--skill`:
 
 1. Identify skill-worthy repeated workflow.
 2. Produce a concise skill brief: triggers, core workflow, references/assets/scripts needed, validation plan.
+   When the brief drafts the candidate's `SKILL.md` frontmatter (`name`, `description`), quote its string values as
+   `../control-tower/references/memory-protocol.md` § YAML frontmatter 字串寫法與寫入後自檢 says (the single authority; v6.0.2+) and
+   check the file the same way after writing it.
 3. Do not edit installed skill files unless the user explicitly invokes `$skill-creator`.
 
 For `--workflow` (v5.10.0+; what Workflow is in CT, rules R1–R5, card format and maturity: `../control-tower/references/workflow-engine.md`, the single authority):

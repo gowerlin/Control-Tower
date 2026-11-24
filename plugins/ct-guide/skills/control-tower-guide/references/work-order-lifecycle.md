@@ -288,6 +288,14 @@ commit 訊息必須帶工單編號；有無關的未提交變更時只 commit �
 `session_ids`（Renew 追加、不覆蓋；拿不到寫 `unavailable`），回報區〈完成狀態〉多一行鏡像。這是「環境變數只列名稱」唯一允許寫值的例外——session id 不是秘密，
 但它讓 `*insights sessions` 在原始紀錄被清掉之後仍對得上工單。權威：CT `ct-exec/SKILL.md` § Phase 4 › Session id。
 
+**為什麼長內容要先寫檔（v6.0.2）**：回報區常常很長，腳本與 JSON 常有反斜線。過去 Worker 習慣把它們用 heredoc 塞進一個 Bash 指令（`cat >> 工單 <<'EOF'`、`python - <<'PY'`），這會壞在三個地方：
+
+- **長度**：Bash 工具把整段指令當成一個參數交出去，跳脫後約 7,500 字元以上就被截斷，bash 只看到半段，固定以 `unexpected EOF` 失敗。本機約 2,300 個 session 的紀錄裡，這個長度以上的 Bash 指令幾乎全部失敗——而且失敗的內容是模型已經寫好的，只能整段重寫。
+- **反斜線**：heredoc 可能把兩個反斜線收成一個，照 Python 規則寫對的正則或 Windows 路徑，到 Python 手上已經錯了；資料每多經過一層 shell，就多一套跳脫規則。
+- **編碼**：`python -I` 會忽略 `PYTHONIOENCODING`，主控台是 cp950 這類編碼時印不出中文；`-X utf8` 不受 `-I` 影響。
+
+所以 6.0.2 起改成：回報與長段落用 Edit／Write 工具直接寫進工單；腳本、JSON、要送 stdin 的內容（例：BAT 提問與答覆）先用 Write 寫到 scratchpad 檔，再用短指令執行或以 `<` 送入；指令超過一個畫面、含反斜線、或有兩層以上引號就改寫檔；Python 一律 `python -X utf8 -I -B`。規則寫成「改做什麼」而不是「注意什麼」，是因為量測顯示只寫「注意」的提醒沒有讓錯誤變少，寫成替代做法的才有效。同一版 `*sync` 也多一步：對熱區跑 `check-frontmatter.py`，只回報解析失敗的 frontmatter、不自動修、不阻擋。規則以 CT `ct-exec/SKILL.md` § Long Content Via Files 為準。
+
 ### BAT Notify
 
 通知在最終狀態與回報區都寫完**之後**才送，依 `CT_MODE` 處理：`yolo` 預填並自動送出（`--submit`）；`on` 只預填、不送出；

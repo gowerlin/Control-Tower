@@ -1,6 +1,6 @@
 {
   "_note": "相容版本對照（/versions/compatibility 的資料）。每列 feature、ct（CT 起始版本）、bat／codex（最低版本，不需要就省略）、note、source（權威出處：檔案 § 章節）。CT 發版時相容性有變才改（CT 每次發版都要同步更新 Portal）。",
-  "ctVersion": "6.0.1",
+  "ctVersion": "6.0.2",
   "rows": [
     {
       "feature": "帶前綴的工單 ID 走結構化派工（--workorder 帶前綴）",
@@ -186,6 +186,13 @@
       "bat": ">= 0.7.0-pre.7",
       "note": "PATCH。BAT 介面同 v6.0.0，最低 BAT 版本不變，沒有新門檻；BAT 塔台面板讀取契約 v1（summary_version: 1）的欄位與型別都不變，BAT 端不必改。改的是 CT 寫入的一側：含 Windows 路徑的值寫進雙引號字串時，整份 frontmatter 解析失敗，面板讀不到那個工作區的摘要。已經寫壞的 _tower-state.md，在該工作區塔台換上 6.0.1、下次寫入並自檢時修正。檢查腳本只用 Python 標準函式庫。塔台與 Worker 同一批升級，Worker 才找得到檢查腳本。",
       "source": "CHANGELOG.md [6.0.1]；memory-protocol.md § YAML frontmatter 字串寫法與寫入後自檢；ct-exec/SKILL.md § Frontmatter Rules"
+    },
+    {
+      "feature": "長內容先寫檔（回報用 Edit／Write 寫進工單；腳本、JSON、要送 stdin 的內容先寫檔再執行或以 < 送入；Python 一律 -X utf8 -I -B）；*sync 第 6 步 frontmatter 自檢（只回報）",
+      "ct": "v6.0.2",
+      "bat": ">= 0.7.0-pre.7",
+      "note": "PATCH。BAT 介面同 v6.0.0，最低 BAT 版本不變，沒有新門檻；BAT 塔台面板讀取契約 v1（summary_version: 1）不變；BAT helper 的參數、exit code 與「內容只走 stdin」的要求都不變，改的只是 CT 怎麼準備 stdin 的內容（--ask、--answer 的題目與答覆先寫成檔再送入）。*sync 的自檢用 6.0.1 附帶的 check-frontmatter.py，只回報、不自動修、不阻擋。",
+      "source": "CHANGELOG.md [6.0.2]；ct-exec/SKILL.md § Long Content Via Files；work-order-system.md § 主方法論 tracker 同步 › 同步流程；yolo-mode.md § BAT 通道"
     },
     {
       "feature": "Level 2：外部 bmad-guide 的 BMad workflow 路由",

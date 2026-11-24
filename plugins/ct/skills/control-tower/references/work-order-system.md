@@ -401,7 +401,7 @@ Claude Code 預設只留 session 紀錄 30 天，所以收單當下（紀錄一�
 （讓這次補記的 id 也能用來歸屬），處理每一次 Worker 回報都做（同一張工單再寫一次時，腳本依併入規則取代或保留，不會重複）：
 
 ```bash
-python "<ct-insights>/scripts/ct-session-stats.py" --workorders-dir _ct-workorders --workorders <工單 ID> \
+python -X utf8 -I -B "<ct-insights>/scripts/ct-session-stats.py" --workorders-dir _ct-workorders --workorders <工單 ID> \
   --snapshot-append _ct-workorders/_insights/session-stats/<YYYY-MM>.json
 ```
 
@@ -644,4 +644,10 @@ bmad 時為 `sprint-status.yaml`（[adapters/bmad.yaml](adapters/bmad.yaml) `tra
 4. 以工單檔案為 single source of truth 修正差異
 5. 量熱檔大小，超過預算時在摘要加提示（[memory-protocol.md](memory-protocol.md) § BAT 塔台面板讀取契約 › 大小預算）；
    啟用 BUG 追蹤時，加未結 BUG 清理提示（[bug-plan-system.md](bug-plan-system.md) § BUG 單據 › 未結 BUG 清理提示）
-6. 顯示同步結果摘要
+6. **frontmatter 自檢（只回報，v6.0.2+）**：對熱區跑一次 `python -X utf8 -I -B <control-tower>/scripts/check-frontmatter.py _ct-workorders/`
+   （目錄裡的 `*.md`、不含子目錄，所以不掃 `_archive/`）。exit `1` → 在同步摘要列出每一處的檔名、行號、問題類型，並建議「把該值整個加引號
+   （含反斜線的用單引號或改正斜線）」；exit `2` → 摘要記一行「frontmatter 自檢未執行」與原因。**不自動修、不阻擋 `*sync`**，其餘步驟照常；
+   何時修由塔台決定。腳本不在 → 對熱區的檔照權威節〈寫入後自檢〉的退路 2、3。輸出不含檔案原文。字串寫法與退路的唯一權威是
+   [memory-protocol.md](memory-protocol.md) § YAML frontmatter 字串寫法與寫入後自檢，這裡只引用。
+   本步不受上方「主方法論沒有 `tracker` → 本節不適用」影響：`*sync` 每次都跑。
+7. 顯示同步結果摘要

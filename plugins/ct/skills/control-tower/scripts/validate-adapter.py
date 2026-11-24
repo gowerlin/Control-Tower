@@ -5,8 +5,8 @@
 § 新 adapter 的最小檢查）。本腳本只做其中「可機器檢查」的部分，規則有變以權威檔為準，再改這裡。
 
 用法：
-  uv run --no-project --with pyyaml python <control-tower>/scripts/validate-adapter.py <路徑> [<路徑> ...]
-  python <control-tower>/scripts/validate-adapter.py <路徑> ...      # 環境已有 PyYAML 時
+  uv run --no-project --with pyyaml python -X utf8 -I -B <control-tower>/scripts/validate-adapter.py <路徑> [<路徑> ...]
+  python -X utf8 -B <control-tower>/scripts/validate-adapter.py <路徑> ...  # 環境已有 PyYAML 時（不加 -I：PyYAML 可能裝在使用者層）
 
   <路徑> 可以是描述檔（內建 adapters/<id>.yaml、外部或專案本地的 adapter.yaml），
   或含 adapter.yaml 的目錄（例：ct-adapter-pstack/）。
@@ -582,7 +582,7 @@ def main(argv=None):
     try:
         import yaml
     except ImportError:
-        print('ERROR 需要 PyYAML。用 `uv run --no-project --with pyyaml python validate-adapter.py <路徑>` 執行，'
+        print('ERROR 需要 PyYAML。用 `uv run --no-project --with pyyaml python -X utf8 -I -B validate-adapter.py <路徑>` 執行，'
               '或先 `pip install pyyaml`。', file=sys.stderr)
         return 2
 

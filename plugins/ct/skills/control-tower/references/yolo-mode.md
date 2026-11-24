@@ -576,7 +576,9 @@ Worker 以 helper 提問、以唯讀 MCP 長輪詢等答覆；塔台以唯讀 MC
   工單的問答紀錄（`### 待塔台決策`、`### 互動紀錄`）屬 CT，BAT 不保存；BAT 通道成功時塔台不在工單寫答覆行，由 Worker 寫互動紀錄。
 - `worker_question_timeout = 0` → 不用 BAT 通道（照 § Worker 端 第 3 點）。
 - 🔴 **內容只走 stdin**：問題、選項、`detail`、答覆文字只從 stdin 傳給 helper（UTF-8、≤ 64 KiB），不得放進命令列參數
-  （helper 會把命令列原樣寫進 `bat-scripts.log`，命令列也會出現在程序列表與 agent 的工具紀錄）。Windows 用 pwsh 7 或 Git Bash heredoc；
+  （helper 會把命令列原樣寫進 `bat-scripts.log`，命令列也會出現在程序列表與 agent 的工具紀錄）。v6.0.2+：先用 Write 工具把內容寫到
+  scratchpad 檔（UTF-8），再以 `< 檔案`（bash）或 `Get-Content -Raw 檔案 | …`（pwsh 7）送 stdin；不用 heredoc 或 here-string
+  （長指令會被截斷、heredoc 會把兩個反斜線收成一個；規則與原因見 `ct-exec/SKILL.md` § Long Content Via Files）。
   Windows PowerShell 5.1 的管線預設不是 UTF-8，會弄壞中文，不得使用。
 - 權杖：題目與答覆裡不得寫出任何權杖值（[auto-session.md](auto-session.md) § 範圍權杖與分頁角色 第 2 點）；BAT 收件時的遮罩不改變這條規則。
 - 不需要事先判斷 BAT 版本：直接送，依下方「版本判定與降級」表的結果降級。
@@ -698,29 +700,33 @@ Worker 有 `blocking` 的待答題時 `state: blocked`、`blockedReason: tower`�
    - 🔴 `--submit` 與 `--no-pty-write` 互斥（兩個都帶 → helper exit `1`、`ask: USAGE`，題目沒有登記），同一個 `--ask` 只帶其中一個。
    - 這依賴 BAT「`--ask --no-pty-write` 只做 UI 通知、不寫塔台 PTY」的行為，BAT 已確認（BAT D190），見 § BAT 通道。
 
+   每題先用 Write 工具把題目 JSON 寫到 scratchpad 檔（v6.0.2+；一題一個檔，例 `<scratchpad>/q-n.json`），內容：
+
+   ```json
+   {"question":"Q-n：<一句話問題>","options":["<選項 A>","<選項 B>"],"detail":"Worker 建議：…\n影響範圍：…\n阻塞：…","blocking":true}
+   ```
+
    第 1～N-1 題（N ≥ 2 才有）：
 
    ```bash
    "${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR/bat-notify.mjs" --ask --source "<工單 ID>" --target "$BAT_TOWER_TERMINAL_ID" \
-     --no-pty-write --expires-min <worker_question_timeout> "<工單 ID> 提問" <<'JSON'
-   {"question":"Q-n：<一句話問題>","options":["<選項 A>","<選項 B>"],"detail":"Worker 建議：…\n影響範圍：…\n阻塞：…","blocking":true}
-   JSON
+     --no-pty-write --expires-min <worker_question_timeout> "<工單 ID> 提問" < "<題目檔>"
    ```
 
    第 N 題（N = 1 時就是這一題）：
 
    ```bash
    "${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR/bat-notify.mjs" --ask --source "<工單 ID>" --target "$BAT_TOWER_TERMINAL_ID" \
-     --submit --expires-min <worker_question_timeout> "<工單 ID> 提問" <<'JSON'
-   {"question":"Q-n：<一句話問題>","options":["<選項 A>","<選項 B>"],"detail":"Worker 建議：…\n影響範圍：…\n阻塞：…","blocking":true}
-   JSON
+     --submit --expires-min <worker_question_timeout> "<工單 ID> 提問" < "<題目檔>"
    ```
 
    - `<工單 ID>` 是工單完整 ID，含前綴、不得截短；送出前與 frontmatter `id` 比對（[work-order-system.md](work-order-system.md) § 回報與通知用的工單 ID）。
    - `question` 以工單題號 `Q-n：` 開頭，內容與工單的題目相同（塔台據此對應工單題目）；`options` 照工單題目的選項，不列「其他」
      （BAT 預設允許自由文字）；`detail` 放 Worker 建議、影響範圍、阻塞；`blocking` 固定 `true`。
-   - `--expires-min` = 生效的 `worker_question_timeout`；第 N 題的 `--submit` 照 yolo 規則。PowerShell 用 pwsh 7 的 here-string 管線
-     （`@'…'@ | & $n $h --ask …`），不用 Windows PowerShell 5.1。
+   - `--expires-min` = 生效的 `worker_question_timeout`；第 N 題的 `--submit` 照 yolo 規則。PowerShell 用 pwsh 7 讀題目檔接管線
+     （`Get-Content -Raw <題目檔> | & $n $h --ask …`，v6.0.2+；不用 here-string），不用 Windows PowerShell 5.1。
+   - 題目檔用 Write 工具寫（`detail` 的換行照 JSON 寫成 `\n`）；`<scratchpad>` 是 session scratchpad，沒有時用系統暫存目錄下的
+     `ct-<工單 ID>/`，收尾時刪除（`ct-exec/SKILL.md` § Long Content Via Files）。
    - 每一則 `--ask` 都帶通知字串 `T#### 提問`：第 1～N-1 題只出現在 toast，第 N 題預填並送出、叫醒塔台。`--ask` 成功的題**不要再另送一般通知**。
    - 一次問多題時，**先把所有題的 `--ask` 送完**（含第 2 步的標記、commit 與一般通知），才進入第 3 步的等待（v5.7.1，T0170）。
      租約以**每一題**計（v6.0.0-beta.9）：每一題從它自己的 `--ask` 成功起 120 s 內都要有第一次等待（§ BAT 通道 › 限制、第 3 步），所以送出階段不要拖。
@@ -954,12 +960,11 @@ Worker 有 `blocking` 的待答題時 `state: blocked`、`blockedReason: tower`�
      - 使用者回答後照第 3 點答覆（通道依回答當下第 1 點的判斷；Worker 已走備援就寫在 Renew 區段），再寫一筆結果條目（`…（使用者決定）`）。
      - 條目寫在 `_tower-state.md`，塔台 context 被壓縮後仍讀得到：這題的最新 `[提問]` 條目是等待條目，就表示還在等使用者。
 3. 依第 1 點的結果答覆：
-   - **BAT 答覆**（v5.7.0+）：答覆文字只走 stdin（同 § BAT 通道 的 stdin 規則）：
+   - **BAT 答覆**（v5.7.0+）：答覆文字只走 stdin（同 § BAT 通道 的 stdin 規則）。v6.0.2+：先用 Write 工具把答覆寫到 scratchpad 檔
+     （例 `<scratchpad>/answer-q-n.txt`，內容一行：`<決策>——<一句理由>（塔台代決 / 使用者決定）`），再送入：
 
      ```bash
-     "${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR/bat-terminal.mjs" --answer <questionId> --notify-id "$BAT_TERMINAL_ID" [--choice <n>] <<'TXT'
-     <決策>——<一句理由>（塔台代決 / 使用者決定）
-     TXT
+     "${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR/bat-terminal.mjs" --answer <questionId> --notify-id "$BAT_TERMINAL_ID" [--choice <n>] < "<答覆檔>"
      ```
 
      `--choice` = 選第幾個選項（1 起算）；答「其他」不帶 `--choice`，只寫文字。結果只看 exit code：

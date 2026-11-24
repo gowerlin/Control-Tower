@@ -84,9 +84,9 @@ const towerRows = [
 - **參數**：一個工單編號或路徑。同一個編號在 `_ct-workorders/` 下找到多張時，Worker 停下來請你指定。
 - **執行環境**：由塔台派工時傳入，Worker 不讀設定檔決定模式。`CT_MODE`：`yolo`／`ask`／`off`／`on`（沒有或不合法時當成 `ask`）；`CT_INTERACTIVE`：`1` 允許研究型互動、`0` 禁止；`CT_HOME`：在 BAT 的 worktree 隔離分頁裡才有，指向主 checkout。
 - **在哪用**：Worker session（一張工單一個新的 session）。
-- **做什麼**：執行一張工單的完整生命週期——讀專案規則與整張工單 → **落點檢查**（任何寫入之前；`repo` 不符就停）→ 標 `IN_PROGRESS` → 只在範圍內執行 → 跑驗收、證據分道記錄 → **反序收尾**（產品 commit → 回報區 → 最終狀態 → 工單 commit）→ 通知塔台。通知與提問用收到的**完整工單 ID**：`/ct-exec CP-T0113` 回的是 `CP-T0113 完成`，不會截成 `T0113`；送出前先和工單 frontmatter 的 `id` 比對，不一致就改用 `id`（v5.13.1 起）。工單原本就是 `IN_PROGRESS` 時記成接續執行。`CT_MODE=yolo` 時不問你，有問題寫進工單問塔台；一次問多題時只有最後一題叫醒塔台（v5.15.0 起）。6.0.0 起：收尾時把自己的 session id 寫進 frontmatter `session_ids`；在跑驗收前、產品 commit 前、寫回報前各看一次有沒有新的〈塔台補充（執行中 #N）〉段並照做（見[執行中補充](/deep/features/recovery#addenda)）；工單有 frontmatter `methodology` 時帶入方法論，呼叫方法論 skill 都記進回報；被 compact 或 resume 後先重讀整張工單。v6.0.1+：寫完 frontmatter 自檢——每次寫完 frontmatter、commit 前用 `control-tower/scripts/check-frontmatter.py` 檢查，解析失敗不得 commit（見[字串寫法與寫入後自檢](/deep/principles/files-as-truth#yaml-strings)）。
-- **起始版本**：v2.1.1（獨立 skill：v3.1.0；`$` 入口：v5.0.3；落點檢查：v5.0.4；yolo 向塔台提問：v5.5.0；完整工單 ID 通知：v5.13.1；一批提問只叫醒塔台一次：v5.15.0；session id、執行中補充、方法論：6.0.0；寫完 frontmatter 自檢：6.0.1）
-- **權威出處**：`ct-exec/SKILL.md`（§ Startup、§ Mode And Environment、§ Landing Zone Check、§ Phase 1～4、§ Questions For Tower (`CT_MODE=yolo`, v5.5.0+)、§ BAT Notify And Fallback；6.0.0 起另有 § Tower Addenda Check、§ Methodology、§ Phase 4 › Session id；6.0.1 起 § Frontmatter Rules 加字串寫法與寫入後自檢）；`control-tower/references/work-order-system.md` § 回報與通知用的工單 ID
+- **做什麼**：執行一張工單的完整生命週期——讀專案規則與整張工單 → **落點檢查**（任何寫入之前；`repo` 不符就停）→ 標 `IN_PROGRESS` → 只在範圍內執行 → 跑驗收、證據分道記錄 → **反序收尾**（產品 commit → 回報區 → 最終狀態 → 工單 commit）→ 通知塔台。通知與提問用收到的**完整工單 ID**：`/ct-exec CP-T0113` 回的是 `CP-T0113 完成`，不會截成 `T0113`；送出前先和工單 frontmatter 的 `id` 比對，不一致就改用 `id`（v5.13.1 起）。工單原本就是 `IN_PROGRESS` 時記成接續執行。`CT_MODE=yolo` 時不問你，有問題寫進工單問塔台；一次問多題時只有最後一題叫醒塔台（v5.15.0 起）。6.0.0 起：收尾時把自己的 session id 寫進 frontmatter `session_ids`；在跑驗收前、產品 commit 前、寫回報前各看一次有沒有新的〈塔台補充（執行中 #N）〉段並照做（見[執行中補充](/deep/features/recovery#addenda)）；工單有 frontmatter `methodology` 時帶入方法論，呼叫方法論 skill 都記進回報；被 compact 或 resume 後先重讀整張工單。v6.0.1+：寫完 frontmatter 自檢——每次寫完 frontmatter、commit 前用 `control-tower/scripts/check-frontmatter.py` 檢查，解析失敗不得 commit（見[字串寫法與寫入後自檢](/deep/principles/files-as-truth#yaml-strings)）。v6.0.2+：長內容先寫檔——回報與長段落用 Edit／Write 工具直接寫進工單，腳本、JSON、要送 stdin 的內容先寫到 scratchpad 檔再執行或以 `<` 送入，Python 用 `python -X utf8 -I -B`（見[長內容先寫檔](/lifecycle#long-content)）。
+- **起始版本**：v2.1.1（獨立 skill：v3.1.0；`$` 入口：v5.0.3；落點檢查：v5.0.4；yolo 向塔台提問：v5.5.0；完整工單 ID 通知：v5.13.1；一批提問只叫醒塔台一次：v5.15.0；session id、執行中補充、方法論：6.0.0；寫完 frontmatter 自檢：6.0.1；長內容先寫檔：6.0.2）
+- **權威出處**：`ct-exec/SKILL.md`（§ Startup、§ Mode And Environment、§ Landing Zone Check、§ Phase 1～4、§ Questions For Tower (`CT_MODE=yolo`, v5.5.0+)、§ BAT Notify And Fallback；6.0.0 起另有 § Tower Addenda Check、§ Methodology、§ Phase 4 › Session id；6.0.1 起 § Frontmatter Rules 加字串寫法與寫入後自檢；6.0.2 起 § Long Content Via Files）；`control-tower/references/work-order-system.md` § 回報與通知用的工單 ID
 - **相關**：[一張工單的一生](/lifecycle#worker)、[落點檢查](/deep/features/landing-check)、[Worker 向塔台提問](/deep/features/worker-questions)
 
 ### `/ct-done T#### [狀態]` {#ct-done}
@@ -94,9 +94,9 @@ const towerRows = [
 - **語法**：`/ct-done T#### [DONE|FIXED|PARTIAL|BLOCKED|FAILED]`（Codex：`$ct-done …`）
 - **參數**：工單編號或路徑；可選的最終狀態。沒給狀態時，依回報區的證據判斷，判斷不了就問你。`ABANDONED` 這類退役狀態只在範圍決定要退役這張工單時使用。
 - **在哪用**：Worker session（補救用）。
-- **做什麼**：只做收尾的修補，**不做新的產品工作**——落點檢查 → 收集現況證據（`git status`、變更檔、最近的 commit）→ 先補齊回報區缺的欄位 → 再更新狀態 → commit 工單檔本身 → 通知塔台（和 `/ct-exec` 一樣用完整工單 ID）。產品改動不替你 commit，只告訴你哪些看起來還沒 commit。遇到原本是 `PARTIAL`、但卡點已經解除的工單，補一段事後註記並改成 `DONE`。不會送 `T#### 提問`。6.0.0 起寫回報前同樣檢查新的執行中補充段，並寫執行 `ct-done` 那個 session 的 id。v6.0.1+：寫完 frontmatter 自檢（同 `/ct-exec`）。
-- **起始版本**：v2.1.1（獨立 skill：v3.1.0；session id、執行中補充檢查：6.0.0；寫完 frontmatter 自檢：6.0.1）
-- **權威出處**：`ct-done/SKILL.md` § Workflow、§ Status Selection、§ Commit Check、§ BAT Notify（寫完 frontmatter 自檢照 `ct-exec/SKILL.md` § Frontmatter Rules）；`control-tower/references/work-order-system.md` § 回報與通知用的工單 ID
+- **做什麼**：只做收尾的修補，**不做新的產品工作**——落點檢查 → 收集現況證據（`git status`、變更檔、最近的 commit）→ 先補齊回報區缺的欄位 → 再更新狀態 → commit 工單檔本身 → 通知塔台（和 `/ct-exec` 一樣用完整工單 ID）。產品改動不替你 commit，只告訴你哪些看起來還沒 commit。遇到原本是 `PARTIAL`、但卡點已經解除的工單，補一段事後註記並改成 `DONE`。不會送 `T#### 提問`。6.0.0 起寫回報前同樣檢查新的執行中補充段，並寫執行 `ct-done` 那個 session 的 id。v6.0.1+：寫完 frontmatter 自檢（同 `/ct-exec`）。v6.0.2+：補回報同樣用 Edit／Write 寫入，不用 heredoc 附加（同 `/ct-exec`）。
+- **起始版本**：v2.1.1（獨立 skill：v3.1.0；session id、執行中補充檢查：6.0.0；寫完 frontmatter 自檢：6.0.1；長內容先寫檔：6.0.2）
+- **權威出處**：`ct-done/SKILL.md` § Workflow、§ Status Selection、§ Commit Check、§ BAT Notify（寫完 frontmatter 自檢照 `ct-exec/SKILL.md` § Frontmatter Rules；長內容先寫檔照 § Long Content Via Files）；`control-tower/references/work-order-system.md` § 回報與通知用的工單 ID
 - **相關**：[常見問題 › 卡在 IN_PROGRESS](/faq#in-progress)、[中斷、Renew 與補救收尾](/deep/features/recovery)
 
 ### `/ct-status [參數]` {#ct-status}
@@ -283,8 +283,9 @@ const towerRows = [
   - 啟用 BUG 追蹤時，未結 BUG 張數或久未更新的天數超過門檻（`bug_review_open_threshold`、`bug_review_stale_days`），就建議照結案判準逐張核對（見 [BUG 結案判準](/deep/features/record-types#bug-closing)）。
   - 決策日誌的格式驗證多檢查 BAT 讀不讀得到（表頭 `ID`、每列以 `|` 開頭與結尾、標題格式）和檔案大小。
   - 索引格式照新規則重建；舊索引在下一次 `*sync` 時換成新格式。塔台改了 BUG／PLAN 狀態，同一批就重建索引，不等下一次 `*sync`。
-- **起始版本**：v3.2.0（多類型掃描：v4.0.0；大小提示、未結 BUG 提示：v5.13.0）
-- **權威出處**：`control-tower/references/work-order-system.md` § sprint-status.yaml 同步；`control-tower/references/bug-plan-system.md` § 索引格式、§ 未結 BUG 清理提示；`control-tower/references/decision-log-system.md` § 格式驗證；`control-tower/references/memory-protocol.md` § BAT 塔台面板讀取契約 › 大小預算；`control-tower/references/archive-system.md` § 與 `*sync` 的協作
+- **v6.0.2+：frontmatter 自檢（只回報）**：同步流程的第 6 步對熱區（`_ct-workorders/` 的 `*.md`，不含 `_archive/`）跑 `check-frontmatter.py`，有解析失敗的檔就在同步摘要列出檔名、行號、問題類型，建議「把該值整個加引號」；不自動修、不阻擋 `*sync`，輸出不含檔案原文（見[字串寫法與寫入後自檢](/deep/principles/files-as-truth#yaml-strings)）。
+- **起始版本**：v3.2.0（多類型掃描：v4.0.0；大小提示、未結 BUG 提示：v5.13.0；frontmatter 自檢：6.0.2）
+- **權威出處**：`control-tower/references/work-order-system.md` § sprint-status.yaml 同步；`control-tower/references/bug-plan-system.md` § 索引格式、§ 未結 BUG 清理提示；`control-tower/references/decision-log-system.md` § 格式驗證；`control-tower/references/memory-protocol.md` § BAT 塔台面板讀取契約 › 大小預算；`control-tower/references/archive-system.md` § 與 `*sync` 的協作；6.0.2 起 `control-tower/references/work-order-system.md` § 主方法論 tracker 同步 › 同步流程（第 6 步）
 
 ### `*pause [原因]` {#pause}
 
@@ -479,7 +480,7 @@ yolo 下塔台另外也接受 `T#### 失敗`。不是這些格式的訊息，會
 - `control-tower/SKILL.md` § Built-In Commands
 - `ct-help/SKILL.md` § Command Families
 - 各 skill 的 `SKILL.md`（`ct-exec`、`ct-done`、`ct-status`、`ct-evolve`、`ct-insights`、`ct-fieldguide`、`control-tower-guide`）
-- CT 安裝與使用指南 § 13. Config 速查表（v6.0.1）、§ 14. 命令速查表（v6.0.1）
+- CT 安裝與使用指南 § 13. Config 速查表（v6.0.2）、§ 14. 命令速查表（v6.0.2）
 - `control-tower/references/tower-config.md` § `*config` 命令、§ 可用選項（表下註明 `gp-prefix` 不是選項）
 - `control-tower/references/multi-tower-protocol.md` § `gp-prefix` 設定（唯一權威定義）
 - `control-tower/references/fieldguide-commands.md`

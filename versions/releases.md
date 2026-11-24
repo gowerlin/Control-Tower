@@ -1,13 +1,13 @@
 ---
 title: 更版紀錄
-description: BMad Control Tower 近 10 版的更版紀錄（最新 v6.0.1），更早的版本見演進史。
+description: BMad Control Tower 近 10 版的更版紀錄（最新 v6.0.2），更早的版本見演進史。
 ---
 
 <!-- 本頁由 scripts/sync-ct-release.mjs 從 CT CHANGELOG 產生，請勿手改；要改內容請改來源後重跑。 -->
 
 # 更版紀錄
 
-目前版本 **v6.0.1**（2026-11-25）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 63 版（v2.1.1 ～ v5.12.8）請看[演進史](./evolution)。
+目前版本 **v6.0.2**（2026-11-25）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 64 版（v2.1.1 ～ v5.13.0）請看[演進史](./evolution)。
 
 本頁只列正式版。預發行版 v6.0.0-pre.1 ～ v6.0.0-rc.1（14 版）的改動已彙整在 v6.0.0 的段落，逐版說明保留在「實驗功能」的[預發行專章](../preview/methodology-adapters)作為歷史參考。
 
@@ -16,6 +16,69 @@ description: BMad Control Tower 近 10 版的更版紀錄（最新 v6.0.1），�
 :::
 
 ::: v-pre
+
+## 6.0.2 <small>2026-11-25</small> {#v6-0-2}
+
+
+> **修正：長內容與含反斜線的內容經過 shell 時常常寫壞。** 塔台與 Worker 把回報、腳本或 JSON 用 heredoc 塞進一個 Bash 指令時，指令跳脫後約 7,500 字元以上就會被
+> Bash 工具截斷，bash 只看到半段指令，固定以 `unexpected EOF` 失敗，整段內容只能重新產生（本機約 2,300 個 session 的紀錄裡，這個長度以上的 Bash 指令 711 次有 706 次失敗）。
+> heredoc 也會把兩個反斜線收成一個，讓照 Python 規則寫對的正則或 Windows 路徑在 Python 讀到時已經錯了；`python -I` 會忽略 `PYTHONIOENCODING`，
+> 主控台是 cp950 這類編碼時印不出中文。規則寫成「注意 X」時這些錯誤沒有減少，所以本版把做法寫成「改做 Y」：長內容先用 Write 工具寫檔，再執行或送入。
+> `*sync` 另加一步只回報的 frontmatter 自檢。**BAT 塔台面板契約 v1 不變**；沒有新設定鍵或命令；BAT 最低版本不變（`>= 0.7.0-pre.7`）。
+> 方法論契約仍 `ct-methodology-adapter/v1`，**契約不變**；內建 `bmad.yaml` 0.2.1、`ct-adapter-pstack` 0.2.6（只改版號註解）。
+
+### 升級說明
+
+**從 `6.0.1` 升級**：只換 skill 檔案；沒有新設定鍵、新的 frontmatter 欄位或新命令，舊工單、舊快照與 `_tower-state.md` 照常。
+
+- 建議 8 個 skill 一起換（8 個 `SKILL.md` 版本註解都變了）。規則有改的是 `ct-exec`（新權威節）、`control-tower`（引用、`yolo-mode.md` 的 stdin 寫法、`*sync` 自檢、python 範例）、
+  `ct-done`（引用）、`ct-evolve`（引用 frontmatter 權威節）、`ct-insights`（python 範例與腳本用法說明）；其餘 3 個只改版號。
+- 新規則從換版後新開的 session 起生效；已開著的塔台與 Worker session 仍照舊版規則。
+- `*sync` 的自檢只回報：第一次跑可能列出既有工單裡解析失敗的 frontmatter（例：值以反引號或 `*` 開頭、含 `: `）。不修也不影響 `*sync`；要修就把該值整個加引號。
+- plugin 使用者：marketplace 更新後把 `ct@control-tower`、`ct-guide@control-tower` 升到 6.0.2（安裝指南 § 4.1〈用 plugin marketplace 安裝／升級〉）。
+
+### Added
+
+- `ct-exec/SKILL.md` 新增 § Long Content Via Files（**唯一權威**），寫成要怎麼做：
+  - 回報區、長段落、工單補充：用 Edit 或 Write 工具直接寫進工單，**不用** heredoc、`cat >>`、`echo >>` 附加
+  - 腳本、JSON、要送 stdin 的內容：先用 Write 工具寫到 session scratchpad 檔，再用短指令執行，或以 `< 檔案`（bash）／`Get-Content -Raw 檔案 | …`（pwsh 7）送入；不用 heredoc 或 here-string
+  - 什麼時候改寫檔：指令超過一個畫面、含反斜線、或有兩層以上引號
+  - 原因：長指令被截斷、heredoc 收合反斜線、Write／Edit 會把 `\uXXXX` 寫成實際字元（反斜線在程式裡用 `chr(92)` 組，寫完以 bytes 驗證）
+  - Python 一律 `python -X utf8 -I -B`（`-X utf8` 在 `-I` 下仍有效）；交給原生程式的路徑在 Git Bash 先 `cygpath -m`
+- `work-order-system.md` § 主方法論 tracker 同步 › 同步流程：`*sync` 新增第 6 步，對熱區（`_ct-workorders/` 的 `*.md`，不含 `_archive/`）跑 `check-frontmatter.py`，
+  有問題就在同步摘要列出檔名、行號、問題類型與「把該值整個加引號」的建議；**不自動修、不阻擋 `*sync`**；腳本不在時照權威節的退路。
+  字串寫法與退路的權威仍是 `memory-protocol.md` § YAML frontmatter 字串寫法與寫入後自檢，這裡只引用
+
+### Changed
+
+- `control-tower/SKILL.md` § Alignment And Work Orders、`ct-done/SKILL.md` 第 6 步、`ct-exec/SKILL.md` § Phase 4 第 2 步與 § Questions For Tower：改成引用 § Long Content Via Files
+- `yolo-mode.md` § BAT 通道「內容只走 stdin」：「Windows 用 pwsh 7 或 Git Bash heredoc」改成先用 Write 把內容寫到 scratchpad 檔，再以 `< 檔案` 或 `Get-Content -Raw 檔案 | …` 送 stdin；
+  § Worker 向塔台提問 3-A 的兩個 `--ask` 範例與 PowerShell 寫法、§ 塔台答覆 的 `--answer` 範例都改成先寫檔
+- python 指令範例加 `-X utf8 -I -B`：`memory-protocol.md` § 寫入後自檢（腳本；PyYAML 退路改成先寫檔、用 `python -X utf8 -B`，因為 `-I` 會找不到裝在使用者層的 PyYAML）、
+  `work-order-system.md` § 收單快照、`ct-exec/SKILL.md` § Frontmatter Rules、`ct-insights/references/analysis-rules.md`（三個命令與直譯器說明）、
+  `check-frontmatter.py`、`validate-adapter.py`、`run_tests.py`、`ct-session-stats.py`、`ct-workflow-prefilter.py` 與其單元測試的用法說明（只改說明文字，程式行為不變）
+- `version-governance.md` § 安裝／升級流程：路徑說明補「本機 Bash 工具可能設有 `MSYS_NO_PATHCONV=1`，`/c/…` 不會自動轉換；交給原生程式的路徑先 `cygpath -m`／`-w`」
+- `ct-evolve/SKILL.md` `--skill`：草擬候選 skill 的 `SKILL.md` frontmatter 時，照 `memory-protocol.md` 的 frontmatter 權威節加引號並自檢
+- `memory-protocol.md` § 寫入後自檢 › 時機：加一句指向 `*sync` 第 6 步
+- 版號：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表（加 6.0.2 列）、`methodology-adapters.md` 版本歷史（加 6.0.2 列，契約不變）、
+  `bmad.yaml` 版號註解；`ct-adapter-pstack` 版號 6.0.2（`adapter_version` 仍 0.2.6）
+- 安裝指南：新增 § 2.67 本版變更；§ 1、§ 4.1、§ 4.3 版號；§ 4.1 安裝腳本的 python 加 `-X utf8 -I -B`、路徑說明補 `MSYS_NO_PATHCONV=1`；§ 14 `*sync`、`/ct-exec`、`/ct-done` 三列
+
+### Unchanged
+
+- BAT 塔台面板讀取契約 v1（`summary_version: 1`、欄位與型別）；BAT helper 的參數、exit code 與「內容只走 stdin」的要求本身（只改了怎麼準備 stdin 的內容）
+- 設定鍵與預設值、狀態值、frontmatter 欄位、命令、派工命令（`--skill` + `--workorder`）、BAT 最低版本（`>= 0.7.0-pre.7`）
+- `memory-protocol.md` § YAML frontmatter 字串寫法與寫入後自檢 的規則內容；`check-frontmatter.py` 的檢查項、輸出與 exit code
+- 方法論契約 `ct-methodology-adapter/v1`、adapter 描述檔；`ct-session-stats.py`（0.2.0）的行為
+- zip 手動安裝流程與發行物版面（全量 zip、8 個單一 skill zip、`ct-adapter-pstack` zip、Guide zip），不含 `scripts/tests/`；plugin 規則
+- 歷史段落（本檔 `[6.0.1]` 以前的段落、版號表舊列、安裝指南 § 2.66 以前的章節）與「v6.0.1+」等引入標記不改
+
+### Known unverified（已知未驗）
+
+`[6.0.0]` 的 41 項與 `[6.0.1]` 的 2 項不變。本版另有：
+
+- 塔台與 Worker 換上 6.0.2 後，是否真的改用 Write 寫檔、不再用 heredoc 附加回報（含 Codex Worker），尚未實機觀察
+- `*sync` 第 6 步在實際塔台 session 的輸出格式與耗時，尚未實機觀察（腳本本身已有樣本測試）
 
 ## 6.0.1 <small>2026-11-25</small> {#v6-0-1}
 
@@ -377,47 +440,12 @@ RC 期間沒有新驗證到的項目；下列 41 項與 `[6.0.0-rc.1]` 相同，
 - 設定、工單欄位、狀態值不變；400 KB 預算與 512 KiB 上限的數字不變。
 - 歷史段落（本檔舊段落、版號表舊列、安裝指南舊章節）不改。
 
-## 5.13.0 <small>2026-10-29</small> {#v5-13-0}
-
-
-> **MINOR：BUG／工單狀態衛生、BAT 塔台面板讀取契約、`_tower-state.md` 機器可讀摘要契約 v1，新增 3 個設定。**
-> 讓 BAT 指揮塔面板（總覽、決策、臭蟲、待辦池、工單）穩定讀得到 CT 寫的檔，並讓未結清單只留真的還要做的事。
-> 新設定依 `version-governance.md` § SemVer 慣例屬 MINOR（原規劃為 PATCH，中間沒有另發 PATCH）。
-> BAT 介面不變、最低 BAT 版本不變；對照 BAT `0.7.1-pre.8` 的解析器。升級無需遷移（見安裝指南 § 2.54）。
-
-### Added
-
-- `_tower-state.md` 機器可讀摘要契約 v1（`memory-protocol.md` § 機器可讀摘要（YAML frontmatter），唯一權威）：塔台每次寫入 `_tower-state.md` 都同步更新檔頭 frontmatter（`schema_kind`、`summary_version`、`updated_at`、`session`、`next_ids`、`todo`），BAT 指揮塔總覽讀得到待辦與下一個編號。與 v6 同一份契約，欄位與 BAT 逐欄一致；舊專案沒有摘要不算錯，下次寫入時補上。Startup Protocol 與 `*pause`／`*resume` 都指回這一節
-- BAT 塔台面板讀取契約（`memory-protocol.md` 新節，唯一權威）：熱檔大小預算 400 KB（409,600 bytes，以磁碟 UTF-8 位元組計）與 BAT 讀檔上限 524,288 bytes、超過時 BAT 各頁的表現、各檔 BAT 依賴的格式、嚴重度／優先級值域對照、frontmatter 與 BOM 共通規則。對照 BAT `0.7.1-pre.8`
-- `_bug-tracker.md`／`_backlog.md` 索引格式（`bug-plan-system.md` § 索引格式，唯一權威）：原本指向的「SKILL.md `*sync` 段落」不存在，補上完整格式
-- Startup Protocol 與 `*sync` 量熱檔大小，超過預算或上限各印一行提示（不阻擋）
-- 決策日誌收斂程序（`decision-log-system.md` § 收斂）：較舊的詳細紀錄原文搬到 `_archive/decisions/_decision-log-D###-D###.md`，熱檔保留涵蓋全部決策的索引表，🔴 危害規則逐字留在熱檔
-- BUG 結案判準（`bug-plan-system.md` § 結案判準）：七種情況對應 `FIXED`／`CLOSED`／`WONTFIX`／`OPEN`；不新增狀態值，改用選填欄位 `closed_reason`（`not_a_defect`、`superseded`、`duplicate`、`obsolete`、`external`、`deferred`）；延後的 BUG 列進 `_backlog.md`〈後續待辦（延後的 BUG）〉、留在熱區、可重開
-- 未結 BUG 清理提示：`*sync`／`*insights` 在未結張數或久未更新天數超過門檻時印一行，新設定 `bug_review_open_threshold`（預設 `20`）、`bug_review_stale_days`（預設 `30`）
-- 客戶驗收不回歸閘（可選）：新設定 `customer_acceptance_gate`（預設 `off`）；`on` 時會改程式或資料的工單多〈相關通過案例〉段，Worker 動工前逐案判定，會改變通過案例就停下交使用者
-
-### Changed
-
-- 決策日誌索引表頭 `#` 改 `ID`；寫明每列 `|` 開頭與結尾、格子內不得有 `|`、索引涵蓋熱檔每一筆、標題固定 `### D### YYYY-MM-DD — 標題`、熱檔不放其他含 `ID` 欄的表格；`*sync` 格式驗證加 BAT 可讀性與大小
-- `_bug-tracker.md` 索引：未結區段時間欄改 `報修時間`、CLOSED／WONTFIX 為 `關閉時間`，加 `相關工單` 欄；嚴重度／優先級格子一律 `🔴 High`／`🟡 Medium`／`🟢 Low`（`critical` 寫 `🔴 High（critical）`），不再只寫 emoji；寫明狀態只由區段標題決定
-- `_backlog.md` 索引：`## Dropped` 表頭改 `| ID | 標題 | 原因 | 連結 |`（原刪除線表頭讓整區讀不到）
-- `PARTIAL` 收尾時點提前到塔台裁示當下（`work-order-system.md` § PARTIAL 當下收尾）：補〈塔台收尾補記〉並改 `DONE`，接手單完成後回頭確認；歸檔前覆核改為最後防線
-- 改了 BUG／PLAN 狀態要同一批重建 `_bug-tracker.md`／`_backlog.md`
-- 版號：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表；安裝指南新增 § 2.54，§ 4.1 版號範例同步（`OLD=5.12.8`、`VER=5.13.0`、發行物檔名），§ 13 Config 速查表加 3 個新設定
-
-### Unchanged
-
-- BAT 介面、CT 最低 BAT 版本、派工與通知的指令、旗標、exit code 不變。
-- BUG 狀態值不變（`OPEN／FIXING／FIXED／VERIFY／CLOSED／WONTFIX`，與 BAT 一對一）；工單狀態值不變。
-- 既有設定的值域與預設不變；三個新設定不設就用預設，行為與 5.12.8 相同（清理提示只多印一行）。
-- 歷史段落（本檔舊段落、版號表舊列、安裝指南舊章節）不改；安裝指南 § 2.13 只加一行 📌 註。
-
 :::
 
 ## 延伸閱讀 {#further-reading}
 
-- CT `CHANGELOG.md`（共 73 個版本；本頁列最近 10 版）
+- CT `CHANGELOG.md`（共 74 個版本；本頁列最近 10 版）
 - CT `version-governance.md` § 歷史版號表
-- [演進史](./evolution)：更早的 63 版與九個世代
+- [演進史](./evolution)：更早的 64 版與九個世代
 
 Portal 是摘要，不具權威；與 CT reference 有出入時，以 reference 為準。

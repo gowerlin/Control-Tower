@@ -84,12 +84,23 @@ Worker 是一個全新的 session，輸入 `/ct-exec T0042`（Codex：`$ct-exec 
 4. **執行**：只在 `affects_files`、執行步驟與排除事項的範圍內動手，不碰和工單無關的未提交變更。做到一半發現需要擴大範圍時，停下來問（yolo 下改問塔台），不自己擴大。
 5. **驗證**：跑工單寫的驗收。跑不了的要寫出確切原因，不能暗示通過。證據分道記錄：原始碼與文件、建置與測試、實際執行、部署、發行包、外部驗收各寫各的，每一道各自標 `PASS`、`PARTIAL`、`BLOCKED` 或 `FAILED`。
 
+### 長內容先寫檔（v6.0.2+） {#long-content}
+
+Worker 寫回報、跑腳本、送題目給塔台時，內容常常很長，或含反斜線。整段塞進一個 shell 指令很容易寫壞，所以 6.0.2 起改成先寫檔：
+
+- **回報、長段落、工單補充**：用 Edit 或 Write 工具直接寫進工單，不用 heredoc、`cat >>`、`echo >>` 附加。
+- **腳本、JSON、要送 stdin 的內容**：先用 Write 工具寫到 session 的 scratchpad 檔，再用短指令執行（`python -X utf8 -I -B <腳本>`、`node <腳本>`），或用 `< "<檔>"`（bash）、`Get-Content -Raw <檔> | …`（pwsh 7）送入；沒有 scratchpad 時用系統暫存目錄下的 `ct-<工單 ID>/`，收尾時刪掉。BAT 的提問與答覆也一樣：`--ask … < "<題目檔>"`、`--answer … < "<答覆檔>"`（見 [Worker 向塔台提問](/deep/features/worker-questions#channels)）。
+- **什麼時候改寫檔**：指令超過一個畫面、含反斜線，或有兩層以上引號（例如 `python -c "…"` 再包進 bash 指令）。短而單純的指令照舊直接寫。
+- **Python** 一律 `python -X utf8 -I -B`：`-I` 會忽略 `PYTHONIOENCODING`，主控台是 cp950 這類編碼時，沒有 `-X utf8` 就印不出中文。Git Bash 裡交給原生程式的路徑先 `cygpath -m`。
+
+為什麼寫成「改做什麼」，而不是「注意什麼」：Bash 工具會截斷跳脫後約 7,500 字元以上的指令，bash 只看到半段、固定以 `unexpected EOF` 失敗，整段內容只能重新產生；heredoc 也可能把兩個反斜線收成一個，照 Python 規則寫對的正則或 Windows 路徑，到 Python 手上已經錯了。規則只寫「注意」時，這些錯誤沒有減少。權威定義：`ct-exec/SKILL.md` § Long Content Via Files。
+
 ### 反序收尾：先寫報告，再改狀態 {#closeout}
 
 收尾的順序是刻意倒過來的：
 
 1. 需要 commit 時，**先 commit 產品改動**，好讓報告能寫上 commit。
-2. **填回報區**：結果摘要、改了哪些檔、驗收證據、commit、偏差、阻礙與後續建議。
+2. **填回報區**：結果摘要、改了哪些檔、驗收證據、commit、偏差、阻礙與後續建議。6.0.2 起回報用 Edit／Write 工具寫進工單（見[長內容先寫檔](#long-content)）。
 3. **最後才改狀態**（`DONE`、`PARTIAL`……）與完成時間，並自我檢查回報區沒有留下範本字樣。
 4. **commit 工單檔本身**。
 5. **通知塔台**。
@@ -149,7 +160,7 @@ Worker 是一個全新的 session，輸入 `/ct-exec T0042`（Codex：`$ct-exec 
 
 - CT Guide `references/work-order-lifecycle.md` § 核心迴圈、§ 狀態機、§ ct-exec 的執行流程、§ 回報規範、§ 需求對齊協議、§ Session 中斷善後
 - `control-tower/references/work-order-system.md` § 派發流程、§ 派發前 overlap check（v4.4.0+）、§ 回報處理流程、§ 中斷復原
-- `ct-exec/SKILL.md` § Landing Zone Check、§ Phase 1: Start ～ § Phase 4: Report And Commit、§ BAT Notify And Fallback
+- `ct-exec/SKILL.md` § Landing Zone Check、§ Phase 1: Start ～ § Phase 4: Report And Commit、§ BAT Notify And Fallback、§ Long Content Via Files（v6.0.2+）
 - `control-tower/references/doctrine.md` § 工單狀態機的設計依據
 - `control-tower/references/auto-session.md` § 派發後行為（依 `auto-session` 設定）、§ 降級鏈、§ Mode 與互動旗標協定（v4.3.0+）
 - CT 安裝與使用指南 § 6. 基本操作流程

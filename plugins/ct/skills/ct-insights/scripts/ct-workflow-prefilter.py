@@ -6,7 +6,7 @@
 T0183 修 E4–E6。只用 Python 標準函式庫，不呼叫任何 LLM。
 
 用法：
-  python <ct-insights>/scripts/ct-workflow-prefilter.py [選項] <_ct-workorders 路徑> [<路徑> ...]
+  python -X utf8 -I -B <ct-insights>/scripts/ct-workflow-prefilter.py [選項] <_ct-workorders 路徑> [<路徑> ...]
 
   --ids T####[,T####]  只列這些工單的守門結果與證據位置（可重複；X5 仍以整個目錄判定系列）
   --label NAME       專案名稱（可重複，依序對應路徑；預設取路徑上一層目錄名）

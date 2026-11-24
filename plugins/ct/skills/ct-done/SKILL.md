@@ -2,7 +2,7 @@
 name: ct-done
 description: "Control Tower Worker recovery-close skill for remedially closing a work order after interruption, missed closeout, manual status correction, or Tower recovery. Use when the user invokes $ct-done or /ct-done with a T#### work order and optionally a final status such as DONE, FIXED, PARTIAL, BLOCKED, or FAILED."
 ---
-<!-- ct-done-version: 6.0.1 -->
+<!-- ct-done-version: 6.0.2 -->
 
 # ct-done
 
@@ -24,7 +24,8 @@ Act as a Worker doing closeout repair. Do not implement new product work unless 
 6. Run `../ct-exec/SKILL.md` § Tower Addenda Check once first (node 3, before filling the report; v6.0.0-beta.11+): a `## 塔台補充（…）`
    section added after the work started (one the report does not already show as read) → read only that section and log one line in
    `### 互動紀錄`; whatever this recovery closeout cannot do from it goes into the report as is, never a scope widening. That section is the
-   single authoritative definition; do not restate it here. Then fill missing report fields, before any metadata change.
+   single authoritative definition; do not restate it here. Then fill missing report fields, before any metadata change, with the
+   Edit or Write tool, never by appending with a heredoc or `cat >>` (v6.0.2+, `../ct-exec/SKILL.md` § Long Content Via Files).
 7. Update metadata only after the report is complete, including the frontmatter `session_ids` (v6.0.0-beta.10+, § Session id below).
 8. Commit the work order file itself before any notify (v5.7.0+): `git commit --only <work order file> -m "<message with the work order id>"`
    (add it first if untracked; with `CT_HOME` set, commit it in `$CT_HOME` as § Worktree Isolation says). Commit only that file —

@@ -60,32 +60,34 @@ BAT 通道的題目只存在 BAT 主行程的記憶體裡，不寫檔、日誌�
 
 BAT 通道有幾條必須遵守的規則：
 
-- 題目、選項、說明與答覆文字**只走 stdin**，不得放進命令列參數。命令列會被原樣寫進 BAT 的 script 日誌，也會出現在程序列表與工具紀錄裡。
+- 題目、選項、說明與答覆文字**只走 stdin**，不得放進命令列參數。命令列會被原樣寫進 BAT 的 script 日誌，也會出現在程序列表與工具紀錄裡。6.0.2 起內容先用 Write 工具寫成檔（一題一個檔，例 `<scratchpad>/q-1.json`），再用 `< "<題目檔>"` 送入，不用 heredoc 或 PowerShell here-string；PowerShell 用 pwsh 7 的 `Get-Content -Raw <題目檔> | …`（見[長內容先寫檔](/lifecycle#long-content)）。
 - `question` 以工單題號 `Q-n：` 開頭，內容和工單相同，塔台靠題號把兩邊對起來。
 - 等待的租約**每一題各自計算**：每一題從登記起 120 秒內要有第一次等待，之後同一題兩次等待的間隔也不得超過 120 秒；等其中一題不會替別題續約。超過的那一題，BAT 會判為沒人在等而過期。一次等好幾題時怎麼排，見[多題](#edge-cases)。
 - 不必事先判斷 BAT 版本：直接送，失敗了照降級表處理。
+
+題目檔用 Write 工具寫，內容是一行 JSON：
+
+```json
+{"question":"Q-n：<一句話問題>","options":["<選項 A>","<選項 B>"],"detail":"Worker 建議：…","blocking":true}
+```
 
 一次只問一題，或一批裡的最後一題（帶 `--submit`，叫醒塔台）：
 
 ```bash
 "${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR/bat-notify.mjs" --ask --source "<工單 ID>" --target "$BAT_TOWER_TERMINAL_ID" \
-  --submit --expires-min <worker_question_timeout> "<工單 ID> 提問" <<'JSON'
-{"question":"Q-n：<一句話問題>","options":["<選項 A>","<選項 B>"],"detail":"Worker 建議：…","blocking":true}
-JSON
+  --submit --expires-min <worker_question_timeout> "<工單 ID> 提問" < "<題目檔>"
 ```
 
 一次問好幾題時，前面幾題（帶 `--no-pty-write`，只登記、只在塔台分頁顯示提示，不叫醒塔台；v5.15.0 起）：
 
 ```bash
 "${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR/bat-notify.mjs" --ask --source "<工單 ID>" --target "$BAT_TOWER_TERMINAL_ID" \
-  --no-pty-write --expires-min <worker_question_timeout> "<工單 ID> 提問" <<'JSON'
-{"question":"Q-n：<一句話問題>","options":["<選項 A>","<選項 B>"],"detail":"Worker 建議：…","blocking":true}
-JSON
+  --no-pty-write --expires-min <worker_question_timeout> "<工單 ID> 提問" < "<題目檔>"
 ```
 
 `--submit` 和 `--no-pty-write` 只能擇一，兩個都帶時 helper 直接失敗、題目不登記。`--no-pty-write` 只做畫面上的通知、不寫進塔台的輸入框：BAT `0.7.0-pre.7` 起就是這個行為，`0.7.2-pre.4` 起列為 BAT 的正式契約。
 
-塔台那一側，先讀工單的 `### 待塔台決策`，再用 `bat_list_questions` 對照 BAT 裡的題目狀態，決定每一題要用 BAT 答覆（`bat-terminal.mjs --answer`，答覆文字同樣只走 stdin）還是在工單裡寫答覆行。無論哪一種，**同一題只能有一個生效的答覆**。有幾題一律看 BAT 題目列表和工單，不看通知字串有幾段。
+塔台那一側，先讀工單的 `### 待塔台決策`，再用 `bat_list_questions` 對照 BAT 裡的題目狀態，決定每一題要用 BAT 答覆（`bat-terminal.mjs --answer`，答覆文字同樣只走 stdin：6.0.2 起先寫成答覆檔，再以 `< "<答覆檔>"` 送入）還是在工單裡寫答覆行。無論哪一種，**同一題只能有一個生效的答覆**。有幾題一律看 BAT 題目列表和工單，不看通知字串有幾段。
 
 ## 多題、晚退回與備援 {#edge-cases}
 
@@ -147,7 +149,7 @@ BAT 這一端的提問介面，見 <BatLink path="control-tower#questions">BAT �
 ## 延伸閱讀 {#further-reading}
 
 - `control-tower/references/yolo-mode.md` § Worker 向塔台提問（v5.5.0+）（含 § 適用範圍、§ BAT 通道（v5.7.0+）、§ Worker 端、§ 塔台端、§ 計數、§ `worker_question_timeout` 的取值）
-- `ct-exec/SKILL.md` § Questions For Tower (`CT_MODE=yolo`, v5.5.0+)
+- `ct-exec/SKILL.md` § Questions For Tower (`CT_MODE=yolo`, v5.5.0+)、§ Long Content Via Files（v6.0.2+）
 - `control-tower-guide/references/work-order-lifecycle.md` § yolo 提問通道：Worker 改問塔台（v5.5.0）
 - CT 安裝與使用指南 § 2.33、§ 2.37、§ 2.38、§ 2.60
 

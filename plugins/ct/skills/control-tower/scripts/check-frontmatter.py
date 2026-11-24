@@ -5,9 +5,9 @@
 本腳本只做其中「可機器檢查」的部分，規則有變以權威檔為準，再改這裡。
 
 用法：
-  python <control-tower>/scripts/check-frontmatter.py <路徑> [<路徑> ...]
-  python <control-tower>/scripts/check-frontmatter.py _ct-workorders/            # 檢查目錄裡的 *.md（不含子目錄）
-  python <control-tower>/scripts/check-frontmatter.py -r <目錄>                  # 含子目錄（略過 . 開頭的目錄）
+  python -X utf8 -I -B <control-tower>/scripts/check-frontmatter.py <路徑> [<路徑> ...]
+  python -X utf8 -I -B <control-tower>/scripts/check-frontmatter.py _ct-workorders/            # 檢查目錄裡的 *.md（不含子目錄）
+  python -X utf8 -I -B <control-tower>/scripts/check-frontmatter.py -r <目錄>                  # 含子目錄（略過 . 開頭的目錄）
 
   --recursive, -r  目錄連子目錄一起檢查
   --no-yaml        不用 PyYAML 做完整解析（只做本腳本的檢查；測試用）

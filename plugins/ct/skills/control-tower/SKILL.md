@@ -2,9 +2,9 @@
 name: control-tower
 description: "BMad Control Tower project orchestrator for Tower sessions. Use when the user invokes $control-tower or /control-tower, says control tower, 塔台, 指揮塔, 工單管理, or asks to create, dispatch, sync, recover, archive, report, or coordinate file-driven work orders, BUG/PLAN/EXP records, sprint state, BAT/YOLO dispatch, or multi-agent project work. For worker execution commands such as $ct-exec, $ct-done, $ct-status, $ct-evolve, or $ct-insights, route to those dedicated skills instead of loading tower mode."
 ---
-<!-- control-tower-version: 6.0.1 -->
+<!-- control-tower-version: 6.0.2 -->
 
-# BMad Control Tower v6.0.1
+# BMad Control Tower v6.0.2
 
 $ARGUMENTS
 
@@ -94,6 +94,8 @@ For new work that is not safely direct:
 6. Dispatch via auto-session/BAT when configured, or show the exact Worker command for manual launch.
 
 Read `references/work-order-template.md` before writing a work order. Read `references/research-workorder.md` for investigation work and Renew behavior.
+
+v6.0.2+: write a work order, an addendum or any long section with the Edit or Write tool, and put scripts, JSON and stdin content (for example a BAT answer) in a scratchpad file first, then run it or send it with `<`; no heredoc, `cat >>` or long one-line command. Python runs as `python -X utf8 -I -B`. The rule, when to switch and why live only in `../ct-exec/SKILL.md` § Long Content Via Files.
 
 ## BAT And Auto-Session
 

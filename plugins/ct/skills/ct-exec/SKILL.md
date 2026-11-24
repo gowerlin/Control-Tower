@@ -2,7 +2,7 @@
 name: ct-exec
 description: "Control Tower Worker skill for executing a work order end to end from any sub-session. Use when the user invokes $ct-exec or /ct-exec with a T#### work order, asks a worker to start or resume scoped execution, or needs the full lifecycle of reading the work order, marking IN_PROGRESS, implementing only the listed scope, validating, writing the report, committing when required, and notifying Tower or providing a fallback completion message."
 ---
-<!-- ct-exec-version: 6.0.1 -->
+<!-- ct-exec-version: 6.0.2 -->
 
 # ct-exec
 
@@ -357,7 +357,7 @@ The single authoritative definition is `../control-tower/references/yolo-mode.md
   (v5.7.0, written to both places). Then send each question once, by exactly one of the two ways below; never both.
 - BAT channel (v5.7.0+, BAT `>= 0.7.0-pre.7`; authority § Worker 端 3-A, with the commands, exit codes, result fields and the
   version/fallback table in § BAT 通道): unless `worker_question_timeout = 0`, send each question with `bat-notify.mjs --ask`, question
-  text on stdin only (never in argv), then keep calling `bat_wait_question` (fallback `--wait-answer --timeout-ms`) until it ends.
+  text on stdin only (never in argv; write it to a file first and send it with `<`, v6.0.2+, § Long Content Via Files), then keep calling `bat_wait_question` (fallback `--wait-answer --timeout-ms`) until it ends.
   The 120 s lease counts per question (v6.0.0-beta.9): every question needs its own first wait within 120 s of its `--ask`, and no gap over
   120 s between two of its waits; waiting on one question never renews another. Each wait's timeout is `min(45, floor(90 / K))` s for
   K questions still waiting; wait on all of them each round, at the same time when the platform can (at most 8), otherwise in turn,
@@ -603,6 +603,7 @@ Use reverse-order closeout to avoid watchers seeing terminal status before the r
    Run § Tower Addenda Check first (node 2, v6.0.0-beta.11+).
 2. Fill the report section: result summary, files changed, validation evidence, commit status (the product commit hashes), deviations,
    blockers, and follow-ups. Run § Tower Addenda Check first (node 3, v6.0.0-beta.11+); a section it reads may still change steps 1–2.
+   Write the report with the Edit or Write tool, never by appending with a heredoc or `cat >>` (v6.0.2+, § Long Content Via Files).
 3. Include interaction history and Renew history when present, sub-agent / Workflow use when any (v5.11.0+, § Workflow And Sub-Agents),
    and the methodology sections when § Methodology requires them (v6.0.0-pre.1+).
 4. Only after the report is complete, update final metadata status and completion timestamps, and the frontmatter `session_ids`
@@ -717,12 +718,40 @@ For v1 work orders:
   or uses forward slashes, never inside double quotes; free text with `: ` or a leading special character is quoted.
   Already-parseable old values are not rewritten.
 - v6.0.1+: after every frontmatter write (Phase 1 start, `tower_question`, Phase 4 closeout) check the file before committing it:
-  `python <control-tower>/scripts/check-frontmatter.py <work order>` (`<control-tower>` = the installed `control-tower` skill,
+  `python -X utf8 -I -B <control-tower>/scripts/check-frontmatter.py <work order>` (`<control-tower>` = the installed `control-tower` skill,
   usually `../control-tower` next to this skill). Not found → an available YAML parser (PyYAML, node `yaml`/`js-yaml`), printing only
   the problem and line; none either → at least list the frontmatter lines with a backslash inside double quotes and fix them by hand.
   Commands for both fallbacks are in the authority. A failure is fixed and re-checked at once; never commit a file that fails.
   Output and report lines name only file, line and problem type, never the file text.
 - If frontmatter/body drift exists, use frontmatter and record the drift rather than rewriting unrelated content.
+
+## Long Content Via Files (v6.0.2+)
+
+This section is the single authoritative definition of how a Worker gets long content, or content with backslashes, into a work order,
+a script or a program's stdin. The Tower follows the same rule when it writes work orders, addenda, answers and scripts
+(`../control-tower/SKILL.md` § Alignment And Work Orders refers here). Other files refer here and do not restate it.
+
+- **Report, long paragraphs, addenda → Edit or Write.** Write the report section, long paragraphs and any section added to a work order
+  with the Edit or Write tool, straight into the work order file. Do not append with a heredoc, `cat >>`, `echo >>` or `printf >>`.
+- **Scripts, JSON, stdin content → a file first.** Write the script, JSON or text with the Write tool to a file in the session scratchpad
+  (no scratchpad: `ct-<work order id>/` under the system temp directory, deleted at closeout, as § Methodology item 5 says). Then run it
+  with a short command (`python -X utf8 -I -B <script>`, `node <script>`) or send it on stdin: `< <file>` in bash,
+  `Get-Content -Raw <file> | …` in pwsh 7. Do not use a heredoc or a PowerShell here-string for it.
+- **When to switch.** Use a file when the command would be longer than one screen, contains a backslash, or has two or more levels of
+  quoting (for example code inside `python -c "…"` inside a bash command). A short command with none of these stays inline.
+- **Why.**
+  - The Bash tool cuts off a command of about 7,500 characters or more after escaping (each `'` costs about four characters); bash then
+    sees half a command and fails with `unexpected EOF`. Measured over a large set of local sessions, almost every Bash command above
+    that length failed, and the whole content had to be produced again.
+  - A heredoc can collapse two backslashes into one, so a regex or Windows path that is correct for Python is wrong by the time
+    Python reads it.
+  - The Write and Edit tools turn a `\uXXXX` escape into the real character. In a script or test file that needs a literal backslash,
+    build it in code (`chr(92)`) and check the written file as bytes.
+- **Python** runs as `python -X utf8 -I -B`: `-I` ignores `PYTHONIOENCODING`, and without `-X utf8` (which `-I` does not turn off) a
+  console code page such as cp950 breaks non-ASCII output. A third-party module goes through the project's venv or
+  `uv run --no-project --with <package> python -X utf8 -I -B …`; drop `-I` only for a module that exists only in the user site.
+- **Paths for native programs** in Git Bash: pass them through `cygpath -m` (or write `<drive>:/…`). The Bash tool may set
+  `MSYS_NO_PATHCONV=1`, so `/c/…` is not converted and a native Python reads it as `<current drive>:\c\…`.
 
 ## Error Handling
 

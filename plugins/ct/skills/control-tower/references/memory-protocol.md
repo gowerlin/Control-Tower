@@ -366,25 +366,27 @@ todo:
 
 **時機**：塔台與 Worker **每次寫入或修改**上述檔案的 frontmatter 之後、commit 之前，對**這次寫的檔**跑一次檢查：
 塔台寫 `_tower-state.md`、建立或修改工單、BUG／PLAN／EXP、`_handover`／`_reply`、收單改狀態或補記 `session_ids`；Worker 開工改狀態、
-寫 `tower_question`、收尾寫狀態與 `session_ids`（`ct-exec`、`ct-done`）。
+寫 `tower_question`、收尾寫狀態與 `session_ids`（`ct-exec`、`ct-done`）。v6.0.2+ 另有 `*sync` 每次對熱區跑一次、只回報不修
+（[work-order-system.md](work-order-system.md) § 主方法論 tracker 同步 › 同步流程 第 6 步）。
 
 **方法**（依序取第一個能用的）：
 
 1. **隨 skill 附的檢查腳本**（只用 Python 標準函式庫，不需要 PyYAML）：
 
    ```bash
-   python <control-tower>/scripts/check-frontmatter.py _ct-workorders/T0549-example.md   # 一個或多個檔
-   python <control-tower>/scripts/check-frontmatter.py _ct-workorders/                   # 整個目錄的 *.md（不含子目錄）
+   python -X utf8 -I -B <control-tower>/scripts/check-frontmatter.py _ct-workorders/T0549-example.md   # 一個或多個檔
+   python -X utf8 -I -B <control-tower>/scripts/check-frontmatter.py _ct-workorders/                   # 整個目錄的 *.md（不含子目錄）
    ```
 
    `<control-tower>` 是已安裝的 `control-tower` skill 目錄（例：Claude Code `~/.claude/skills/control-tower`、Codex `~/.codex/skills/control-tower`；
    plugin 安裝則在 plugin 的 `skills/control-tower`）。exit `0` = 全部通過、`1` = 有問題、`2` = 用法錯誤或路徑不存在。
    檢查項目與輸出格式寫在腳本開頭的說明；環境裡有 PyYAML 時，腳本會再做一次完整解析。
 2. **腳本不在**（例：Worker 端只裝了 `ct-exec`、找不到 `control-tower`）→ 用環境裡現成的 YAML 解析器（PyYAML、node `yaml`／`js-yaml`），
-   只印問題描述與行號。PyYAML 的例子（`<檔>` 換成檔名）：
+   只印問題描述與行號。PyYAML 的例子：先用 Write 工具把下面的程式寫到 scratchpad 檔（例 `check_fm.py`；v6.0.2+ 不用 heredoc，
+   規則見 `ct-exec/SKILL.md` § Long Content Via Files），再執行 `python -X utf8 -B <scratchpad>/check_fm.py <檔>`
+   （不加 `-I`：PyYAML 若裝在使用者層 site-packages，`-I` 會找不到它）：
 
-   ```bash
-   python - <檔> <<'PY'
+   ```python
    import sys, yaml
    lines = open(sys.argv[1], encoding='utf-8').read().splitlines()
    end = lines.index('---', 1)
@@ -394,7 +396,6 @@ todo:
    except yaml.YAMLError as e:
        mark = getattr(e, 'problem_mark', None)
        print('FAIL', sys.argv[1], 'line', (mark.line + 2) if mark else '?', getattr(e, 'problem', ''))
-   PY
    ```
 
    不要直接印例外全文：PyYAML 的例外訊息會附上原文片段。

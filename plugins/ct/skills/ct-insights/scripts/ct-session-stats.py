@@ -20,11 +20,11 @@
 - 每次輸出（stdout、快照、候選事實）前自動跑隱私自檢，命中就不輸出並 exit 3。
 
 用法（完整說明見 analysis-rules.md）：
-  python <ct-insights>/scripts/ct-session-stats.py --workorders-dir _ct-workorders --days 30
-  python <ct-insights>/scripts/ct-session-stats.py --workorders-dir _ct-workorders --workorders T0394 \
+  python -X utf8 -I -B <ct-insights>/scripts/ct-session-stats.py --workorders-dir _ct-workorders --days 30
+  python -X utf8 -I -B <ct-insights>/scripts/ct-session-stats.py --workorders-dir _ct-workorders --workorders T0394 \
       --snapshot-append _ct-workorders/_insights/session-stats/2026-11.json
-  python <ct-insights>/scripts/ct-session-stats.py --tools --workorders-dir _ct-workorders --days 30
-  python <ct-insights>/scripts/ct-session-stats.py --self-check out.json
+  python -X utf8 -I -B <ct-insights>/scripts/ct-session-stats.py --tools --workorders-dir _ct-workorders --days 30
+  python -X utf8 -I -B <ct-insights>/scripts/ct-session-stats.py --self-check out.json
 
 exit code：0 成功；2 參數錯誤；3 隱私自檢不通過（不輸出）；4 資料不可用（找不到 session 紀錄）。
 """

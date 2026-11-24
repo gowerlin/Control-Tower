@@ -230,15 +230,16 @@ X1–X4 對兩軌都適用；X5 不算 Workflow 訊號，把工單轉去 Playboo
 
 | 命令 | 執行 | 輸出 |
 |---|---|---|
-| `*insights workflow` | `python "<ct-insights>/scripts/ct-workflow-prefilter.py" _ct-workorders` | 規則命中率、分軌、**排除守門統計**、前 N 名候選（`--top N`，預設 10）與證據位置 |
+| `*insights workflow` | `python -X utf8 -I -B "<ct-insights>/scripts/ct-workflow-prefilter.py" _ct-workorders` | 規則命中率、分軌、**排除守門統計**、前 N 名候選（`--top N`，預設 10）與證據位置 |
 | `*insights workflow T#### [T#### …]` | 同上，加 `--ids T####,T####` | 逐張：守門結論（`不考慮 Workflow`／`不考慮 Workflow；提示 Playbook`／`未擋下`）、守門命中與證據、主判定（全部 X 套用）、需人工的項目、證據位置 |
 
 - `<ct-insights>` 是**已載入的 `ct-insights` skill 所在目錄**（放它 `SKILL.md` 的那一層，v6.0.0-beta.5+）；塔台只載入 `control-tower` 時，用和 `control-tower`
   skill 目錄同一層的 `ct-insights` 目錄。8 個 CT skill 不論手動安裝或 plugin 安裝都是兄弟目錄，所以兩種安裝方式都成立；不要寫死
   `~/.claude/skills`、`~/.codex/skills`（plugin 安裝時不在那裡）。腳本本身不依賴安裝位置（只讀命令列給的路徑）。
   X5 要看整個目錄才判得出系列，所以給 `--ids` 時仍掃整個 `_ct-workorders/`，只輸出指定的工單。
-- 直譯器名稱依平台（Windows 多半是 `python`，macOS／Linux 多半是 `python3`）。Windows 上從 Git Bash 呼叫時，Windows 版 Python 讀不到
-  `/c/...` 形式的路徑，腳本路徑先轉成 Windows 形式（`cygpath -w`）；`_ct-workorders` 這類相對路徑不受影響。找不到 Python 3：說明原因，改依本節條文人工判定那幾張；不安裝套件、不改用其他腳本。
+- 直譯器名稱依平台（Windows 多半是 `python`，macOS／Linux 多半是 `python3`），一律帶 `-X utf8 -I -B`（v6.0.2+：`-I` 會忽略
+  `PYTHONIOENCODING`，主控台是 cp950 這類編碼時，沒有 `-X utf8` 就印不出中文）。Windows 上從 Git Bash 呼叫時，Windows 版 Python 讀不到
+  `/c/...` 形式的路徑（Git Bash 可能設有 `MSYS_NO_PATHCONV=1`，不會自動轉換），腳本路徑先轉成 Windows 形式（`cygpath -m` 或 `cygpath -w`）；`_ct-workorders` 這類相對路徑不受影響。找不到 Python 3：說明原因，改依本節條文人工判定那幾張；不安裝套件、不改用其他腳本。
 - 三個 `workflow_integration` 值下都可以跑（0 workflow token）；值的定義在 `control-tower/references/tower-config.md` § 可用選項。
 - 守門擋的是 **Workflow 工具**。Worker 自己用一般 Agent 工具開唯讀子代理平行讀取，不受 X2 守門限制（例：專案 A T0081
   同時有即時問答與 5 個唯讀子代理），但要依 `ct-exec/SKILL.md` § Workflow And Sub-Agents 記在回報區。
@@ -277,7 +278,7 @@ X1–X4 對兩軌都適用；X5 不算 Workflow 訊號，把工單轉去 Playboo
 
 | 命令 | 執行 | 輸出 |
 |---|---|---|
-| `*insights sessions` | `python "<ct-insights>/scripts/ct-session-stats.py" --workorders-dir _ct-workorders --days 30 --decision-log _ct-workorders/_decision-log.md --decision-log _ct-workorders/_archive/decisions --snapshot-append _ct-workorders/_insights/session-stats/<YYYY-MM>.json` | 摘要表（每張工單一列）、覆蓋率、塔台另列、卡住訊號、依決策切的「估」欄；同時把還沒有快照的工單補進快照 |
+| `*insights sessions` | `python -X utf8 -I -B "<ct-insights>/scripts/ct-session-stats.py" --workorders-dir _ct-workorders --days 30 --decision-log _ct-workorders/_decision-log.md --decision-log _ct-workorders/_archive/decisions --snapshot-append _ct-workorders/_insights/session-stats/<YYYY-MM>.json` | 摘要表（每張工單一列）、覆蓋率、塔台另列、卡住訊號、依決策切的「估」欄；同時把還沒有快照的工單補進快照 |
 | `*insights sessions T#### [T#### …]` | 同上，加 `--workorders T####,T####`（`--days` 可省略） | 只列這些工單；塔台 session 只取和它們時間重疊的 |
 | `*insights sessions … --since … --until …` | 同上，改用 `--since`／`--until`（取代 `--days`） | 指定期間 |
 
@@ -474,7 +475,7 @@ Claude Code 預設只保留 session 紀錄 30 天（`cleanupPeriodDays`），換
 
 | 命令 | 執行 | 輸出 |
 |---|---|---|
-| `*insights tools` | `python "<ct-insights>/scripts/ct-session-stats.py" --tools --workorders-dir _ct-workorders --days 30` | 本 repo 的建議報告（Markdown，stdout） |
+| `*insights tools` | `python -X utf8 -I -B "<ct-insights>/scripts/ct-session-stats.py" --tools --workorders-dir _ct-workorders --days 30` | 本 repo 的建議報告（Markdown，stdout） |
 | `*insights tools --since … --until …` | 同上，改用 `--since`／`--until` | 指定期間 |
 | `*insights tools --all-projects` | 同上，加 `--all-projects` | 跨 repo：掃 Claude Code 專案紀錄目錄下全部專案；其他 repo 一律代號 |
 | `*insights tools --keep <名稱>` | 同上，加 `--keep <名稱>`（可多次） | 指定的 skill／plugin／MCP／agent 一律不建議（例：本 repo 的產品 `bmad-guide`） |

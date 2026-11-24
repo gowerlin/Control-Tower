@@ -664,6 +664,7 @@ CT 從不預先判斷 BAT 版本：一律先照常呼叫，失敗才依 exit cod
 | v6.0.0-rc.1（RC，正式版候選，與穩定版 5.15.0 並行） | BAT 介面同 v6.0.0-pre.1；本版只有修正（Worker 塔台補充檢查的寫法、`analysis-rules.md` 的 JSON 欄位清單），都不經 BAT；預發行版（beta、rc）不提供 CT plugin | 無新門檻 | 見 `preview-methodology.md` § rc.1：正式版候選（只修錯） |
 | v6.0.0（正式版，取代 5.15.0 成為穩定版） | BAT 介面同 v6.0.0-pre.1；相對 rc.1 沒有功能或規則變更；CT plugin 6.0.0 起上架（Codex 用 plugin 又要接 BAT 派工需 BAT `>= 0.7.2-pre.1`，同 5.14.2） | 無新門檻（最低仍 `>= 0.7.0-pre.7`） | 見 `preview-methodology.md` § 6.0.0：納入正式版 |
 | v6.0.1（正式版 PATCH） | BAT 介面同 v6.0.0-pre.1；CT 寫的 YAML frontmatter 字串寫法與寫入後自檢（含反斜線的值用單引號或正斜線），讓 BAT 塔台面板不再因為 `_tower-state.md` 摘要的雙引號字串裡有 Windows 路徑而整份讀不到；面板契約 v1 不變（欄位、型別、`summary_version: 1`） | 無新門檻（最低仍 `>= 0.7.0-pre.7`） | 見 `three-layer-arch.md` § Tower State（`_tower-state.md`） |
+| v6.0.2（正式版 PATCH） | BAT 介面同 v6.0.0-pre.1；helper 的參數與「內容只走 stdin」不變，只改 CT 怎麼準備 stdin 的內容：題目 JSON 與答覆先用 Write 寫到 scratchpad 檔，再以 `< 檔案` 送入（不用 heredoc）；面板契約 v1 不變 | 無新門檻（最低仍 `>= 0.7.0-pre.7`） | 見 `work-order-lifecycle.md` § Phase 4：Report And Commit（反序收尾） |
 
 `BAT_HELPER_NODE`（v5.2.1）沒有版本門檻：本機沒有這個變數就用 `node`，只有遠端分頁會由 BAT 注入。
 版號以 CT 的 `version-governance.md` § 歷史版號表 與 `auto-session.md` § 依賴的 BAT 基礎設施 為準；v5.1.0 的 BAT 版本出自 CT `CHANGELOG.md` [5.12.3]：[5.1.0] 原寫 `0.6.1-pre.3`，v5.12.3 依 BAT 塔台回覆更正為 `>= 0.6.1-pre.4`（歷史段落不改）。

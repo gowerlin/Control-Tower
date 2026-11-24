@@ -96,7 +96,7 @@ BUG、PLAN、EXP 單據有自己的編號規則，不適用這個正則（見 [B
 
 `PARTIAL` 是某個時間點的未完成狀態，不應該永久掛在待辦清單上。補正時不覆寫歷史結論，而是在原工單文末加一段〈塔台收尾補記〉，寫明剩下的部分由哪張工單完成，或依哪個決策不需再做；接手單完成後塔台再回頭確認。只有真的在等外部條件（廠商、客戶、環境）的才保留 `PARTIAL` 或改 `BLOCKED`。
 
-進度同步用「雙重保障」：Worker 在工單指示裡被要求更新 `sprint-status.yaml`，塔台每次收單時再複查補漏。需要全面對齊時執行 `*sync`：塔台列出所有工單檔，交叉比對塔台記憶、工單檔與 `sprint-status.yaml` 三方，**以工單檔為唯一事實來源**修正差異。
+進度同步用「雙重保障」：Worker 在工單指示裡被要求更新 `sprint-status.yaml`，塔台每次收單時再複查補漏。需要全面對齊時執行 `*sync`：塔台列出所有工單檔，交叉比對塔台記憶、工單檔與 `sprint-status.yaml` 三方，**以工單檔為唯一事實來源**修正差異。6.0.2 起 `*sync` 的第 6 步另對熱區做 frontmatter 自檢，列出解析失敗的檔，只回報、不修、不阻擋（見[字串寫法與寫入後自檢](/deep/principles/files-as-truth#yaml-strings)）。
 
 收單之後還有兩個附帶動作，都是 BAT 環境下才會做：`worker_auto_close: done` 時回收已完成的 Worker 分頁；要對同一張工單重派 Worker 之前，先回收舊分頁，避免同一張單同時開著兩個 Worker。這兩個動作的失敗都不影響收單結果。分頁回收的細節見 [派工：auto-session 與 BAT](./dispatch#recycle)。
 
