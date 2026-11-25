@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""check-frontmatter.py — CT 寫的 YAML frontmatter 寫入後自檢（T0549；v6.0.1 起隨 control-tower 發行；v6.1.0 起另檢查契約 v2 欄位，T0557）。
+"""check-frontmatter.py — CT 寫的 YAML frontmatter 寫入後自檢（T0549；v6.0.1 起隨 control-tower 發行；v6.1.0 起另檢查契約 v2 欄位，T0557；
+v6.2.0 起另檢查 awaiting_user[].recommended 與 inbox_features，T0566）。
 
 規則的權威是 control-tower/references/memory-protocol.md § YAML frontmatter 字串寫法與寫入後自檢。
 本腳本只做其中「可機器檢查」的部分，規則有變以權威檔為準，再改這裡。
@@ -42,6 +43,9 @@
   v2-length             summary／title 超過 120 字、command 超過 300 字
   v2-date               reminders 的 due_at（或 last_at）不是可解析的 ISO 日期或日期時間
   v2-next-id            next_ids.user 不是 "U-n"、next_ids.action 不是 "A-n"
+  v2-recommended        （v6.2.0 起）awaiting_user 的 recommended 不是字串（沒加引號的數字也算）、對不到同一筆 options 的
+                        任何代號（不分大小寫），或 options 是空清單（自由回答）卻寫了 recommended
+  v2-features           （v6.2.0 起）inbox_features 不是字串清單（例：不是清單、項目是數字或巢狀清單）；不認得的值不報錯
   waiting-user          工單 frontmatter 的 waiting_user 不是 "U-n"
   v2-count（警告）      awaiting_user 超過 20 筆、user_actions 超過 20 筆或 reminders 超過 10 筆；只警告，不影響 exit code
   v2-skipped（警告）    本腳本的小型解析器看不懂這份 frontmatter，契約 v2 欄位沒有檢查（語法檢查照常）
@@ -380,6 +384,11 @@ V2_REQUIRED = {
 V2_LEN_LIMITS = {'summary': 120, 'title': 120, 'command': 300}
 V2_OPTION_RE = re.compile(r'^([A-Za-z0-9]{1,3})[ \t]+[^ \t]')
 V2_INT_RE = re.compile(r'^[-+]?[0-9]+$')
+# 沒加引號時 YAML 不會讀成字串的純量（數字、布林、null；v6.2.0+ 的 recommended／inbox_features 用來判斷型別）
+V2_NON_STR_PLAIN_RE = re.compile(r'^(?:[-+]?(?:[0-9][0-9_]*(?:\.[0-9_]*)?|\.[0-9]+)(?:[eE][-+]?[0-9]+)?'
+                                 r'|0[xX][0-9a-fA-F_]+|0[oO][0-7_]+|[-+]?\.(?:inf|Inf|INF)|\.(?:nan|NaN|NAN)'
+                                 r'|true|True|TRUE|false|False|FALSE|yes|Yes|YES|no|No|NO|on|On|ON|off|Off|OFF'
+                                 r'|null|Null|NULL|~)$')
 V2_DATE_RE = re.compile(r'^([0-9]{4})-([0-9]{2})-([0-9]{2})'
                         r'(?:[Tt ]([0-9]{2}):([0-9]{2})(?::([0-9]{2})(?:[.,][0-9]+)?)?'
                         r'(?:[Zz]|[+-]([0-9]{2})(?::?([0-9]{2}))?)?)?$')
@@ -629,6 +638,16 @@ def _str_value(node):
     return node.value
 
 
+def _is_yaml_string(node):
+    """節點是 YAML 會讀成字串的純量：引號字串，或沒加引號但不是數字／布林／null、也不以 [ { 開頭的純量（v6.2.0+）。"""
+    v = _str_value(node)
+    if v is None:
+        return False
+    if node.style in ('double', 'single'):
+        return True
+    return not V2_NON_STR_PLAIN_RE.match(v) and v[:1] not in ('[', '{')
+
+
 def _valid_date(s):
     m = V2_DATE_RE.match(s)
     if not m:
@@ -670,6 +689,15 @@ def check_contract_v2(fm_lines, base, rep):
         node, kl, kc = top['bat_contract']
         if node.kind != 'scalar' or node.style != 'plain' or node.value is None or not V2_INT_RE.match(node.value):
             rep.add(*at(kl, kc), 'v2-type', 'bat_contract 要是整數（不加引號）')
+
+    if 'inbox_features' in top:  # v6.2.0+：字串清單；不認得的值不報錯
+        node, kl, kc = top['inbox_features']
+        if node.kind != 'seq':
+            rep.add(*at(kl, kc), 'v2-features', 'inbox_features 要是字串清單（例：["recommended", "dismiss"]）')
+        else:
+            for item in node.value:
+                if not _is_yaml_string(item):
+                    rep.add(*at(item.line, item.col), 'v2-features', 'inbox_features 的項目要是字串')
 
     if 'next_ids' in top:
         node = top['next_ids'][0]
@@ -716,14 +744,16 @@ def check_contract_v2(fm_lines, base, rep):
                 v = _str_value(sub)
                 if v is not None and len(v) > limit:
                     rep.add(*at(sl, sc), 'v2-length', '%s 的 %s 超過 %d 字（目前 %d 字）' % (name, key, limit, len(v)))
+            codes = None  # awaiting_user 的選項代號（小寫）；None = options 不是可讀的清單
             if name == 'awaiting_user' and 'options' in fields:
                 sub, sl, sc = fields['options']
                 if sub.kind == 'scalar' and sub.value is None and sub.style == 'plain':
-                    pass
+                    codes = set()
                 elif sub.kind != 'seq':
                     rep.add(*at(sl, sc), 'v2-type', 'awaiting_user 的 options 要是清單（自由回答時寫 []）')
                 else:
                     seen = set()
+                    codes = seen
                     for opt in sub.value:
                         v = _str_value(opt)
                         m = V2_OPTION_RE.match(v) if v is not None else None
@@ -735,6 +765,22 @@ def check_contract_v2(fm_lines, base, rep):
                         if code in seen:
                             rep.add(*at(opt.line, opt.col), 'v2-option', '同一筆的選項代號重複（不分大小寫）')
                         seen.add(code)
+            if name == 'awaiting_user' and 'recommended' in fields:  # v6.2.0+
+                if 'options' not in fields:
+                    codes = set()
+                sub, sl, sc = fields['recommended']
+                v = _str_value(sub)
+                if not _is_yaml_string(sub):
+                    rep.add(*at(sl, sc), 'v2-recommended',
+                            'awaiting_user 的 recommended 要是字串（選項代號；數字代號也要加引號）')
+                elif codes is None:
+                    pass  # options 本身寫錯（已回報 v2-type），無從比對
+                elif not codes:
+                    rep.add(*at(sl, sc), 'v2-recommended',
+                            'options 是空清單（自由回答）時不寫 recommended')
+                elif v.lower() not in codes:
+                    rep.add(*at(sl, sc), 'v2-recommended',
+                            'awaiting_user 的 recommended 對不到同一筆 options 的任何代號（不分大小寫）；對不到時不寫這個鍵')
             if name == 'reminders':
                 for key in ('due_at', 'last_at'):
                     if key in fields:

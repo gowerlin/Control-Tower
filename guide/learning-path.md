@@ -33,7 +33,7 @@ Guide 回答前會先看問題裡的關鍵詞。像「入門、開始、新手�
 
 - **`three-layer-arch.md`**：Core、Global、Project 三層資料各放什麼、誰能寫哪一層、設定的四層覆蓋、學習紀錄的分流，以及塔台自己的狀態檔與決策日誌。→ Portal：[三層資料與記憶](/deep/principles/data-layers)
 - **`runtime-dispatch.md`**：派工怎麼和終端無關地運作。auto-session 四階、`CT_MODE` 怎麼送到 Worker、YOLO 的斷點 A–E、Claude Code 與 Codex 的中立性、成功判讀與降級鏈。→ Portal：[派工：auto-session 與 BAT](/deep/features/dispatch)、[yolo 與斷點 A–E](/deep/features/yolo)
-- **`bat-integration.md`**：和 BAT 有關的一切。BAT 定介面、CT 照契約呼叫的分工，兩座塔台怎麼協作，一張 Worker 分頁的生命週期，範圍權杖、隔離派工、查詢通道、斷點 D，以及 CT 與 BAT 的版本對照；6.1.0 起另有 BAT ↔ CT 契約 v2（待辦分頁）一節。→ Portal：[派工：auto-session 與 BAT](/deep/features/dispatch)、[待辦分頁（BAT ↔ CT 契約 v2）](/deep/features/bat-todo)、[相容版本對照](/versions/compatibility)
+- **`bat-integration.md`**：和 BAT 有關的一切。BAT 定介面、CT 照契約呼叫的分工，兩座塔台怎麼協作，一張 Worker 分頁的生命週期，範圍權杖、隔離派工、查詢通道、斷點 D，以及 CT 與 BAT 的版本對照；6.1.0 起另有 BAT ↔ CT 契約 v2（待辦分頁）一節，6.2.0 起再加〈推薦項、放棄與暫停選單〉一小節。→ Portal：[派工：auto-session 與 BAT](/deep/features/dispatch)、[待辦分頁（BAT ↔ CT 契約 v2）](/deep/features/bat-todo)、[相容版本對照](/versions/compatibility)
 - **`governance.md`**：各道護欄的設計理由。落點檢查為什麼「身分不能用路徑證明」、摘要授權規則、單一權威定義、Layer 1 寫入機制、版本治理、合併護欄與棄用條款。→ Portal：[治理：單一權威與「摘要不具權威」](/deep/principles/governance)、[落點檢查](/deep/features/landing-check)
 - **`advanced-patterns.md`**：五種跨專案協調類型、多塔台、中斷與恢復、mono-repo（含 v5.14.3 起一個塔台管多個巢狀的獨立 repo）、除錯防線、品質閘門、Worker 的四項防護、新手村、`ct-insights`、`ct-evolve`、FIELDGUIDE、歸檔與遷移。→ Portal：[跨塔台與跨專案協作](/deep/features/multi-tower)、[觀測與改進](/deep/features/observability)
 - **`integration.md`**：CT 怎麼接其他工具。Level 1 ECC（6.0.0 起退場）、Level 2 外部 bmad-guide 與 6.0.0 起的方法論轉接、Level 3 mem0，Codex 整合、Playbook 引擎、`*import` 與 `*onboard`。→ Portal：[功能總覽](/features)

@@ -17,7 +17,7 @@ const twoCliRows = [
 ]
 const towerRows = [
   ['*rescan', '完整掃描，刷新塔台狀態檔的環境快照', '—', 'v4.0.1'],
-  ['*config', '檢視或修改塔台設定', '[選項] [值] [--save project|global]、reset [選項]、methodology', 'v3.2.0（methodology：6.0.0；user_inbox：6.1.0）'],
+  ['*config', '檢視或修改塔台設定', '[選項] [值] [--save project|global]、reset [選項]、methodology', 'v3.2.0（methodology：6.0.0；user_inbox：6.1.0；pending_reminder：6.2.0）'],
   ['*help', '不離開塔台查使用說明', '[主題]：commands、workflow、config、workorder、status、tips、methodology', 'v3.2.0（methodology：6.0.0）'],
   ['*sync', '以工單檔為事實來源，校準塔台記憶、工單與 sprint-status.yaml', '—', 'v3.2.0'],
   ['*pause', '凍結進行中的工單，處理緊急任務', '[原因]', 'v3.2.0'],
@@ -173,8 +173,8 @@ const towerRows = [
 - **語法**：`/ct-help`、`/ct-help <問題>`（Codex：`$ct-help …`）
 - **參數**：可選的自由文字問題，例如「`ct-done` 跟 `ct-exec` 差在哪？」。
 - **在哪用**：任何 session。
-- **做什麼**：操作手冊——先回答你眼前的問題，給確切的指令、紀錄檔的位置、狀態字的意思；新手只解釋接下來兩三步。**只解釋，不建立也不修改工單**，也不切換成塔台或 Worker。v6.1.0+：可以問〈與 BAT 協作〉：契約 v2、待辦分頁、`U-n`／`A-n` 回答格式、BAT 的 hooks 與 CT 的 hooks 有什麼不同、什麼時候要裝 `bat-hooks` plugin、版本要求。
-- **起始版本**：v3.1.0（〈與 BAT 協作〉：6.1.0）
+- **做什麼**：操作手冊——先回答你眼前的問題，給確切的指令、紀錄檔的位置、狀態字的意思；新手只解釋接下來兩三步。**只解釋，不建立也不修改工單**，也不切換成塔台或 Worker。v6.1.0+：可以問〈與 BAT 協作〉：契約 v2、待辦分頁、`U-n`／`A-n` 回答格式、BAT 的 hooks 與 CT 的 hooks 有什麼不同、什麼時候要裝 `bat-hooks` plugin、版本要求。v6.2.0+：也可以問推薦標記、放棄與略過（含批次）、新舊版本搭配、選單的放棄項、Esc 之後怎麼辦、`pending_reminder`。
+- **起始版本**：v3.1.0（〈與 BAT 協作〉：6.1.0；推薦項、放棄、選單、`pending_reminder`：6.2.0）
 - **權威出處**：`ct-help/SKILL.md` § Command Families、§ User Guidance Patterns；6.1.0 起 § 與 BAT 協作（Working With BAT, v6.1.0+）
 - **相關**：[`*help`](#help)、[CT Guide](#control-tower-guide)
 
@@ -215,6 +215,8 @@ const towerRows = [
   *config reset <選項>                       單項重設為預設值（只影響 session）
   *config methodology                       列出 9 個方法論設定鍵與每一層的解析結果（6.0.0 起）
   *config user_inbox off --save project      不寫待決與待執行清單，回覆結尾照樣重列（6.1.0 起）
+  *config pending_reminder on-change --save project   回覆結尾的待決提醒只在清單有變化時印（6.2.0 起）
+  *config interactive-prompts off            需求對齊與塔台暫停都改用純文字提問
   ```
 
 - **作用域**：session > 專案 > 全域 > 預設，上面的蓋過下面的。值不在範圍內、或選項名稱不存在，會報錯並列出可用選項，不修改。
@@ -224,7 +226,7 @@ const towerRows = [
   | 選項 | 值 | 預設 | 說明 |
   |---|---|---|---|
   | `alignment-rounds` | `0`–`5` | `3` | 開單前最少問幾輪；`0` = 關閉強制提問 |
-  | `interactive-prompts` | `on`／`off` | `on` | 選項式提問；`off` 退回純文字提問 |
+  | `interactive-prompts` | `on`／`off` | `on` | 選項式提問；`off` 退回純文字提問。6.2.0 起範圍擴大到塔台暫停（斷點、合併前確認、Worker 提問升級、塔台自己的提問）：`on` 時先寫待決再開原生選單，選項 1～3 個時最後一定有「放棄（停下等新方向）」、4 個時在「其他」打「放棄」，沒有選項或超過 4 個選項的題目用文字；按 Esc 後該筆照留、下一則回覆提醒並重列，之後仍開選單。Codex 塔台與 BAT 契約不是 `v2` 的分頁自動改用文字；`off` 時需求對齊與暫停都用純文字（見[待辦分頁 › 暫停改開原生選單](/deep/features/bat-todo#menu)） |
   | `experience-level` | `beginner`／`standard`／`expert` | `standard` | 提示詳細度與引導程度；`beginner` 啟用新手村教學 |
   | `verbose` | `on`／`off` | `on` | 派工摘要的詳細程度 |
   | `auto-session` | `on`／`ask`／`off`／`yolo` | `ask` | 派工後的行為：`on` 靜默開新分頁；`ask` 先問；`off` 只給文字提示；`yolo` 是 `on` 的超集，Worker 自動送出、塔台自主決定下一張。在 BAT 內，生效值也以 `--set-role tower --mode` 宣告給塔台分頁；v6.1.0+ 同一個宣告另帶 `--bat-contract 2` |
@@ -258,14 +260,15 @@ const towerRows = [
   | `methodology_subagent_writes` | `deny`／`per-workorder` | `deny` | 6.0.0 起。方法論自己開的寫入型子代理怎麼處置 |
   | `methodology_guard` | `warn`／`block`／`off` | `warn` | 6.0.0 起。派工前的方法論注入／衝突檢查；`warn` = 自動在工單加〈方法論邊界〉段 |
   | `methodology_adapters_path` | 路徑／空 | 空 | 6.0.0 起。額外的 adapter 搜尋路徑（一個；相對路徑以 repo 根目錄為準） |
-  | `user_inbox` | `on`／`off` | `on` | 6.1.0 起。BAT ↔ CT 契約 v2 的待決與待執行清單：`on` = 塔台把要你決定（`awaiting_user`）與要你執行（`user_actions`）的事寫進 `_tower-state.md` frontmatter，BAT 的「待辦」分頁可以顯示；`off` = 不寫這兩個清單，退回 6.0.x 寫法（只在終端輸出、待執行的項目照舊放 `todo`）；`bat_contract`、`ct_version`、`reminders` 與每次回覆結尾的重列照舊（見[待辦分頁](/deep/features/bat-todo#user-inbox)） |
+  | `user_inbox` | `on`／`off` | `on` | 6.1.0 起。BAT ↔ CT 契約 v2 的待決與待執行清單：`on` = 塔台把要你決定（`awaiting_user`）與要你執行（`user_actions`）的事寫進 `_tower-state.md` frontmatter，BAT 的「待辦」分頁可以顯示；`off` = 不寫這兩個清單，退回 6.0.x 寫法（只在終端輸出、待執行的項目照舊放 `todo`）；`bat_contract`、`ct_version`、`reminders` 與每次回覆結尾的重列照舊（見[待辦分頁](/deep/features/bat-todo#user-inbox)）。6.2.0 起能力旗標 `inbox_features` 不受 `off` 影響、每次照寫；在終端回 `U-n：放棄`、`A-n：略過` 一樣有效 |
+  | `pending_reminder` | `every`／`on-change` | `every` | 6.2.0 起。回覆結尾 `⏸ 待你決定／🙋 待你執行` 那一行的頻率：`every` = 有待決時每則回覆都印（與 6.1.x 相同）；`on-change` = 只在 session 第一則回覆、清單新增項目、你問待決或下 `*sync`、暫停選單被 Esc 關掉後的下一則回覆印。狀態檔清單、BAT 待辦分頁、暫停訊息與選單不受影響；對話被壓縮後可能多提醒一次（見[待辦分頁 › 提醒頻率](/deep/features/bat-todo#pending-reminder)） |
 
   Worker 只會讀 `worker_max_retries`、`worker_strikeout_action`、`worker_commit` 與 `experience-level` 這類調諧參數；`worker_auto_close`、`worker_close_delay` 雖然以 `worker_` 開頭，卻是塔台收單時讀的。
 
   `_tower-config.yaml` 另有 `gp-prefix`（Playbook 的 GP 編號前綴），但它不是 `*config` 選項，所以不在上表；定義與未設定時的 fallback 見 `multi-tower-protocol.md` § `gp-prefix` 設定（唯一權威定義）。
 
 - **起始版本**：v3.2.0（各選項的版本見權威出處）
-- **權威出處**：`control-tower/references/tower-config.md` § `*config` 命令、§ 可用選項、§ 作用域與持久化、§ 方法論設定鍵（6.0.0 起）；`user_inbox` 的欄位規則見 `memory-protocol.md` § 契約 v2 欄位
+- **權威出處**：`control-tower/references/tower-config.md` § `*config` 命令、§ 可用選項、§ 作用域與持久化、§ 方法論設定鍵（6.0.0 起）；`user_inbox` 的欄位規則見 `memory-protocol.md` § 契約 v2 欄位；6.2.0 起 `interactive-prompts` 在塔台暫停時的問法見同一處〈暫停的提問方式〉，`pending_reminder` 見 `control-tower/SKILL.md` § Output Style
 - **相關**：[功能總覽 › 設定](/features#config)（四層覆蓋的概念）
 
 ### `*help` {#help}
@@ -286,7 +289,8 @@ const towerRows = [
   - 決策日誌的格式驗證多檢查 BAT 讀不讀得到（表頭 `ID`、每列以 `|` 開頭與結尾、標題格式）和檔案大小。
   - 索引格式照新規則重建；舊索引在下一次 `*sync` 時換成新格式。塔台改了 BUG／PLAN 狀態，同一批就重建索引，不等下一次 `*sync`。
 - **v6.0.2+：frontmatter 自檢（只回報）**：同步流程的第 6 步對熱區（`_ct-workorders/` 的 `*.md`，不含 `_archive/`）跑 `check-frontmatter.py`，有解析失敗的檔就在同步摘要列出檔名、行號、問題類型，建議「把該值整個加引號」；不自動修、不阻擋 `*sync`，輸出不含檔案原文（見[字串寫法與寫入後自檢](/deep/principles/files-as-truth#yaml-strings)）。
-- **起始版本**：v3.2.0（多類型掃描：v4.0.0；大小提示、未結 BUG 提示：v5.13.0；frontmatter 自檢：6.0.2）
+- **v6.2.0+：待決完整列出**：有待決或待執行項目時，回覆結尾完整列出（`pending_reminder: on-change` 也一樣，見 [`*config`](#config)）。
+- **起始版本**：v3.2.0（多類型掃描：v4.0.0；大小提示、未結 BUG 提示：v5.13.0；frontmatter 自檢：6.0.2；待決完整列出：6.2.0）
 - **權威出處**：`control-tower/references/work-order-system.md` § sprint-status.yaml 同步；`control-tower/references/bug-plan-system.md` § 索引格式、§ 未結 BUG 清理提示；`control-tower/references/decision-log-system.md` § 格式驗證；`control-tower/references/memory-protocol.md` § BAT 塔台面板讀取契約 › 大小預算；`control-tower/references/archive-system.md` § 與 `*sync` 的協作；6.0.2 起 `control-tower/references/work-order-system.md` § 主方法論 tracker 同步 › 同步流程（第 6 步）
 
 ### `*pause [原因]` {#pause}
@@ -468,13 +472,15 @@ yolo 下塔台另外也接受 `T#### 失敗`。不是這些格式的訊息，會
 
 ### 回答待決與待執行（`U-n`／`A-n`） {#user-answers}
 
-- **說法**：v6.1.0+。不是 `*` 命令，是在塔台分頁打的一行回答，或 BAT「待辦」分頁送出的同一行：`U-3：B`（選項代號）、`U-3：先不要發布`（自由回答）、`A-2：完成`、`A-2：失敗 安裝後啟動閃退`。
+- **說法**：v6.1.0+。不是 `*` 命令，是在塔台分頁打的一行回答，或 BAT「待辦」分頁送出的同一行：`U-3：B`（選項代號）、`U-3：先不要發布`（自由回答）、`A-2：完成`、`A-2：失敗 安裝後啟動閃退`。v6.2.0+ 另有 `U-3：放棄 改做 X`（放棄一題，可附原因或新方向）、`A-2：略過 換機器了`（略過一項，可附原因）、`U-1、U-4：放棄`（一次好幾題）。
 - **規則**：全形 `：` 或半形 `:` 都可以；代號不分大小寫，只有唯一命中一個選項才算選了它，否則當自由回答。只有一題在等時直接回 `B` 也可以。塔台回一行確認，例 `U-3 已收到：B → 恢復 T0001`。
-- **回覆結尾重列**：有待決或待執行項目時，塔台每次回覆的最後一行固定是 `⏸ 待你決定：…；🙋 待你執行：…`；沒有項目的那半段不印，兩邊都空就整行不印。任何終端都有，不需要 BAT。
+- **放棄與略過（v6.2.0+）**：只有冒號後第一個詞是「放棄」「略過」才算。放棄不套用任何選項、工單維持暫停；略過不是失敗，不開 BUG、不重開工單，決策日誌記「未驗（使用者略過）」。一次好幾題用 `、`、`,`、`，` 分隔，只用在放棄與略過；不接受 `U-*`、`U-1～U-3` 這類萬用字元與範圍，也不接受好幾題選同一個選項；已經不在清單的編號略過、其他照做。
+- **推薦項（v6.2.0+）**：塔台有推薦時，那個選項排第一、說明結尾有「（推薦）」；BAT 0.8.0-pre.4 起另顯示推薦標記並預設選取。
+- **回覆結尾重列**：有待決或待執行項目時，塔台每次回覆的最後一行固定是 `⏸ 待你決定：…；🙋 待你執行：…`；沒有項目的那半段不印，兩邊都空就整行不印。任何終端都有，不需要 BAT。v6.2.0+ 頻率照 `pending_reminder`（預設 `every`，見 [`*config`](#config)）。
 - **不寫清單**：`*config user_inbox off`（見 [`*config`](#config)），回覆結尾照樣重列。
-- **起始版本**：v6.1.0
+- **起始版本**：v6.1.0（放棄、略過、批次、推薦項：6.2.0）
 - **權威出處**：`control-tower/references/memory-protocol.md` § 契約 v2 欄位；`control-tower/SKILL.md` § Output Style
-- **相關**：[待辦分頁（BAT ↔ CT 契約 v2）](/deep/features/bat-todo)
+- **相關**：[待辦分頁（BAT ↔ CT 契約 v2）](/deep/features/bat-todo)、[放棄與略過](/deep/features/bat-todo#dismiss)、[暫停改開原生選單](/deep/features/bat-todo#menu)
 
 ## 不要找：不存在或已刪除的指令 {#not-commands}
 
@@ -492,7 +498,7 @@ yolo 下塔台另外也接受 `T#### 失敗`。不是這些格式的訊息，會
 - `control-tower/SKILL.md` § Built-In Commands
 - `ct-help/SKILL.md` § Command Families
 - 各 skill 的 `SKILL.md`（`ct-exec`、`ct-done`、`ct-status`、`ct-evolve`、`ct-insights`、`ct-fieldguide`、`control-tower-guide`）
-- CT 安裝與使用指南 § 13. Config 速查表（v6.1.1）、§ 14. 命令速查表（v6.1.1）
+- CT 安裝與使用指南 § 13. Config 速查表（v6.2.0）、§ 14. 命令速查表（v6.2.0）
 - `control-tower/references/tower-config.md` § `*config` 命令、§ 可用選項（表下註明 `gp-prefix` 不是選項）
 - `control-tower/references/multi-tower-protocol.md` § `gp-prefix` 設定（唯一權威定義）
 - `control-tower/references/fieldguide-commands.md`

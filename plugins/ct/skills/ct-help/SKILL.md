@@ -2,7 +2,7 @@
 name: ct-help
 description: "Control Tower help skill for explaining the Tower and Worker ecosystem, commands, prefixes, workflow, BAT and YOLO concepts, methodology adapters, state files, onboarding, and common confusion. Use when the user invokes $ct-help or /ct-help, is new to Control Tower, asks how to use ct-exec, ct-done, ct-status, ct-evolve, ct-fieldguide, or asks what a Tower command means."
 ---
-<!-- ct-help-version: 6.1.1 -->
+<!-- ct-help-version: 6.2.0 -->
 
 # ct-help
 
@@ -125,8 +125,30 @@ Summaries only; the CT rules live in `../control-tower/references/memory-protoco
 - **How to answer** (type it in the Tower tab, or use BAT's answer box, which sends the same line): `U-3：B` (an option code) or
   `U-3：<your own words>`; `A-2：完成`; `A-2：失敗 <what went wrong>`. Full-width `：` and `:` both work. The Tower replies with one
   confirmation line, for example 「U-3 已收到：B → 恢復 T0123」.
+- **Recommended option** (CT 6.2.0+): when the Tower has a recommendation it lists that option first and ends its text with 「（推薦）」,
+  in the terminal and in the file; BAT 0.8.0-pre.4 or later also shows a marker and selects it by default. No recommendation, no mark.
+- **Dropping items** (CT 6.2.0+): `U-3：放棄` drops a decision, `A-2：略過` drops a to-do; add words after it to give a reason or a new
+  direction (`U-3：放棄 改做 X`). Several at once: `U-1、U-3：放棄 <reason>`. The Tower applies no option, removes the items, keeps the
+  work order paused, and logs one decision; with no words it waits for your next instruction instead of asking again. 「略過」 is not
+  「失敗」: no BUG is opened and the check is logged as not verified. Wildcards and ranges (`U-*`, `U-1～U-5`) are not accepted.
+  BAT 0.8.0-pre.4 or later adds buttons for this, batch ticks and 「全部放棄」.
+- **Pauses as a menu** (CT 6.2.0+): when the Tower stops for your decision (a breakpoint, the merge check, a Worker question passed to you,
+  or its own question) it first writes the `U-n` item and then opens Claude Code's own option menu, recommended option first. When the
+  question has 1 to 3 options the menu always ends with 「放棄（停下等新方向）」; with 4 options there is no room, so type 「放棄」 in "Other".
+  "Other" takes free text, and text starting with 「放棄」 drops the item. A free-answer question (no options) is asked as text, because
+  the menu needs at least 2 choices. Pressing Esc closes the menu and ends the Tower's turn: the item stays open, and the Tower's next
+  reply reminds you which menus were closed; the next pause still opens a menu.
+  The item is still in the inbox and `U-n：…` typed in the terminal or sent from BAT still counts. The same setting as requirement
+  questions controls it: `*config interactive-prompts off` gives the plain text pause of 6.1.x. The Tower falls back to text by itself
+  on Codex (no menu) and in a BAT tab whose startup check did not report contract v2, because only such a BAT holds a Worker's Enter
+  while the menu is open (otherwise that Enter could pick an option for you).
+- **Mixing versions**: CT 6.2.0 with an older BAT (0.8.0-pre.3) still shows the inbox tab; there is no marker or drop button, but the
+  recommended option is first with 「（推薦）」 and typing `U-n：放棄` in the free-answer box works. A newer BAT with CT 6.1.x shows neither
+  feature; everything else works as before. The contract stays v2 (`bat_contract: 2`); CT 6.2.0 adds `inbox_features` to tell BAT.
 - **Any terminal**: while something waits for you, every Tower reply ends with one line such as
-  `⏸ 待你決定：U-3（T0123）；🙋 待你執行：A-2（…）`. This works without BAT and with an old BAT.
+  `⏸ 待你決定：U-3（T0123）；🙋 待你執行：A-2（…）`. This works without BAT and with an old BAT. If that line feels noisy,
+  `*config pending_reminder on-change` (CT 6.2.0+, add `--save project` to keep it) prints it only in the first reply of a session, when
+  a new item is added, when you ask what is pending, and after you close a pause menu with Esc.
 - **Not writing the lists**: `*config user_inbox off` (add `--save project` to keep it) stops CT from writing the decision and to-do lists into
   the file; the reply-end line still appears.
 - **Two kinds of hooks, not the same thing**:
@@ -138,7 +160,7 @@ Summaries only; the CT rules live in `../control-tower/references/memory-protoco
   - CT never installs a plugin for you and never changes your claude settings.
 - **Versions**: both sides must be new enough — BAT 0.8.0-pre.3 or later and CT 6.1.0 or later. If either side is
   older, BAT's inbox tab says which version is needed and stays off; an old BAT simply has no inbox tab, and the Tower prints one fallback
-  line at startup and keeps working.
+  line at startup and keeps working. The recommended marker and the drop controls need BAT 0.8.0-pre.4 or later and CT 6.2.0 or later.
 
 ## Claude Code Workflow (v5.11.0+)
 

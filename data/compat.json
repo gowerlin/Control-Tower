@@ -1,6 +1,6 @@
 {
   "_note": "相容版本對照（/versions/compatibility 的資料）。每列 feature、ct（CT 起始版本）、bat／codex（最低版本，不需要就省略）、note、source（權威出處：檔案 § 章節）。CT 發版時相容性有變才改（CT 每次發版都要同步更新 Portal）。",
-  "ctVersion": "6.1.1",
+  "ctVersion": "6.2.0",
   "rows": [
     {
       "feature": "帶前綴的工單 ID 走結構化派工（--workorder 帶前綴）",
@@ -207,6 +207,13 @@
       "bat": ">= 0.7.0-pre.7",
       "note": "PATCH，沒有新門檻。契約 v2 的欄位與寫入規則不變，待辦分頁仍需要 BAT >= 0.8.0-pre.3；其餘功能最低仍是 >= 0.7.0-pre.7，BAT helper 的參數與 exit code 不變。讀取位置的改動只在 CT 這一側（ct-session-stats.py 讀 Claude Code 的 session 紀錄，不經過 BAT）；沒設 CLAUDE_CONFIG_DIR 時行為與 6.1.0 相同。",
       "source": "CHANGELOG.md [6.1.1]；ct-insights/references/analysis-rules.md；decision-log-system.md § 注意事項；memory-protocol.md § 契約 v2 欄位"
+    },
+    {
+      "feature": "待辦清單的推薦項與放棄：有推薦時選項排第一、說明結尾加「（推薦）」並寫 recommended；U-n：放棄、A-n：略過（含批次）；狀態檔能力旗標 inbox_features；塔台暫停改開原生選單（interactive-prompts）；回覆結尾提醒頻率 pending_reminder",
+      "ct": "v6.2.0",
+      "bat": ">= 0.8.0-pre.4",
+      "note": "MINOR。推薦標記與放棄控制項（放棄、略過、批次勾選、「全部放棄」）需要 BAT >= 0.8.0-pre.4（與 CT 6.2.0 同日發佈）；契約 v2 本身最低仍是 >= 0.8.0-pre.3：bat_contract 仍是 2、summary_version 不升，新能力以狀態檔的 inbox_features 告訴 BAT，開工宣告與降級提示不變。搭 BAT 0.8.0-pre.3 時待辦分頁照常，看不到推薦標記與放棄按鈕，但推薦項排第一、說明有「（推薦）」，在塔台的輸入框打 U-n：放棄、A-n：略過一樣有效。CT 6.1.x 搭新 BAT：狀態檔沒有 inbox_features，沒有推薦標記與放棄控制項，其他照舊。暫停改開原生選單是 Claude Code 塔台這一側的行為：Codex 塔台與開工時 BAT 契約不是 v2 的分頁自動改用文字。契約 v2 以外的功能最低仍是 >= 0.7.0-pre.7。",
+      "source": "CHANGELOG.md [6.2.0]；memory-protocol.md § 契約 v2 欄位（含〈暫停的提問方式〉）；control-tower/SKILL.md § Output Style；tower-config.md § 可用選項（interactive-prompts、pending_reminder）；yolo-mode.md § 斷點 A、§ 斷點 B › B-2"
     },
     {
       "feature": "Level 2：外部 bmad-guide 的 BMad workflow 路由",

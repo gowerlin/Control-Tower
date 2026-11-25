@@ -32,11 +32,11 @@
 | 選項 | 有效值 | 預設 | 說明 |
 |------|--------|------|------|
 | `alignment-rounds` | `0` - `5` | `3` | 需求對齊最少提問輪數。`0` = 關閉強制提問，直接產生工單 |
-| `interactive-prompts` | `on` / `off` | `on` | 選項式提問開關。`off` 時退回純文字提問 |
+| `interactive-prompts` | `on` / `off` | `on` | 選項式提問開關，涵蓋需求對齊與塔台暫停（v6.2.0+：斷點、合併前確認、Worker 提問升級、`tower-question` 用原生選單）。`off` 時兩者都退回純文字提問（暫停照 6.1.x 文字範本）。暫停的做法與改用文字範本的條件見 [memory-protocol.md](memory-protocol.md) § 契約 v2 欄位〈暫停的提問方式〉 |
 | `experience-level` | `beginner` / `standard` / `expert` | `standard` | 影響提示詳細度和引導程度 |
 | `verbose` | `on` / `off` | `on` | 工單派發摘要的詳細程度。`off` 時精簡輸出 |
 | `auto-session` | `on` / `ask` / `off` / `yolo` | `ask` | 工單派發後自動開新 session 行為。`on` = 靜默開新分頁；`ask` = 詢問使用者；`off` = 僅文字提示；`yolo` = `on` 的超集，Worker 自動送出 + 塔台自主決策下一張工單（詳見 [yolo-mode.md](yolo-mode.md)） |
-| `yolo_max_retries` | `0` - `10` | `3` | YOLO 模式斷點 B 閾值（Renew ≥N 次或連續 N 張 FAILED 觸發暫停）。`0` = 停用斷點 B。詳見 [yolo-mode.md](yolo-mode.md) |
+| `yolo_max_retries` | `0` - `10` | `3` | YOLO 模式斷點 B 閾值（Renew ≥N 次或連續 N 張 FAILED／BLOCKED 觸發暫停）。`0` = 停用斷點 B。詳見 [yolo-mode.md](yolo-mode.md) |
 | `worker_question_timeout` | `0` - `120`（分鐘，整數） | `30` | v5.5.0+。yolo Worker 向塔台提問後原地等待答覆的上限；逾時改以 `BLOCKED` 收尾、由塔台以 Renew 答覆。`0` = 不等，提問後直接走備援。只影響 yolo。塔台 yolo 派工時把生效值寫進工單 frontmatter，Worker 的取值順序見 [yolo-mode.md](yolo-mode.md) § Worker 向塔台提問 › `worker_question_timeout` 的取值。走 BAT 通道（v5.7.0+）時同一個值也是 `--ask --expires-min` 的值（見同節 § BAT 通道 › 限制、§ Worker 端 3-A） |
 | `project-prefix` | `2-4 字元大寫英文` / 空 | 空 | 專案前綴，用於跨專案協調時的工單編號。設定後工單格式變為 `<前綴>-T<編號>-<描述>`。詳見 [cross-project-coordination.md](cross-project-coordination.md) |
 | `enable_bug_tracking` | `true` / `false` | `true` | 啟用 BUG 單據追蹤。啟用後可使用 `*bug` 命令建立 BUG 單，`*sync` 掃描 BUG 檔案；啟用時（含預設）立即產生空的 `_bug-tracker.md`（[bug-plan-system.md](bug-plan-system.md) § 啟用與索引檔）。v6 起預設 `true`（D363），設定明寫 `false` 的照舊 |
@@ -57,6 +57,7 @@
 | `worker_auto_close` | `off` / `done` | `off` | `done` = 工單 `DONE` 且不 Renew、輸出收單確認後，呼叫 BAT 回收該工單的 Worker 分頁。`PARTIAL` / `FAILED` / `BLOCKED` 與需要 Renew 的單一律不回收。僅在 BAT 環境（`BAT_SESSION=1`）且該工單是由本塔台以 `bat-terminal.mjs` 派出時生效。`off` = 收單流程不變。觸發條件、指令與 exit code 處理見 [work-order-system.md](work-order-system.md) § 回報處理流程。不影響重派前回收（v5.12.0+，`off` 時也回收；見 [work-order-system.md](work-order-system.md) § 重派前回收舊 Worker 分頁） |
 | `worker_close_delay` | `0` - `300`（秒） | `10` | 回收前的延遲，以 `--delay-ms` 傳給 BAT。延遲期間 Worker 分頁的輸出**不**取消回收；只有排程後使用者在該 Worker 分頁的輸入會取消（終端自動回應，例如切換分頁時送出的 focus report，不算輸入）。延遲到期後 BAT 等分頁連續安靜 5 s 才關，從到期起最多再等 60 s，屆時仍在輸出就放棄、分頁保留（helper 已 exit `0`，塔台不會得知）。以上依 BAT T0545／D145（BAT `CLAUDE.md`「Worker 分頁回收」節、`docs/agent-guide/worker-tab-recycle.md`）。僅在 `worker_auto_close: done` 時有作用。詳見 [work-order-system.md](work-order-system.md) § 回報處理流程 |
 | `user_inbox` | `on` / `off` | `on` | v6.1.0+（BAT ↔ CT 契約 v2）。`on` = 塔台把要你決定的事（`awaiting_user`）與要你執行的事（`user_actions`）寫進 `_tower-state.md` frontmatter，Better Agent Terminal 的「待辦」分頁可以顯示；`off` = 不寫這兩個清單，退回 6.0.x 寫法（待決只在終端輸出、待執行的項目照舊放 `todo`）。`bat_contract`、`ct_version`、`reminders` 與每次回覆結尾的待決重列照舊。專案不能把這類內容寫進檔案時才關。規則見 [memory-protocol.md](memory-protocol.md) § 契約 v2 欄位 |
+| `pending_reminder` | `every` / `on-change` | `every` | v6.2.0+。回覆結尾 `⏸ 待你決定／🙋 待你執行` 重列行的頻率。`every` = 有待決時每則回覆都印（與 6.1.x 相同）；`on-change` = 只在 session 第一則回覆、清單新增項目、使用者問待決或下 `*sync` 時印，以及暫停選單被 Esc 關掉後的下一則回覆。只影響終端的重列行；frontmatter 清單、BAT 待辦分頁、暫停訊息照舊。規則見 `control-tower/SKILL.md` § Output Style |
 | `workflow_integration` | `off` / `ask` / `on` | `on` | v5.11.0+。Claude Code Workflow 工具的整合強度（token 焦慮時可臨時關閉）。`off` = 塔台不建議、不授權 Worker 用 Workflow，不跑工具型 workflow；`ask` = 每次要授權 Worker 用 Workflow 都先問使用者，⭐ 也一樣；`on` = 知識卡到 ⭐ 之前先問使用者，⭐ 之後塔台在 yolo 下可自決。三個值下，規則分析、預篩腳本與 `--workflow` brief 都照常（不花 workflow token）。只約束塔台；Worker 不讀此值，依工單裡的授權段落行事。行為細節見 [workflow-engine.md](workflow-engine.md) § `workflow_integration` 的行為 |
 | `methodology` | `auto` / `none` / `<adapter id>` | `auto` | v6.0.0+。主方法論（沒有個別指定的層都跟它）。語意見 [methodology-adapters.md](methodology-adapters.md) § 抽換 |
 | `methodology_planning` | `inherit` / `none` / `<adapter id>` | `inherit` | v6.0.0+。規劃層的負責 adapter。語意見 [methodology-adapters.md](methodology-adapters.md) § 抽換、§ 層次 |
@@ -287,6 +288,8 @@ control-tower:
   worker_close_delay: 10
   # v6.1.0+ BAT ↔ CT 契約 v2：待你決定／待你執行清單寫進 _tower-state.md（on / off）
   user_inbox: on
+  # v6.2.0+ 回覆結尾待決重列行的頻率（every / on-change）
+  pending_reminder: every
   # v5.11+ Claude Code Workflow 整合強度（off / ask / on）
   workflow_integration: on
   # v6.0.0+：方法論轉接（語意見 methodology-adapters.md § 抽換）

@@ -45,6 +45,8 @@ yolo 依賴 BAT 把派工與回報接起來，而兩個方向需要的環境變�
 
 Worker 的收尾訊息必須精準符合固定格式：工單 ID 後接 `完成`、`部分完成`、`需要協助` 或 `提問`（容錯另收 `失敗`）。工單 ID 的部分引用工單編號的唯一權威定義，所以 `CP-T0113 完成` 這種帶前綴的回報同樣合法。不符合就是斷點 A：塔台無法確定 Worker 的真實狀態，可能是 Worker 版本太舊，也可能是措辭出格。你可以選擇接受為 DONE 續派、接受為 FAILED（計入斷點 B），或退回 ask 手動接手。
 
+**「非預期」指的是通知字串不合法**（6.2.0 起寫明，規則沒變），不是「工單狀態不是 `DONE`」。合法的 `需要協助`（`BLOCKED`／`FAILED`）與 `部分完成` 不是斷點 A，照收單處理；`BLOCKED`／`FAILED` 照常計入 [B-2](#b) 的連續計數。計數還沒到上限、塔台又要你決定下一步時，那一題是塔台提問（待辦清單的來源寫塔台提問），不是斷點 A。
+
 漏了前綴的回報也不是斷點 A（v5.13.1 起）：收到 `T0113 完成`、熱區只有 `CP-T0113` 時，格式仍然合法，塔台把它當成那一張收單，並記一行「回報 ID 缺前綴」；同號的工單有好幾張，或根本找不到，塔台才不猜、停在斷點 A。這個容錯只保住塔台這一側，BAT 要把 Worker 分頁標成 Done，仍要 Worker 送出完整 ID，所以 Worker 送出前也會先和工單的 `id` 比對。
 
 `T#### 提問` 不是收尾訊息，工單還在執行，塔台不收單，改去讀題答覆。
@@ -56,7 +58,7 @@ Worker 的收尾訊息必須精準符合固定格式：工單 ID 後接 `完成`
 N 是設定值 `yolo_max_retries`（預設 `3`，設 `0` 停用斷點 B）。
 
 - **B-1 Renew 過多**：被回報工單的 Renew 次數達到 N。同一張單反覆迭代，代表方向需要重新對齊，建議拆新工單。
-- **B-2 連續失敗**：塔台 session 層級的計數，跨工單累計。Worker 回報 `FAILED` 或 `BLOCKED` 時計數加一，`DONE`、`FIXED`、`PARTIAL` 歸零，達到 N 就暫停。計數器的格式見 `yolo-mode.md` § YOLO 計數器。可能是 PLAN 或研究結論本身有問題，繼續派只會累積失敗。
+- **B-2 連續 FAILED／BLOCKED**：塔台 session 層級的計數，跨工單累計。Worker 回報 `FAILED` 或 `BLOCKED` 時計數加一，`DONE`、`FIXED`、`PARTIAL` 歸零，達到 N 就暫停。計數器的格式見 `yolo-mode.md` § YOLO 計數器；6.2.0 起標籤寫成 `連續 FAILED／BLOCKED`（規則一直是兩者都加一，舊標籤 `連續 FAILED:` 容易讓人漏算 `BLOCKED`；讀到舊標籤照讀，下次寫入改新標籤）。可能是 PLAN 或研究結論本身有問題，繼續派只會累積失敗。
 
 ### C：跨出 PLAN 範圍 {#c}
 
@@ -80,7 +82,7 @@ yolo 期間，你隨時在塔台輸入獨立的 `停`、`stop` 或 `abort`，塔
 
 ## 計數器與 YOLO 歷程 {#history}
 
-yolo 啟用後，塔台在 `_tower-state.md` 加一個 `## YOLO 歷程` 區段，記下每一次啟動、派發、完成、斷點、提問、使用者中斷與恢復，以及計數器：連續失敗（`FAILED`／`BLOCKED`）次數、本 session 派發張數、各斷點觸發次數、提問數。已經請你決定、還在等你回答的提問，會記一筆等待條目，之後同一張工單的通知不再重複跳 `⏸ YOLO PAUSED`（v5.15.0 起）。yolo 關閉時，當前 session 的紀錄濃縮成一行摘要移到歷史區。這個區段只在曾經啟用 yolo 時存在，非 yolo 專案缺少它不算區段缺失。
+yolo 啟用後，塔台在 `_tower-state.md` 加一個 `## YOLO 歷程` 區段，記下每一次啟動、派發、完成、斷點、提問、使用者中斷與恢復，以及計數器：連續 FAILED／BLOCKED 次數（6.2.0 起的標籤）、本 session 派發張數、各斷點觸發次數、提問數。已經請你決定、還在等你回答的提問，會記一筆等待條目，之後同一張工單的通知不再重複跳 `⏸ YOLO PAUSED`（v5.15.0 起）。yolo 關閉時，當前 session 的紀錄濃縮成一行摘要移到歷史區。這個區段只在曾經啟用 yolo 時存在，非 yolo 專案缺少它不算區段缺失。
 
 收單後回收 Worker 分頁也照常進行，但回收結果不影響任何斷點判斷，也不計入斷點 B。
 
@@ -97,6 +99,8 @@ yolo 啟用後，塔台在 `_tower-state.md` 加一個 `## YOLO 歷程` 區段�
 | 使用者中斷 | `🛑 YOLO PAUSED — 使用者中斷` |
 | PLAN 完成 | `✅ PLAN-0XX 所有工單完成 → yolo 流程結束` |
 
+**暫停時怎麼問你（6.2.0 起）**：斷點 A、B-1、B-2、C、E 與「提問需要你決定」暫停時，塔台先把題目寫進待辦清單（`U-n`），選項有推薦時推薦項排第一、標「（推薦）」；`interactive-prompts: on`（預設）時再開 Claude Code 的原生選單，選項 1～3 個時最後一定有「放棄（停下等新方向）」。Codex 塔台與開工時 BAT 契約不是 `v2` 的分頁改用文字；回 `U-n：放棄` 時工單維持暫停、yolo 不會自己繼續。實機驗收只走過「塔台提問」這一種來源，斷點來源開選單還沒實機驗過。詳見[待辦分頁 › 暫停改開原生選單](./bat-todo#menu)。
+
 BAT 這一端怎麼呈現自主程度與「一定會停下來問你的時候」，見 <BatLink path="control-tower#autonomy">BAT 站：自主程度與斷點</BatLink>。
 
 ::: tip 命令範例
@@ -105,9 +109,10 @@ BAT 這一端怎麼呈現自主程度與「一定會停下來問你的時候」�
 
 ## 延伸閱讀 {#further-reading}
 
-- `control-tower/references/yolo-mode.md` § BAT env 分工、§ 下一張工單判定邏輯、§ 斷點判準（A / B / C / D / E）（含 § 斷點 B：Renew ≥N 或連續 N FAILED › B-2：連續 N FAILED › YOLO 計數器）、§ 使用者中斷（非斷點）、§ `_tower-state.md` 新增 `## YOLO 歷程` 區段、§ 使用者可見訊息（規格化彙整）
+- `control-tower/references/yolo-mode.md` § BAT env 分工、§ 下一張工單判定邏輯、§ 斷點判準（A / B / C / D / E）（含 § 斷點 B：Renew ≥N 或連續 N FAILED／BLOCKED › B-2：連續 N FAILED／BLOCKED › YOLO 計數器；6.2.0 起 § 斷點 A 寫明「非預期」指通知字串不合法）、§ 使用者中斷（非斷點）、§ `_tower-state.md` 新增 `## YOLO 歷程` 區段、§ 使用者可見訊息（規格化彙整）
 - `control-tower/references/auto-session.md` § 派發後行為（依 `auto-session` 設定）› `auto-session = yolo`
-- `control-tower/references/tower-config.md` § 可用選項（`yolo_max_retries`）
+- `control-tower/references/tower-config.md` § 可用選項（`yolo_max_retries`；6.2.0 起 `interactive-prompts` 的範圍擴大到塔台暫停）
+- `control-tower/references/memory-protocol.md` § 契約 v2 欄位〈暫停的提問方式〉（6.2.0 起，塔台暫停時怎麼問你的唯一權威）
 - `control-tower-guide/references/runtime-dispatch.md` § YOLO 與斷點：自主推進的邊界
 
 ::: warning 摘要不具權威

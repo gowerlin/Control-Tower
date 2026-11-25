@@ -60,7 +60,7 @@ yolo 模式開啟時，塔台主面板（[memory-protocol.md](memory-protocol.md
 ```
 ╠═══════════════════════════════════════════════════════╣
 ║ ⚠️  YOLO MODE ACTIVE — 塔台將自主決策                  ║
-║  斷點條件：A 非預期狀態 / B Renew≥N 或 N 連續 FAILED / C 跨 PLAN / D Worker 等待使用者 / E 合併前確認  ║
+║  斷點條件：A 非預期狀態 / B Renew≥N 或 N 連續 FAILED／BLOCKED / C 跨 PLAN / D Worker 等待使用者 / E 合併前確認  ║
 ║  Worker 提問：問塔台（等待上限 <M> 分鐘）              ║
 ║  關閉：*config auto-session on                        ║
 ╠═══════════════════════════════════════════════════════╣
@@ -211,8 +211,15 @@ on_worker_report_done(T_done):
 有工單時工單 frontmatter 同時加 `waiting_user: "U-n"`；暫停訊息帶上同一個 `U-n`。使用者回答後同一次寫入移除該筆、清 `waiting_user`、記決策日誌。
 欄位、回答格式與 `user_inbox: off` 的行為只定義在 [memory-protocol.md](memory-protocol.md) § 契約 v2 欄位，本檔不複述。
 斷點 D（不暫停）與使用者中斷不寫。
+v6.2.0+：下方各暫停訊息的選項清單照同一處 `options` 列的推薦項排法（有推薦項時排第一、結尾加「（推薦）」、同一筆寫 `recommended`）；
+使用者回 `U-n：放棄` 時不套用任何選項、暫停維持（同處〈誰寫、誰清〉的〈放棄／略過〉）。
+`interactive-prompts: on`（預設）時，下方的暫停（含斷點 E 與非 yolo 的合併前確認、Worker 提問升級）寫完待決後改開原生選單；下方的文字範本是 `off`、
+Codex 塔台與 BAT 契約不是 `v2` 時用的。做法與條件只定義在同處〈暫停的提問方式〉。
 
 ### 斷點 A：Worker 回報非預期狀態
+
+> v6.2.0 釐清：「非預期」指**通知字串不合法**（不符合下方 regex），不是工單狀態不是 `DONE`。
+> 合法的 `<工單 ID> 需要協助`（`BLOCKED`／`FAILED`）、`<工單 ID> 部分完成` 不是斷點 A，見下方「不匹配 → 斷點 A 觸發」後的說明。
 
 **判準（機械化 regex）**：
 
@@ -272,6 +279,10 @@ Worker 的通知字串以**結尾**判讀（v6.0.0-beta.9）：取字串結尾�
 
 不匹配 → 斷點 A 觸發。
 
+匹配（合法字串）就不是斷點 A，照 [work-order-system.md](work-order-system.md) § 回報處理流程 收單。v6.2.0 釐清：Worker 合法回報 `BLOCKED`／`FAILED`
+（`需要協助`）時，計數照 § 斷點 B › B-2 +1；計數未達上限、塔台又要使用者決定下一步時，那一筆是 `tower-question`，不是 `breakpoint-A`
+（[memory-protocol.md](memory-protocol.md) § 契約 v2 欄位〈誰寫、誰清〉）。
+
 **觸發後塔台動作**：
 
 ```
@@ -288,7 +299,7 @@ Worker 的通知字串以**結尾**判讀（v6.0.0-beta.9）：取字串結尾�
 
 ---
 
-### 斷點 B：Renew ≥N 或連續 N FAILED
+### 斷點 B：Renew ≥N 或連續 N FAILED／BLOCKED
 
 N = `yolo_max_retries` config 值（有效值與預設見 [tower-config.md](tower-config.md) § 可用選項）。
 
@@ -310,7 +321,7 @@ N = `yolo_max_retries` config 值（有效值與預設見 [tower-config.md](towe
   請回覆 U-n：A／B／C
 ```
 
-#### B-2：連續 N FAILED
+#### B-2：連續 N FAILED／BLOCKED
 
 **判準**：塔台 session 級計數器（記在 `_tower-state.md` 的 `## YOLO 歷程` › `### 計數器`，格式見下方 § YOLO 計數器），規則：
 
@@ -320,7 +331,7 @@ N = `yolo_max_retries` config 值（有效值與預設見 [tower-config.md](towe
 
 ##### YOLO 計數器
 
-斷點 B-2 用的連續 FAILED 計數器，計數規則就是上方 B-2 的判準。記在 `_tower-state.md` 的 `## YOLO 歷程` › `### 計數器`（v5.12.4 起統一為這個位置，
+斷點 B-2 用的連續 FAILED／BLOCKED 計數器，計數規則就是上方 B-2 的判準。記在 `_tower-state.md` 的 `## YOLO 歷程` › `### 計數器`（v5.12.4 起統一為這個位置，
 沒有獨立的 `## YOLO 計數器` 區段；同一段其他列的格式見下方 § `_tower-state.md` 新增 `## YOLO 歷程` 區段），格式：
 
 ```markdown
@@ -328,16 +339,18 @@ N = `yolo_max_retries` config 值（有效值與預設見 [tower-config.md](towe
 
 ### 計數器
 
-- 連續 FAILED: 2 / 3
-- 最近 FAILED 工單: T####, T####
+- 連續 FAILED／BLOCKED: 2 / 3
+- 最近 FAILED／BLOCKED 工單: T####, T####
 - 最後更新：2026-04-18 14:23
 ```
+
+v6.2.0 起標籤寫成 `連續 FAILED／BLOCKED`（計數規則沒變：`BLOCKED` 本來就要 +1，舊標籤容易讓人漏算）。讀到舊標籤 `連續 FAILED:` 照同一個計數讀，下次寫入改新標籤。
 
 **觸發訊息**：
 
 ```
 ⏸ YOLO PAUSED — 斷點 B-2
-  連續 FAILED 計數：N / N（達上限）
+  連續 FAILED／BLOCKED 計數：N / N（達上限）
   最近失敗工單：T####, T####, T####
   建議：yolo 自動暫停，檢查是否需調整 PLAN 或研究結論
   待決編號：U-n
@@ -437,7 +450,7 @@ Worker 同時在等使用者時會回等使用者的 reason，照本節處理。
 **共同**：
 
 - 🔴 塔台**不代答、不送按鍵、不對 Worker 分頁寫入任何輸入**；請使用者自己到該分頁處理。
-- `blocked` 不算卡住或失敗：不重派、不 Renew、不計入 `yolo_max_retries`（斷點 B-1 / B-2）與連續 FAILED。
+- `blocked` 不算卡住或失敗：不重派、不 Renew、不計入 `yolo_max_retries`（斷點 B-1 / B-2）與連續 FAILED／BLOCKED 計數（那裡的 `BLOCKED` 是工單狀態，不是這個分頁狀態）。
 - 同一次 `blocked`（同一個 `blockedSince`）只告知一次，不重複催促；`blockedSince` 改變（新的一次等待）才再告知。
 
 **訊息**（`<分頁標題>` 依 [auto-session.md](auto-session.md) § 對使用者描述分頁；`blockedSince` 是 ms，換成本地時間顯示）：
@@ -534,7 +547,7 @@ BAT `>= 0.7.0-pre.9` 另有 `input`（v5.8.0+，`source: 'osc'`，codex `>= 0.16
 
 - 非 yolo 的 `⏸ 合併前確認` 同樣寫 `awaiting_user`（`source: "breakpoint-E"`，v6.1.0+，見本節開頭的〈暫停時寫待決〉）。
 
-- 斷點 E 不計入斷點 B 的連續 FAILED 計數；`[斷點 E]` 照常寫入 YOLO 歷程。
+- 斷點 E 不計入斷點 B 的連續 FAILED／BLOCKED 計數；`[斷點 E]` 照常寫入 YOLO 歷程。
 - `--ff-only` 被 git 拒絕（主 checkout 有重疊的髒檔）屬正常保護，不是失敗：告知使用者擋住的檔案，等使用者處理後再 ff。
 
 ---
@@ -1017,7 +1030,8 @@ Worker 有 `blocking` 的待答題時 `state: blocked`、`blockedReason: tower`�
   請回覆 U-n：A／B，或 U-n：<你的決定>
 ```
 
-（`U-n` 是 v6.1.0+ 的待決編號，見上方第 2 點；工單的 `Q-n` 是 Worker 的題號，兩者不同。）
+（`U-n` 是 v6.1.0+ 的待決編號，見上方第 2 點；工單的 `Q-n` 是 Worker 的題號，兩者不同。v6.2.0+：選項的推薦項排法、`U-n：放棄` 的處理，
+以及 `interactive-prompts: on` 時改開原生選單（〈暫停的提問方式〉）只定義在 [memory-protocol.md](memory-protocol.md) § 契約 v2 欄位。）
 
 使用者回答前 Worker 可能已逾時走備援：照下方「收到備援」處理，答覆改寫在 Renew 區段；已升級、還在等的題不重出這個暫停（第 2 點，v6.0.0-beta.9）。
 走 BAT 答覆的題目升級給使用者時仍是 `pending`，但會在 `expiresAt` 過期（v5.7.0+）：使用者回答後照第 3 點答覆，
@@ -1079,7 +1093,7 @@ yolo 模式啟動時，塔台在 `_tower-state.md` **必要區段清單**之外�
 
 ### 計數器
 
-- 連續 FAILED: 0 / 3
+- 連續 FAILED／BLOCKED: 0 / 3
 - 本 session yolo 派發工單數: 3
 - 本 session 斷點觸發: A×1, B×0, C×0, D×0, E×0, 使用者中斷×0
 - 本 session 提問: 0
@@ -1145,7 +1159,7 @@ yolo 模式啟動時，塔台在 `_tower-state.md` **必要區段清單**之外�
 | 使用者中斷（非斷點） | `🛑 YOLO PAUSED — 使用者中斷` |
 
 v6.1.0+：上表 `⏸` 開頭的暫停（A、B-1、B-2、C、E、提問需要你決定）訊息裡多一行 `待決編號：U-n`，最後一行改成 `請回覆 U-n：…`；
-標題字樣不變。待決期間塔台每次回覆的最後一行另有 `⏸ 待你決定：…` 重列（`SKILL.md` § Output Style），那不是重出暫停訊息。
+標題字樣不變。待決期間塔台回覆的最後一行另有 `⏸ 待你決定：…` 重列（頻率照 `pending_reminder`，`SKILL.md` § Output Style），那不是重出暫停訊息。
 
 ### PLAN 完成
 
@@ -1282,12 +1296,12 @@ yolo 為**新增**第四階，啟用前需使用者明確下 `*config auto-sessi
   - 顯示 `⏸ YOLO PAUSED — 斷點 B-1` + A/B/C
   - `_tower-state.md` 追加 `[斷點 B-1]`
 
-### T7：斷點 B-2 觸發（連續 N FAILED）
+### T7：斷點 B-2 觸發（連續 N FAILED／BLOCKED）
 
 - 觸發：T0003、T0004、T0005 連續回報 `T#### 需要協助`（FAILED），`yolo_max_retries: 3`
 - 預期：
   - 第 3 次回報後計數器達 3 → 觸發 B-2
-  - `## YOLO 歷程` › `### 計數器` 顯示 `連續 FAILED: 3 / 3`
+  - `## YOLO 歷程` › `### 計數器` 顯示 `連續 FAILED／BLOCKED: 3 / 3`
   - 顯示 `⏸ YOLO PAUSED — 斷點 B-2`
 
 ### T8：斷點 C 觸發（Worker 建議跨 PLAN）

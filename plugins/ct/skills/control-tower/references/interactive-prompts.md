@@ -13,6 +13,8 @@
 | 其他互動 | AI 判斷 | 評估是否能減少來回 |
 
 > 當 `*config interactive-prompts` 設為 `off` 時，所有場景皆退回純文字提問。
+> v6.2.0+：塔台暫停（斷點、合併前確認、Worker 提問升級、`tower-question`）也歸這個開關；`on` 時怎麼開原生選單、什麼情況改用文字範本，
+> 只定義在 [memory-protocol.md](memory-protocol.md) § 契約 v2 欄位〈暫停的提問方式〉。
 
 ## 選項格式規範
 

@@ -636,6 +636,27 @@ CT 自己訂的預算是 400 KB（409,600 bytes），比 BAT 的上限低約 100
 
 流程圖照 `diagrams.md` § 21（現成 SVG 在專章 § 圖：CT 寫、BAT 讀、你回答）。使用者端怎麼操作，指向 `ct-help` § 與 BAT 協作（Working With BAT, v6.1.0+）。
 
+### 推薦項、放棄與暫停選單（v6.2.0+）
+
+> 6.2.0 起屬正式版（6.2.0-pre.1 預覽時加入、pre.2 依實機驗收修正，已在 BAT 0.8.0-pre.4 的測試版上實機驗證）。本小節是簡述與索引，
+> 詳見 `preview-inbox-recommended-dismiss.md`（預覽期間寫的專章，保留作為參考）；確切欄位、寫法與處理以 CT `memory-protocol.md` § 契約 v2 欄位（唯一權威），
+> 回覆結尾提醒的頻率以 CT `control-tower/SKILL.md` § Output Style 為準，本小節不重抄。
+
+**一句話**：塔台推薦哪個選項，寫成資料；不想選任何一個，也有一句話可以說。塔台暫停時改開選單，回覆結尾的提醒可以少印一點。
+
+| 概念 | 簡述 | 詳見 `preview-inbox-recommended-dismiss.md` |
+|------|------|------|
+| 推薦項 | 排第一、說明結尾「（推薦）」、同一筆寫 `recommended`；BAT 0.8.0-pre.4 起顯示標記並預設選取 | § 推薦項：排第一、寫「（推薦）」、再寫一個欄位 |
+| 放棄與略過 | `U-n：放棄`、`A-n：略過`（可附一句話）；放棄不套用任何選項、工單維持暫停；略過不是失敗，決策日誌記「未驗（使用者略過）」 | § 放棄與略過 |
+| 批次 | `U-1、U-3：放棄 <原因>`；已經不在清單的編號略過、其他照做；不收萬用字元與範圍 | § 批次：一行列好幾個編號 |
+| 能力旗標 | 狀態檔每次寫 `inbox_features: ["recommended", "dismiss"]`；契約仍是 2，不加進開工宣告 | § 為什麼不升契約 3：能力旗標 `inbox_features` |
+| 暫停改開原生選單 | 沿用 `interactive-prompts`：先寫待決再開選單；1～3 個選項時最後一定有「放棄（停下等新方向）」，4 個時在「其他」打；沒有選項的題目用文字；Esc 是中斷，該筆照留、下一則回覆提醒；Codex 與契約不是 v2 的 BAT 用文字 | § 暫停改用原生選單 |
+| 提醒頻率 | `pending_reminder`：`every`（預設，與 6.1.x 相同）或 `on-change`（只在 session 第一則、清單新增項目、你問待決、Esc 後那一則印）；回應 GitHub issue #1 | § 回覆結尾的提醒：`pending_reminder`（pre.2） |
+| 新舊版本搭配 | 推薦標記與放棄控制項要 BAT ≥ 0.8.0-pre.4；搭 0.8.0-pre.3 時待辦分頁照常，在塔台的輸入框打 `U-n：放棄` 一樣有效（見下方 § 版本對照表） | § 新舊版本搭配 |
+| 驗了什麼 | 推薦項、放棄與略過（含批次）、新舊版本搭配、選單與放棄項、Esc、競態、改用文字、`pending_reminder: on-change` 都實機驗過；Codex 塔台等仍未驗 | § 已知未驗 |
+
+使用者端怎麼操作，指向 `ct-help` § 與 BAT 協作（Working With BAT, v6.1.0+）。
+
 ---
 
 ## 版本對照表
@@ -698,6 +719,9 @@ CT 從不預先判斷 BAT 版本：一律先照常呼叫，失敗才依 exit cod
 | v6.0.2（正式版 PATCH） | BAT 介面同 v6.0.0-pre.1；helper 的參數與「內容只走 stdin」不變，只改 CT 怎麼準備 stdin 的內容：題目 JSON 與答覆先用 Write 寫到 scratchpad 檔，再以 `< 檔案` 送入（不用 heredoc）；面板契約 v1 不變 | 無新門檻（最低仍 `>= 0.7.0-pre.7`） | 見 `work-order-lifecycle.md` § Phase 4：Report And Commit（反序收尾） |
 | v6.1.0（正式版 MINOR，取代 6.0.2；6.1.0-pre.1 預覽起） | 待辦分頁（BAT ↔ CT 契約 v2）：塔台把待你決定（`U-n`）、待你執行（`A-n`）、提醒寫進 `_tower-state.md` frontmatter，開工時 `--set-role tower --bat-contract 2` 宣告，BAT 待辦分頁唯讀顯示；契約 v1 欄位與 `summary_version` 不變；已在 BAT 0.8.0-pre.3 的測試版上實機驗證 | BAT ≥ 0.8.0-pre.3（與 CT 6.1.0 同日發佈） | exit `1`＋`Unknown option '--bat-contract'` → 不帶這個參數重送一次、本 session 不再帶，標題與模式照舊；開工面板一行降級提示，沒有待辦分頁，待決事項仍列在每次回覆的結尾（舊 BAT 0.8.0-pre.1 實機驗過）；見上方 § BAT ↔ CT 契約 v2：待辦分頁（v6.1.0+） |
 | v6.1.1（正式版 PATCH，取代 6.1.0） | BAT 介面與契約 v2 欄位同 v6.1.0；`ct-session-stats.py` 的預設讀取位置跟隨 `CLAUDE_CONFIG_DIR`（收單快照在隔離設定目錄也讀得到）；契約 v2 規格補兩句（決策日誌不存在時直接建立再記、`A-n：失敗` 與複查不符時改發 `U-n`） | 無新門檻（契約 v2 仍 BAT ≥ 0.8.0-pre.3，其餘 `>= 0.7.0-pre.7`） | 同 v6.1.0 |
+| v6.2.0-pre.1（預覽，未發布；與穩定版 6.1.1 並行） | 待辦分頁的推薦項與放棄：`awaiting_user[].recommended`、推薦項排第一並標「（推薦）」、回答 `U-n：放棄`／`A-n：略過`（含批次）、狀態檔頂層能力旗標 `inbox_features: ["recommended", "dismiss"]`；`bat_contract` 仍是 2、`--set-role` 與降級提示不變 | 推薦標記與放棄控制項：BAT 0.8.0-pre.4（實作中）；契約 v2 本身仍 BAT ≥ 0.8.0-pre.3 | 舊 BAT（0.8.0-pre.3）略過不認得的鍵，待辦分頁照常；沒有推薦標記與放棄按鈕，但推薦項排第一、有「（推薦）」，在自由回答欄打 `U-n：放棄` 一樣有效；見 `preview-inbox-recommended-dismiss.md` § 新舊版本搭配 |
+| v6.2.0-pre.2（預覽，未發布；與穩定版 6.1.1 並行） | 6.2.0-pre.1 實機驗收後的條文修正：暫停選單的放棄項以選項數為準（1～3 項一定加）、自由回答用文字、Esc＝使用者中斷（該筆照留、下一則回覆提醒）；新設定 `pending_reminder`（`every`／`on-change`）；`bat_contract`、`inbox_features` 的值、`--set-role` 與降級提示不變 | 同 v6.2.0-pre.1（BAT 以測試版補驗） |
+| v6.2.0（正式版 MINOR，取代 6.1.1；6.2.0-pre.1、pre.2 預覽起） | 待辦分頁的推薦項與放棄（`recommended`、「（推薦）」、`U-n：放棄`／`A-n：略過` 與批次、狀態檔頂層能力旗標 `inbox_features`）、塔台暫停改開原生選單、回覆結尾提醒頻率 `pending_reminder`；`bat_contract` 仍是 2、`--set-role` 與降級提示不變；已在 BAT 0.8.0-pre.4 的測試版上實機驗證 | 推薦標記與放棄控制項：BAT ≥ 0.8.0-pre.4（與 CT 6.2.0 同日發佈）；契約 v2 本身仍 BAT ≥ 0.8.0-pre.3 | 舊 BAT（0.8.0-pre.3）略過不認得的鍵，待辦分頁照常；沒有推薦標記與放棄按鈕，但推薦項排第一、有「（推薦）」，在塔台的輸入框打 `U-n：放棄` 一樣有效（實機驗過）；見上方 § 推薦項、放棄與暫停選單（v6.2.0+） |
 
 `BAT_HELPER_NODE`（v5.2.1）沒有版本門檻：本機沒有這個變數就用 `node`，只有遠端分頁會由 BAT 注入。
 版號以 CT 的 `version-governance.md` § 歷史版號表 與 `auto-session.md` § 依賴的 BAT 基礎設施 為準；v5.1.0 的 BAT 版本出自 CT `CHANGELOG.md` [5.12.3]：[5.1.0] 原寫 `0.6.1-pre.3`，v5.12.3 依 BAT 塔台回覆更正為 `>= 0.6.1-pre.4`（歷史段落不改）。

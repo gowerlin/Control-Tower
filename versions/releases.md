@@ -1,21 +1,137 @@
 ---
 title: 更版紀錄
-description: BMad Control Tower 近 10 版的更版紀錄（最新 v6.1.1），更早的版本見演進史。
+description: BMad Control Tower 近 10 版的更版紀錄（最新 v6.2.0），更早的版本見演進史。
 ---
 
 <!-- 本頁由 scripts/sync-ct-release.mjs 從 CT CHANGELOG 產生，請勿手改；要改內容請改來源後重跑。 -->
 
 # 更版紀錄
 
-目前版本 **v6.1.1**（2026-11-25）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 66 版（v2.1.1 ～ v5.14.0）請看[演進史](./evolution)。
+目前版本 **v6.2.0**（2026-11-26）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 67 版（v2.1.1 ～ v5.14.1）請看[演進史](./evolution)。
 
-本頁只列正式版。預發行版的改動已彙整在對應正式版的段落：v6.0.0-pre.1 ～ v6.0.0-rc.1（14 版）彙整在 v6.0.0，逐版說明保留在「實驗功能」的[預發行專章](../preview/methodology-adapters)作為歷史參考；v6.1.0-pre.1（1 版）彙整在 v6.1.0。
+本頁只列正式版。預發行版的改動已彙整在對應正式版的段落：v6.0.0-pre.1 ～ v6.0.0-rc.1（14 版）彙整在 v6.0.0，逐版說明保留在「實驗功能」的[預發行專章](../preview/methodology-adapters)作為歷史參考；v6.1.0-pre.1（1 版）彙整在 v6.1.0；v6.2.0-pre.1 ～ v6.2.0-pre.2（2 版）彙整在 v6.2.0。
 
 ::: tip 摘要不具權威
 本頁照錄 CT 的 CHANGELOG，只拿掉工單、決策、驗收回函等內部編號與出處註記。規則的權威定義在 CT 各 skill 與 references，兩者有出入時以 CT 本體為準。
 :::
 
 ::: v-pre
+
+## 6.2.0 <small>2026-11-26</small> {#v6-2-0}
+
+
+> **正式版：待辦清單看得出塔台推薦哪個選項，也可以放棄；塔台暫停改開選單；回覆結尾的提醒可以少印一點。** 6.1.0 起塔台要你決定的事（`U-n`）與要你執行的事（`A-n`）
+> 寫在 `_tower-state.md`，Better Agent Terminal（BAT）的「待辦」分頁顯示並讓你回答。本版補上三件事：有推薦項時排第一並標「（推薦）」；所有選項都不適用時可以放棄一題、
+> 略過一項待執行，也可以一次列好幾個編號；塔台暫停等你決定時改開 Claude Code 的原生選單。另外回應 GitHub issue #1（回覆結尾的待決提醒每則都印，太吵），
+> 新增設定 `pending_reminder`，可以改成只在清單有變化時提醒。
+> 本版由 `6.2.0-pre.1`、`6.2.0-pre.2` 兩個預覽版定稿：規則與 `6.2.0-pre.2` 相同，只改版號、預覽標示與文件，另把狀態檔範本〈編號追蹤〉的兩個列名寫清楚（見下方 Changed）。
+> 已在 BAT 0.8.0-pre.4 的測試版上實機驗證（見下方〈實機驗證〉），〈已知未驗〉依結果改寫。
+> **需要的 BAT**：推薦標記與放棄控制項要 BAT ≥ 0.8.0-pre.4（與本版同日發佈）；搭配 BAT 0.8.0-pre.3 仍可用（看不到標記與按鈕，在輸入框打 `U-n：放棄` 一樣有效）。
+> 契約 v2 的最低 BAT 仍是 `0.8.0-pre.3`，契約 v2 以外的功能仍是 `>= 0.7.0-pre.7`。
+> **契約版本不變**：`bat_contract` 仍是 `2`、`summary_version` 不升；新功能以狀態檔的能力旗標 `inbox_features` 告訴 BAT。
+> **plugin**：正式版 6.2.0 上架 marketplace `control-tower`（`ct@control-tower`、`ct-guide@control-tower` 6.2.0）；預發行版仍不提供 plugin。zip 手動安裝照舊支援。
+> **下載**：GitHub Release `ct-v6.2.0`（Latest）；6.1.1 成為上一個穩定版，Release `ct-v6.1.1` 仍可下載。
+> 方法論契約仍 `ct-methodology-adapter/v1`，**契約不變**；內建 `bmad.yaml` 0.2.1、`ct-adapter-pstack` 0.2.6（只改版號註解）。
+
+### 升級說明
+
+**從 `6.1.1` 升級**：只換 skill 檔案，不需要遷移。
+
+- 8 個 skill 一起換（8 個 `SKILL.md` 版本註解都變了）。規則有改的是 `control-tower`（`memory-protocol.md` § 契約 v2 欄位、`yolo-mode.md`、`tower-config.md`、
+  `interactive-prompts.md`、`work-order-system.md`、`SKILL.md`、`check-frontmatter.py`）與 `ct-help`（〈與 BAT 協作〉）；其餘 6 個只改版號。
+- 推薦標記與放棄控制項要 BAT ≥ 0.8.0-pre.4。舊 BAT（`0.8.0-pre.3`）仍可用：待辦分頁照常顯示，看不到推薦標記與放棄按鈕，但推薦項排第一、說明有「（推薦）」，
+  在塔台的輸入框打 `U-n：放棄`、`A-n：略過` 一樣有效。在 BAT 以外的終端直接回同一行文字即可。
+- 換版後塔台第一次寫 `_tower-state.md` 時加上 `inbox_features: ["recommended", "dismiss"]`，之後每次寫入都帶；既有的待決項目不會被改寫。
+- `interactive-prompts` 是 `on`（預設）時，塔台暫停改開原生選單；想照舊用文字回答，設 `*config interactive-prompts off`（加 `--save project` 保存）。
+- 不設 `pending_reminder` 時是 `every`，回覆結尾的提醒與 6.1.x 相同；想少一點提醒才設 `on-change`。
+- 狀態檔 `## YOLO 歷程` 計數器的舊標籤 `連續 FAILED:` 照讀，下次寫入改成新標籤 `連續 FAILED／BLOCKED`。
+- 新規則從換版後新開的塔台 session 起生效；已開著的 session 仍照舊版規則。
+- plugin 使用者：marketplace 更新後把 `ct@control-tower`、`ct-guide@control-tower` 升到 6.2.0（安裝指南 § 4.1〈用 plugin marketplace 安裝／升級〉）。
+
+**從 `6.2.0-pre.1` 升級**：規則與 `6.2.0-pre.2` 相同，換 skill 檔案即可，不需要遷移。相對 pre.1 的差異是暫停選單的條文修正與 `pending_reminder`（見 `[6.2.0-pre.2]`），
+以及本版的版號、文件與〈編號追蹤〉列名。狀態檔的 `ct_version` 在下一次寫入時自動變成 `"6.2.0"`。
+
+**從 `6.2.0-pre.2` 升級**：規範相同，只有版號、文件與〈編號追蹤〉列名改變；換 skill 檔案即可，沒有新設定鍵、新的 frontmatter 欄位或新命令。
+8 個 `SKILL.md` 版本註解都變了；內容有改的只有 `control-tower`（版號與引入標記、`memory-protocol.md` 範本的列名與一句說明、`version-governance.md` 版號表與
+`methodology-adapters.md` 版本歷史加 6.2.0 列、`bmad.yaml` 註解）。狀態檔的 `ct_version` 在下一次寫入時自動變成 `"6.2.0"`；既有狀態檔的〈編號追蹤〉列名不必改。
+
+### 本版內容（兩個預覽版合併整理）
+
+- **推薦項**：塔台有推薦時，那個選項排第一、說明結尾加「（推薦）」，並在同一筆寫 `recommended`（選項代號，比對不分大小寫）；暫停訊息的選項清單照同一個排法。
+  沒有推薦就兩者都不寫。BAT 0.8.0-pre.4 起顯示推薦標記並預設選取
+- **放棄與略過**：`U-n：放棄`（可附原因或新方向）放棄一題、`A-n：略過`（可附原因）略過一項待執行；「放棄」「略過」只有在冒號後第一個詞時才算。
+  放棄後不套用任何選項，工單狀態不改、yolo 暫停也維持；沒附文字時塔台在 `todo` 留一則「暫停中，等新方向」，附了文字就照文字重新對齊（改範圍或不可逆、發布的動作照舊先問你）。
+  略過不是失敗：不開 BUG、不重開工單，決策日誌記為「未驗（使用者略過）」
+- **一次處理好幾題**：`U-1、U-3：放棄 <原因>`、`A-2、A-3：略過`；分隔可用 `、`、`,`、全形 `，`，同一行可以混 `U` 和 `A`。已經不在清單的編號略過、其他照做，
+  確認行列出略過了哪幾個；不接受 `U-*`、`U-1～U-3` 這類萬用字元與範圍，也不接受批次選同一個選項
+- **能力旗標 `inbox_features`**：塔台每次寫狀態檔都寫 `["recommended", "dismiss"]`（`user_inbox: off` 也寫），BAT 看到 `dismiss` 才顯示放棄、略過、批次勾選與「全部放棄」；
+  只放在狀態檔，不加進開工宣告
+- **塔台暫停改開原生選單**（沿用 `interactive-prompts`，不新增設定）：斷點、非 yolo 的合併前確認、Worker 提問升級、塔台自己的提問，都先寫待決再開選單。
+  題目寫完整（`U-n`、工單、要決定什麼）、推薦項排第一、標籤開頭放選項代號；選項 1～3 個時最後一定有「放棄（停下等新方向）」，剛好 4 個時在「其他」輸入「放棄」；
+  沒有選項的題目與超過 4 個選項的題目改用文字。Codex 塔台與開工時 BAT 契約不是 `v2` 的分頁自動改用文字。選單、終端打字、待辦分頁的回答都算數，
+  同一筆答過兩次時後到的那行照「編號已結」處理
+- **按 Esc**：等於使用者中斷，Claude Code 直接結束那一回合。該筆待決照留（不算回答、不算放棄），塔台在下一則回覆開頭提醒哪幾筆的選單被關掉並重列；之後的暫停仍開選單
+- **`pending_reminder`**（`every`／`on-change`，預設 `every`；回應 GitHub issue #1）：`every` 與 6.1.x 相同，有待決時每則回覆結尾都印；`on-change` 只在本 session 第一則回覆、
+  清單**新增**項目時（移除不算，已有確認行）、你問「目前有什麼待決」或下 `*sync` 時（完整列出），以及暫停選單被 Esc 關掉後的下一則回覆印整行。
+  狀態檔的三個清單、BAT 待辦分頁、暫停訊息與選單、`user_inbox` 不受影響。已知限制：「已經提醒過」靠對話內容判斷，對話被壓縮後可能多提醒一次
+- **措辭釐清（規則不變）**：斷點 A 的「非預期」指通知字串不合法，合法回報的「需要協助」「部分完成」不是斷點 A——Worker 合法回報 `BLOCKED`／`FAILED`、連續計數還沒到上限而
+  塔台要你決定下一步時，那一筆的來源是「塔台提問」；連續失敗計數的標題與計數器標籤改成「連續 FAILED／BLOCKED」（規則一直是兩者都 +1）
+- **自檢**：`check-frontmatter.py` 另檢查 `recommended`（字串、對得到同一筆的選項代號、自由回答時不應有）與 `inbox_features`（字串清單；不認得的值不報錯）
+- **`ct-help`〈與 BAT 協作〉**：推薦標記、放棄與略過（含批次）、新舊版本搭配、選單的放棄項、Esc 之後怎麼辦、`pending_reminder`
+
+完整的條文改動逐項列在下方 `[6.2.0-pre.1]`、`[6.2.0-pre.2]`。
+
+### Changed
+
+- 版號 `6.2.0`：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表（加 6.2.0 列）、`methodology-adapters.md` 版本歷史（契約不變）、
+  `bmad.yaml` 版號註解；`ct-adapter-pstack` 版號 6.2.0（`adapter_version` 仍 0.2.6）
+- 預覽標示改成正式版：`memory-protocol.md` 範例的 `ct_version`、§ 契約 v2 欄位 開頭的兩段引入說明；`memory-protocol.md`、`yolo-mode.md`、`control-tower/SKILL.md`
+  在預覽版寫成 `v6.2.0-pre.2+`、「6.2.0-pre.2 釐清」的引入標記改成 `v6.2.0+`／「v6.2.0 釐清」；`ct-adapter-pstack` 的說明
+- `memory-protocol.md` 狀態檔範本 § 🔢 編號追蹤：「待你決定」「待你執行」兩列改名 `待你決定（最大編號）`、`待你執行（最大編號）`，表下加一句
+  「只記用過的最大編號；未決清單只在 frontmatter（〈契約 v2 欄位〉）」。這張表記的是用過的最大編號，不是待決清單；舊列名和待辦分頁、重列行同字，實機驗收時曾被讀錯。
+  只改範本文字，沒有腳本讀這張表，既有狀態檔照舊
+- 安裝指南：§ 2.71 改成正式版（版本需求、實機驗證、從 6.1.1 與兩個預覽版升級、已知未驗）；§ 1 加一列；§ 1、§ 4.1、§ 4.3 版號；
+  § 13、§ 14 各列的版本標示改成 `v6.2.0+`
+- 本段〈已知未驗〉依實機驗收結果改寫，已驗與未驗分列
+
+### Unchanged
+
+- 規則與 `6.2.0-pre.2` 相同：狀態檔欄位的名稱、型別與語意；回答格式（含放棄、略過與批次）；〈暫停的提問方式〉；`pending_reminder` 的兩個值與預設；
+  `check-frontmatter.py` 的檢查項、輸出與 exit code
+- `bat_contract` 仍是 `2`、`summary_version` 仍是 `1`、`inbox_features` 仍寫 `["recommended", "dismiss"]`；`--set-role` 的參數與輸出、開工降級提示、契約 v2 的最低 BAT 版號 `0.8.0-pre.3`
+- 狀態值、其他設定鍵與預設值、命令、派工命令、Worker（`ct-exec`、`ct-done`）的流程與通知字串
+- 方法論契約 `ct-methodology-adapter/v1`、adapter 描述檔
+- 歷史段落（本檔 `[6.2.0-pre.2]` 以前的段落、版號表舊列、安裝指南 § 2.70 以前的章節）與「v6.2.0+」等引入標記不改
+
+### 實機驗證（已驗證）
+
+在 BAT 0.8.0-pre.4 的測試版上，用隔離的 BAT 執行環境與隔離的 claude 設定目錄實機跑過兩輪：先以 6.2.0-pre.1 跑完整清單，再以 6.2.0-pre.2 補跑修正過的部分。
+第一輪唯一不合格的「3 個選項的選單沒有放棄」與沒觸發到的「Esc 後的提醒」，都在 6.2.0-pre.2 修正條文後補跑通過；CT 端判定全部通過。
+
+- **推薦項**：有推薦時選項排第一、說明有「（推薦）」並寫 `recommended`；自由回答的題目不寫 `recommended`；BAT 顯示推薦標記並預設選取
+- **`inbox_features`**：換版後第一次寫狀態檔就帶上，之後每次寫入都帶；開工宣告照舊只帶契約版本；`check-frontmatter.py` 對驗收過程中的狀態檔全部通過
+- **放棄與略過**：單筆 `U-n：放棄`（沒附文字：移除、清掉工單的 `waiting_user`、工單狀態不變、`todo` 留暫停說明、決策日誌一筆；附了文字：照文字重新對齊，改範圍時先問）；
+  `A-n：略過`（記為「未驗（使用者略過）」、不開 BUG、工單狀態不變）
+- **批次與已結編號**：`U-1、U-3、U-4：放棄` 其中一個已結時，其他照做、確認行列出略過的編號、決策日誌只記一筆；BAT「全部放棄」送出的是明確編號
+- **不支援的寫法**：`U-*`、`U-1～U-3：放棄`、批次選同一個選項，塔台都不猜、回一行說明，狀態檔不變
+- **新舊版本搭配**：CT 6.2.0 搭 BAT 0.8.0-pre.3（待辦分頁照常、沒有標記與按鈕、手打 `U-n：放棄` 有效）；CT 6.1.1 搭新 BAT（沒有 `inbox_features`，沒有標記與放棄控制項，其他照舊）
+- **暫停的原生選單**：先寫待決並自檢、再開選單；題目含 `U-n` 與工單；選項 1～3 個時最後一項是「放棄（停下等新方向）」，在選單選它照放棄處理；
+  在「其他」輸入「放棄 …」也算放棄；自由回答的題目改用文字
+- **Esc**：該筆照留、沒有記成回答；下一則回覆開頭提醒並重列；之後的暫停仍開選單
+- **選單與待辦分頁的競態**：選單開著時 Worker 的完成通知被保留，沒有替你選；同一筆先在選單答、又從待辦分頁送另一個答案時，後到的那行照「編號已結」處理、不重複套用
+- **自動改用文字**：`interactive-prompts: off`，以及開工時 BAT 契約不是 `v2`（舊 BAT 只重送一次宣告）的分頁，暫停都用文字範本，推薦項照排
+- **`pending_reminder: on-change`**：設定可查；Esc 後那一則重列；沒有新項目的回覆不重列；新增一筆時整行重列；問「目前有什麼待決」時完整列出；移除不觸發
+
+### Known unverified（已知未驗）
+
+`[6.1.0]` 的 7 項、`[6.1.1]` 的 2 項不變。`[6.2.0-pre.1]`、`[6.2.0-pre.2]` 列的項目除 Codex 塔台外都已在實機驗過（見上方〈實機驗證〉）。本版仍未實機驗證的路徑：
+
+1. Codex 塔台：沒有選單，暫停只走文字範本，放棄與略過照文字回答；沒有 Codex 環境，未實機確認
+2. 塔台提問以外的暫停改開選單：斷點 A／B-1／B-2／C／E、非 yolo 的合併前確認、Worker 提問升級，實機只走過「塔台提問」這一種來源
+3. 選項剛好 4 個（題目結尾提示在「其他」輸入「放棄」）與超過 4 個（改用文字）的題目：沒有出現過
+4. 不在 BAT 裡的終端開選單（開工面板 `BAT 契約：略過（非 BAT）` 時照 `on`）：實機都是 BAT 內的 Claude Code 塔台
+5. 連續 FAILED／BLOCKED 計數器的新標籤：驗收期間沒有連續失敗到寫出計數器
+6. `pending_reminder: on-change` 在對話被壓縮之後的行為（已知限制：可能多提醒一次）：驗收回合少，沒有發生壓縮
 
 ## 6.1.1 <small>2026-11-25</small> {#v6-1-1}
 
@@ -481,39 +597,12 @@ RC 期間沒有新驗證到的項目；下列 41 項與 `[6.0.0-rc.1]` 相同，
 - zip 手動安裝流程、發行物版面（全量 zip、8 個單一 skill zip、Guide zip）、plugin 名稱與內容組成不變
 - 歷史段落（本檔舊段落、版號表舊列、安裝指南舊章節）不改
 
-## 5.14.1 <small>2026-10-30</small> {#v5-14-1}
-
-
-> **PATCH：塔台偵測得到 plugin 安裝的 bmad-guide（Level 2）、安裝說明補同一個 marketplace 的 `bmad-guide`、塔台端派工範本改用完整工單 ID。**
-> 5.14.0 只寫「讀取已安裝 skill」，塔台找慣用的 `skills/` 目錄；用 plugin 裝的 bmad-guide 找不到，也不說一聲就改用手動 workflow 欄位。
-> 沒有新命令、新設定；BAT 介面、派工命令的參數與順序、斷點 A 正則、exit code 不變。升級只換 skill 檔案（見安裝指南 § 2.57）。
-
-### Fixed
-
-- **塔台偵測得到 plugin 安裝的 bmad-guide（Level 2）**：`enhancement-integration.md` § Level 2 › 偵測 改成明列搜尋順序（唯一權威）——手動安裝 `skills/bmad-guide/SKILL.md`（`~/.claude`、`~/.codex`、`~/.agents`）→ Claude plugin（`${CLAUDE_CODE_PLUGIN_CACHE_DIR:-~/.claude/plugins}/installed_plugins.json` 的 `bmad-guide@*` → `installPath`）→ Codex plugin（`config.toml` 啟用的 `bmad-guide@*` → `plugins/cache/<marketplace>/bmad-guide/<version>/`）；並存時手動優先；`references/` 相對於找到的 `SKILL.md`；plugin 路徑只讀
-- **不再靜默降級**：可用 skill 清單有 `bmad-guide`／`bmad-guide:bmad-guide` 但讀不到檔案時，提示使用者一次，再改手動欄位；清單裡也沒有才照舊靜默
-
-### Changed
-
-- `version-governance.md` § plugin 安裝／升級 與安裝指南 § 4.1：同一個 marketplace 另有 `bmad-guide`（`bmad-guide@control-tower`，可選，版號跟 BMad-Method 走、不跟 CT）——名稱表、安裝、升級、遷移（要改用 plugin 先移除手動安裝）、呼叫寫法、版號確認
-- 塔台端指令範本 `--workorder`、`--close-worker`、`--worktree-status` 由 `T####` 改成 `<工單 ID>`（含前綴、不截短；與 5.13.1 的 Worker 端相同），`auto-session.md` § 執行方式 加一點說明；`/ct-exec T####` 等呼叫字串樣板的 `T####` 同樣代表完整 ID
-- `mono-repo-patterns.md`、`multi-tower-protocol.md`：`project-context.md` → `AGENTS.md` 的專案上下文區塊（BMad v6.11+，以 bmad-guide v6.12.4 為準）
-- `enhancement-integration.md` § Playbook → bmad-guide 回饋：bmad-guide 為 plugin 安裝時不改已安裝檔案，改提議修改原始碼、隨下一版發布
-- `data-layer-architecture.md` § 寫入規則：補記設了 `CLAUDE_CODE_PLUGIN_CACHE_DIR` 時，`installed_plugins.json`、`known_marketplaces.json` 也一起改到它指的目錄（Layer 1 範圍不變）
-- 版號：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表；安裝指南新增 § 2.57，§ 1〈目前版本一覽〉、§ 4.1 版號範例與發行物檔名同步（`OLD=5.14.0`、`VER=5.14.1`）
-
-### Unchanged
-
-- BAT 介面、派工命令的參數與順序、斷點 A 正則、exit code、設定、工單欄位、狀態值不變
-- zip 手動安裝流程、發行物版面（全量 zip、8 個單一 skill zip、Guide zip）、plugin 名稱與內容組成不變
-- 歷史段落（本檔舊段落、版號表舊列、安裝指南舊章節）不改
-
 :::
 
 ## 延伸閱讀 {#further-reading}
 
-- CT `CHANGELOG.md`（共 76 個版本；本頁列最近 10 版）
+- CT `CHANGELOG.md`（共 77 個版本；本頁列最近 10 版）
 - CT `version-governance.md` § 歷史版號表
-- [演進史](./evolution)：更早的 66 版與九個世代
+- [演進史](./evolution)：更早的 67 版與九個世代
 
 Portal 是摘要，不具權威；與 CT reference 有出入時，以 reference 為準。

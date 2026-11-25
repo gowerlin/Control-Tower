@@ -2,9 +2,9 @@
 name: control-tower
 description: "BMad Control Tower project orchestrator for Tower sessions. Use when the user invokes $control-tower or /control-tower, says control tower, 塔台, 指揮塔, 工單管理, or asks to create, dispatch, sync, recover, archive, report, or coordinate file-driven work orders, BUG/PLAN/EXP records, sprint state, BAT/YOLO dispatch, or multi-agent project work. For worker execution commands such as $ct-exec, $ct-done, $ct-status, $ct-evolve, or $ct-insights, route to those dedicated skills instead of loading tower mode."
 ---
-<!-- control-tower-version: 6.1.1 -->
+<!-- control-tower-version: 6.2.0 -->
 
-# BMad Control Tower v6.1.1
+# BMad Control Tower v6.2.0
 
 $ARGUMENTS
 
@@ -34,7 +34,7 @@ On `$control-tower`, `/control-tower`, or equivalent Tower startup:
 5. In BAT, declare this tab as the Tower once (`bat-terminal.mjs --set-role tower --bat-contract 2 --mode <effective auto-session>`); conditions, command, and exit-code handling live only in `references/auto-session.md` § 塔台分頁角色宣告. Non-zero exit or non-BAT never blocks startup. v6.1.0+ (BAT ↔ CT contract v2): first make sure `_tower-state.md` frontmatter has `bat_contract: 2` (write it now if missing), then declare, then read the `bat-contract:` / `hooks:` lines of that call; an old BAT that rejects `--bat-contract` (exit `1`, `Unknown option '--bat-contract'`) gets exactly one resend without it, and this session stops adding it. Outside BAT nothing is called, and the contract v2 fields are still written. Non-authoritative summary; the order, the output table, the fallback line, and the `hooks:` codes live only in that section.
 6. Show a concrete Tower status panel before dispatching or editing anything, including the `分頁標題` and `BAT 契約` lines from step 5 and their hint lines. Fields and template are defined only in `references/memory-protocol.md` § 塔台狀態面板; unknown values are shown as 「未知」, never filled by an extra scan. v5.9.0+ (BAT `>= 0.7.1-pre.1`): one `bat_whoami` call may add a one-line hint suggesting BAT「以塔台開啟 Claude」 when `claudeSessionName` exists and does not end with ` · Tower`; a missing key, MCP unavailable, or non-BAT shows nothing. Conditions live only in that section.
 7. Run Full Scan only when `_tower-state.md` is missing, the environment snapshot is empty or older than 7 days, or the user runs `*rescan`.
-8. v6.0.0+: every time the Tower writes `_tower-state.md` (startup, dispatch, closeout, decision, `*pause`/`*resume`, …), it also updates the machine-readable summary frontmatter in the same write; the fields and rules live only in `references/memory-protocol.md` § 機器可讀摘要（YAML frontmatter）. v6.1.0+ (BAT ↔ CT contract v2): every write also carries `bat_contract: 2` and `ct_version`; whatever needs the user is kept in `awaiting_user` (decisions, `U-n`) and `user_actions` (things the user must run or verify, `A-n`), plus `reminders`; who writes and removes each item, the answer format (`U-n：<option or text>`, `A-n：完成`, `A-n：失敗 <note>`) and `user_inbox: off` live only in `references/memory-protocol.md` § 契約 v2 欄位. v6.0.1+: after every frontmatter write (this file, work orders, BUG/PLAN/EXP, `_handover`/`_reply`), quote string values as that file's § YAML frontmatter 字串寫法與寫入後自檢 says (a value with a backslash goes in single quotes or uses forward slashes) and run `scripts/check-frontmatter.py` on the files written; fix and re-check before committing. Startup is never blocked by it. v6.0.0-beta.10+: the first write of a session adds its startup entry with this Tower's own session id (or 「session id 未知」; never blocks startup, never a frontmatter field); format and value rules live only in `references/memory-protocol.md` § 塔台 session id.
+8. v6.0.0+: every time the Tower writes `_tower-state.md` (startup, dispatch, closeout, decision, `*pause`/`*resume`, …), it also updates the machine-readable summary frontmatter in the same write; the fields and rules live only in `references/memory-protocol.md` § 機器可讀摘要（YAML frontmatter）. v6.1.0+ (BAT ↔ CT contract v2): every write also carries `bat_contract: 2` and `ct_version` (v6.2.0+: also `inbox_features`); whatever needs the user is kept in `awaiting_user` (decisions, `U-n`) and `user_actions` (things the user must run or verify, `A-n`), plus `reminders`; who writes and removes each item, the answer format (`U-n：<option or text>`, `A-n：完成`, `A-n：失敗 <note>`) and `user_inbox: off` live only in `references/memory-protocol.md` § 契約 v2 欄位. v6.0.1+: after every frontmatter write (this file, work orders, BUG/PLAN/EXP, `_handover`/`_reply`), quote string values as that file's § YAML frontmatter 字串寫法與寫入後自檢 says (a value with a backslash goes in single quotes or uses forward slashes) and run `scripts/check-frontmatter.py` on the files written; fix and re-check before committing. Startup is never blocked by it. v6.0.0-beta.10+: the first write of a session adds its startup entry with this Tower's own session id (or 「session id 未知」; never blocks startup, never a frontmatter field); format and value rules live only in `references/memory-protocol.md` § 塔台 session id.
 9. v6.0.0-beta.3+: measure the hot files against the size budget (bytes only, no reading) and print one line per file over budget; the budget, BAT's 512 KiB limit, and the line format live only in `references/memory-protocol.md` § BAT 塔台面板讀取契約 › 大小預算. It never blocks startup.
 
 For state format and recovery rules, read `references/memory-protocol.md`. For config layering, read `references/tower-config.md`.
@@ -231,8 +231,8 @@ Keep Tower responses operational:
 - Use `PASS`, `PARTIAL`, `BLOCKED`, or `FAILED` when answering whether something is done.
 - Keep recommendations scoped to the next Tower decision.
 - If a rule or environment check is memory-derived or stale, say so and verify when cheap.
-- v6.1.0+ (BAT ↔ CT contract v2): while anything waits for the user, the **last line of every Tower reply** is exactly one line in this form,
-  in any terminal and whatever the BAT version:
+- v6.1.0+ (BAT ↔ CT contract v2): while anything waits for the user, the **last line of a Tower reply** is exactly one line in this form,
+  in any terminal and whatever the BAT version — on every reply, or only at the moments below, as `pending_reminder` says:
 
   ```
   ⏸ 待你決定：U-3（T0123）、U-5（—）；🙋 待你執行：A-2（<title 前 20 字>）——回覆「U-n：選項」或「A-n：完成」
@@ -244,3 +244,20 @@ Keep Tower responses operational:
     When neither list has items, print nothing.
   - With `user_inbox: off` the line is still printed, from the items this Tower would have written there (`references/memory-protocol.md` § 契約 v2 欄位).
   - This line only reminds; the data lives in the frontmatter. It does not replace the pause message that asks the question.
+  - **How often** (v6.2.0+, `pending_reminder` in `references/tower-config.md` § 可用選項; this bullet is the only full statement of the rule):
+    - `every` (default): the line ends every reply while either list has items — the same as 6.1.x.
+    - `on-change`: print the whole line (same format, never a partial line) only when ① it is this session's first reply and either list has
+      items; ② this reply's write **added** an item (a new `U-n` in `awaiting_user` or a new `A-n` in `user_actions`; a removal does not
+      count, the `U-n 已收到` / `已放棄` confirmation line already says it); ③ the user asks what is pending (in any words), or runs `*sync` —
+      then list it in full; ④ the reply after the user pressed Esc on a pause menu (`references/memory-protocol.md` § 契約 v2 欄位〈暫停的提問方式〉 item 7;
+      that is part of the pause flow, not limited by `on-change`). Any other reply leaves the line out.
+    - Either value leaves these unchanged: the three frontmatter lists, the BAT inbox tab, the pause message itself, the native pause menu,
+      and `user_inbox`.
+    - Known limit: under `on-change`, "already reminded" is judged from the conversation, so after a context compact the line may come back once.
+  - v6.2.0+: a pause message lists the recommended option first, marked 「（推薦）」 (and written as `recommended`); the user may also answer
+    `U-n：放棄` / `A-n：略過`, one item or a batch such as `U-1、U-3：放棄`. With `interactive-prompts: on` (default) a pause writes
+    `awaiting_user` first and then opens the native menu (`AskUserQuestion`), except on Codex or when the startup `BAT 契約` is not `v2`.
+    v6.2.0+, the two menu rules most often missed: when `options` has 1–3 items the menu's last choice is always
+    「放棄（停下等新方向）」; when `options` is empty (a free answer) do not open a menu, use the text template.
+    The complete rules (also 4 options, "Other", Esc) live only in `references/memory-protocol.md` § 契約 v2 欄位〈暫停的提問方式〉;
+    layout, parsing and handling live in the same section.

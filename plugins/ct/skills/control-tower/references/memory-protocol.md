@@ -16,7 +16,8 @@
 
 **位置**：`_tower-state.md` 第一行 `---` 起的 YAML frontmatter，以下一行 `---` 結束；其後的 Markdown 本文（下方標準區段）照舊。
 
-**欄位**（前 6 列是契約 v1，全部保留、語意不變；後 6 列是契約 v2，v6.1.0+，細節只寫在下方 § 契約 v2 欄位）：
+**欄位**（前 6 列是契約 v1，全部保留、語意不變；後 7 列是契約 v2，v6.1.0+（其中 `inbox_features` 是 v6.2.0+ 加的能力旗標，契約仍是 2），
+細節只寫在下方 § 契約 v2 欄位）：
 
 | 欄位 | 必填 | 型別 | 內容 |
 |------|------|------|------|
@@ -28,6 +29,7 @@
 | `todo` | 選填 | 字串陣列 | 待辦；外部讀者只顯示**前 5 則** |
 | `bat_contract` | v2 必填 | 整數，目前 `2`；**不加引號** | 契約版本。CT 6.1.0 起每次寫入都寫 |
 | `ct_version` | v2 必填 | 字串 | 寫入時的 CT 版號 |
+| `inbox_features` | 選填；CT 6.2.0 起每次寫 | 字串陣列，目前 `["recommended", "dismiss"]` | 待辦清單的能力旗標（不是契約版本） |
 | `awaiting_user` | 選填 | 陣列 | 待你決定 |
 | `user_actions` | 選填 | 陣列 | 待你執行 |
 | `reminders` | 選填 | 陣列 | 到期提醒 |
@@ -50,6 +52,8 @@
   （依 [cross-project-coordination.md](cross-project-coordination.md)），等 BAT 回覆再改。
 - 契約 v2（v6.1.0+）的欄位是新增，`summary_version` 不升。`bat_contract` 是專門的契約版本欄位，和 `summary_version`（摘要格式版號）是兩件事；
   契約要升 v3 同樣先通知 BAT、雙方核定後才改。
+- 能力旗標（v6.2.0+）：在同一個契約版本內加了讀者要知道的能力（例如看得懂新的回答寫法），就在 `inbox_features` 加一個值，
+  `bat_contract` 不升；只有改掉既有欄位的名稱、型別或語意才升契約版本（下方 § 契約 v2 欄位 › 頂層欄位）。
 
 **YAML 寫法**：
 
@@ -64,9 +68,10 @@
 schema_kind: tower-state
 summary_version: 1
 bat_contract: 2
-ct_version: "6.1.1"
+ct_version: "6.2.0"
+inbox_features: ["recommended", "dismiss"]
 updated_at: "2026-10-25T19:21:43+0800"
-session: "2026-10-25 17:48 塔台 session（CT v6.1.1）"
+session: "2026-10-25 17:48 塔台 session（CT v6.2.0）"
 next_ids:
   workorder: "T0306"
   decision: "D341"
@@ -87,7 +92,7 @@ todo:
 
 - 塔台**每次寫入** `_tower-state.md` 都同步更新摘要（至少刷新 `updated_at`，其餘欄位有變就改）：啟動、派工、收單、決策、
   `*rescan`、收工（Session 結束前）、`*pause`／`*resume`，以及下方 § 自動更新時機 列的每一項。v6.1.0+ 每次寫入也寫 `bat_contract: 2` 與
-  `ct_version`（下方 § 契約 v2 欄位）。
+  `ct_version`，v6.2.0+ 另寫 `inbox_features`（下方 § 契約 v2 欄位）。
 - **Fast Path 恢復**：摘要只供外部顯示，塔台恢復狀態**以本文為準**。摘要與本文不一致（例：`next_ids` 不等於 § 🔢 編號追蹤 的最大編號 + 1、
   `todo` 過時）時以本文為準，並在這次寫入時依本文重寫摘要。
   例外（v6.1.0+）：`awaiting_user`、`user_actions`、`reminders` 三個清單**只存在 frontmatter**（本文不重抄），依本文重寫摘要時原樣保留，不得清掉。
@@ -101,6 +106,7 @@ schema_kind: tower-state
 summary_version: 1
 bat_contract: 2
 ct_version: "<CT 版號>"
+inbox_features: ["recommended", "dismiss"]
 updated_at: "<datetime>"
 next_ids:
   workorder: "T####"
@@ -147,8 +153,10 @@ todo:
 | BUG | BUG-### |
 | PLAN | PLAN-### |
 | 決策 | D### |
-| 待你決定 | U-n（還沒用過寫「—」） |
-| 待你執行 | A-n（還沒用過寫「—」） |
+| 待你決定（最大編號） | U-n（還沒用過寫「—」） |
+| 待你執行（最大編號） | A-n（還沒用過寫「—」） |
+
+只記用過的最大編號；未決清單只在 frontmatter（〈契約 v2 欄位〉）
 
 ---
 
@@ -181,6 +189,11 @@ todo:
 > [tower-config.md](tower-config.md)（`user_inbox`）與 `SKILL.md`（回覆結尾重列）只寫自己那一步並引用這裡，不重抄規則。
 > 依據：BAT 與 CT 雙方使用者核定的契約 v2（BAT GitHub #24）；BAT 待辦分頁怎麼讀、怎麼顯示以 BAT 文件為準。
 > 契約 v1 的欄位全部保留、語意不變；`summary_version` 不升。
+> v6.2.0 加入（6.2.0-pre.1 預覽時加入，6.2.0 納入正式版）：推薦項（`options` 的排法與 `awaiting_user[].recommended`）、頂層能力旗標 `inbox_features`、
+> 放棄／略過與批次的回答寫法和處理、暫停改用原生選單（〈暫停的提問方式〉，沿用 `interactive-prompts`）。
+> 依據：BAT 與 CT 雙方使用者核定的「待辦清單的推薦項與放棄」提案及其補充需求。全部是新增，
+> `bat_contract` 維持 `2`、`summary_version` 不升、既有回答格式不變。
+> v6.2.0 釐清（6.2.0-pre.2 預覽時依實機驗收補上）：〈暫停的提問方式〉的放棄項以 `options` 項數為準、`options` 為空改用文字、Esc 的處理；`tower-question` 的例子；資料格式沒有改。
 
 **用途**：塔台需要使用者決定或執行的事寫進 frontmatter，Better Agent Terminal（BAT）的「待辦」分頁唯讀顯示，
 使用者不必在終端往回捲找塔台的提問。塔台開工時也向 BAT 宣告契約版本（[auto-session.md](auto-session.md) § 塔台分頁角色宣告），
@@ -191,7 +204,8 @@ todo:
 | 欄位 | 型別 | 寫法 |
 |---|---|---|
 | `bat_contract` | 整數 `2`，**不加引號** | CT 6.1.0 起**每次**寫 `_tower-state.md` 都寫；`user_inbox: off`、非 BAT 終端也寫（契約版本和要不要寫清單是兩件事） |
-| `ct_version` | 字串 | 每次寫入都寫，值取自已安裝的 `control-tower/SKILL.md` 版本註解 `<!-- control-tower-version: X -->` 的 `X`（例 `"6.1.1"`）；BAT 只顯示、不比較 |
+| `ct_version` | 字串 | 每次寫入都寫，值取自已安裝的 `control-tower/SKILL.md` 版本註解 `<!-- control-tower-version: X -->` 的 `X`（例 `"6.2.0"`）；BAT 只顯示、不比較 |
+| `inbox_features` | 字串陣列（v6.2.0+） | 待辦清單的能力旗標。CT 6.2.0 起**每次**寫 `_tower-state.md` 都寫 `["recommended", "dismiss"]`；`user_inbox: off`、非 BAT 終端也寫（同 `bat_contract`）。值的意思：`dismiss` = 寫這份狀態檔的塔台看得懂下方〈回答格式與解析〉的放棄、略過與批次寫法（BAT 只在有這個值時顯示放棄、略過、批次勾選與「全部放棄」）；`recommended` = 這個塔台會寫 `awaiting_user[].recommended`，只供參考（推薦標記與預設選取只看那個欄位本身，寫了就顯示）。讀者忽略不認得的值；鍵不存在或不是陣列時當作空陣列（＝ CT 6.1.x 的行為）。只放在狀態檔，**不**加進 `--set-role`（[auto-session.md](auto-session.md) § 塔台分頁角色宣告 不變）。以後要加能力沿用這個陣列；要改既有欄位的語意才升 `bat_contract`，照上方 § 機器可讀摘要 › 相容規則 先雙方核定 |
 | `next_ids.user`／`next_ids.action` | 字串 `"U-n"`／`"A-n"` | 下一個可用編號（見下方〈編號〉） |
 | `awaiting_user` | 陣列，≤ 20 筆 | 待你決定；沒有項目時不寫這個鍵 |
 | `user_actions` | 陣列，≤ 20 筆 | 待你執行；沒有項目時不寫這個鍵 |
@@ -206,7 +220,8 @@ todo:
 | `kind` | 字串 | 目前只有 `"decision"` |
 | `source` | 字串 | `breakpoint-A`／`breakpoint-B-1`／`breakpoint-B-2`／`breakpoint-C`／`breakpoint-E`／`worker-question`／`tower-question`（觸發點見下方〈誰寫、誰清〉） |
 | `summary` | 字串，≤ 120 字 | 一句話說要決定什麼 |
-| `options` | 字串陣列，≤ 6 項 | 每項 `<代號> <說明>`；代號 `^[A-Za-z0-9]{1,3}$`、同一筆內不重複（不分大小寫也不重複）。要自由回答時空陣列 `[]`；「其他」不列成選項（使用者本來就可以回自由文字） |
+| `options` | 字串陣列，≤ 6 項 | 每項 `<代號> <說明>`；代號 `^[A-Za-z0-9]{1,3}$`、同一筆內不重複（不分大小寫也不重複）。要自由回答時空陣列 `[]`；「其他」不列成選項（使用者本來就可以回自由文字）。**推薦項**（v6.2.0+）：有推薦項時排**第一個**、說明文字結尾加「（推薦）」、同一筆寫 `recommended`；有了 `recommended` 之後「（推薦）」照樣保留（終端回覆、舊 BAT 和 BAT 以外的讀者看不到這個欄位）。沒有推薦項時（例：選項各有利弊，交給使用者判斷）兩者都不寫。對使用者顯示的暫停訊息（[yolo-mode.md](yolo-mode.md) 各斷點與 Worker 提問升級，以及 `tower-question`）的選項清單照同一個排法 |
+| `recommended` | 字串，選填（v6.2.0+） | 推薦項的代號：值是同一筆 `options` 裡某一項的代號，比對不分大小寫。沒有這個鍵、或對不到任何選項 = 沒有推薦（讀者不報錯，也不略過這一筆）。塔台寫入前自己確認對得到某個代號，對不到就不寫這個鍵；`options` 是空陣列時不寫 |
 | `created_at` | 字串 | 寫入時間（見下方〈時區〉） |
 
 **`user_actions[]` 每筆**
@@ -241,9 +256,10 @@ todo:
   （[work-order-template.md](work-order-template.md) § `waiting_user`）。觸發點：
   - yolo 斷點 A／B-1／B-2／C 暫停、斷點 E（含非 yolo 的 `⏸ 合併前確認`）——`source` 對應 `breakpoint-<斷點>`（[yolo-mode.md](yolo-mode.md) § 斷點判準）；
   - Worker 提問升級給使用者（`⏸ YOLO PAUSED — 提問需要你決定`）——`worker-question`（[yolo-mode.md](yolo-mode.md) § Worker 向塔台提問 › 塔台端）；
-  - 塔台自己停下來等使用者決定、而且不是同一輪對話就接著做的事（例：收單後要使用者選下一步、跨專案文件要使用者核定）——`tower-question`。
+  - 塔台自己停下來等使用者決定、而且不是同一輪對話就接著做的事（例：收單後要使用者選下一步、跨專案文件要使用者核定；
+    v6.2.0+：yolo 下 Worker 合法回報 `BLOCKED`／`FAILED`（`<工單 ID> 需要協助`）、連續計數未達上限，塔台要使用者決定下一步——這不是斷點 A）——`tower-question`。
     需求對齊時一來一往的提問不寫。
-  - 不寫：斷點 D（不暫停，使用者到 Worker 分頁處理）、使用者中斷。
+  - 不寫：斷點 D（不暫停，使用者到 Worker 分頁處理）、使用者中斷（使用者中斷不新增；已寫入的不因中斷移除，見下方〈暫停的提問方式〉的 Esc）。
   - 對使用者顯示的暫停訊息帶上同一個 `U-n`。
   - **移除**：使用者回答後，在同一次寫入移除該筆、清掉工單的 `waiting_user`、決策日誌記一筆（含 `U-n`；`_decision-log.md` 還不存在時見
     [decision-log-system.md](decision-log-system.md) § 注意事項 的 v6.1.1+ 例外）。工單取消、重開或那件事不再需要決定時，
@@ -253,6 +269,16 @@ todo:
   塔台依內容開 BUG 或重開工單。v6.1.1+：塔台複查後若與回報不符（例：回報失敗，但塔台看到的實況是成功），不開 BUG、不重開，
   改發一筆 `awaiting_user`（`source: "tower-question"`，選項至少含「不處理」「開 BUG 追查」「再發一筆 A-n 重驗」），決策日誌寫明比對結果。
   原本會寫進 `todo` 的同類項目改寫這裡，`todo` 不重複列。
+- **放棄／略過**（v6.2.0+；使用者回 `U-n：放棄`、`A-n：略過`，單筆或批次，寫法見下方〈回答格式與解析〉）：
+  1. **移除與記錄**：在同一次寫入從 `awaiting_user`／`user_actions` 移除、清掉相關工單的 `waiting_user`，決策日誌記一筆
+     （批次也只記一筆，列出全部編號；`_decision-log.md` 還不存在時同上方〈移除〉的例外）。**不套用任何選項**。
+  2. **工單維持暫停**：工單的 `status` 不改（例：`BLOCKED` 維持 `BLOCKED`）；yolo 斷點造成的暫停也維持，不因放棄就自動繼續。
+  3. **`U-n` 放棄、沒有附文字**：**不再新增** `awaiting_user` 問新方向（免得剛放棄的項目換個編號又出現；「全部放棄」之後清單也真的變空）。
+     那件事有工單時，改在 `todo` 留一則 `"T#### 暫停中（U-n 已放棄），等新方向"`；沒有工單時不留。兩種都在當次回覆說明，使用者之後下指示時再處理。
+  4. **`U-n` 放棄、附了文字**（原因或新方向）：照文字重新對齊。文字明確、沒有超出原本範圍時就照做；改變範圍、驗收條件，
+     或屬於不可逆／發布的動作時，照 CT 現行規則先問使用者（需求對齊的一來一往不寫進 `awaiting_user`）。
+  5. **`A-n：略過` 不是 `A-n：失敗`**：略過＝不做了，**不開 BUG、不重開工單**；決策日誌把該項記為「未驗（使用者略過）」，
+     不得寫成已驗證（實際沒驗的不能算驗過）。附的文字是原因，照記。
 - **`reminders`**：專案的定期事項（例：每週日誌清查、到某日重跑掃描）。塔台做完時更新 `last_at`／`due_at`；不再需要時移除。
 - **不自動遷移**：升級到 6.1.0 時不批次改寫既有的 `todo`；塔台下次處理到該項時再搬到對應清單。
 - 三個清單只在 frontmatter（本文不重抄；依本文重寫摘要時原樣保留，見上方 § 機器可讀摘要 › 維護時機）。
@@ -260,18 +286,61 @@ todo:
 
 **回答格式與解析**
 
-- 使用者回答的格式：`U-n：<代號或自由文字>`、`A-n：完成`、`A-n：失敗 <說明>`。全形 `：` 與半形 `:` 都接受，冒號前後的空白忽略。
-  一則訊息有好幾行回答時逐行處理。
+- 使用者回答的格式：`U-n：<代號或自由文字>`、`A-n：完成`、`A-n：失敗 <說明>`；v6.2.0+ 另有 `U-n：放棄[ <原因或新方向>]`、
+  `A-n：略過[ <原因>]` 與下方的批次寫法。全形 `：` 與半形 `:` 都接受，冒號前後的空白忽略。一則訊息有好幾行回答時逐行處理。
 - 回答可能是使用者手打，也可能是 BAT 面板送進塔台分頁的同一行文字，CT 不區分。
+- **放棄／略過**（v6.2.0+）：冒號後的文字（去掉前導空白）以「放棄」或「略過」開頭，而且後面是行尾、空白（半形或全形）或
+  `，`、`,`、`。`、`；`、`;` 時，才是放棄／略過（「放棄」「略過」只有在冒號後**第一個詞**時是保留字）；去掉這個詞與緊接的空白、標點後，
+  剩下的文字是原因或新方向（可以沒有）。這個判斷先於下一點的代號比對；選項代號的格式是 `^[A-Za-z0-9]{1,3}$`，不會和這兩個詞撞在一起。
+  - 從寬：`U-n：略過` 當成放棄、`A-n：放棄` 當成略過（手打時容易混用）。BAT 只送 `U-n：放棄…`、`A-n：略過…`。
+  - 已知取捨：使用者想用自由文字回答、第一個詞剛好是「放棄」時，會被當成放棄。確認行寫明「U-n 已放棄」，
+    使用者要更正就重新回答（照本節最後一點的更正規則）。
+  - 處理（移除、維持暫停、有沒有附文字、略過不開 BUG）見上方〈誰寫、誰清〉的〈放棄／略過〉。
+- **批次**（v6.2.0+，只用在放棄／略過）：冒號前列出多個明確編號，例 `U-1、U-3：放棄 <原因>`、`A-2、A-3：略過`。
+  - 編號之間的分隔接受 `、`、`,`、全形 `，`，前後空白忽略（BAT 固定送 `、`，每區一行）。附的文字套用到這一行的每個編號。
+  - 同一行混 `U` 和 `A` 也照處理：`U` 一律讀成放棄、`A` 一律讀成略過。
+  - **不支援**（不猜，回一行說明，請使用者改寫或逐筆回答）：萬用字元與範圍（例 `U-*`、`U-1～U-5`）；冒號後第一個詞不是放棄／略過的
+    多編號行（例 `U-1、U-3：A` 批次選同一個選項、批次自由回答）。「全部放棄」由送出端展開成明確編號，CT 不接受萬用字元。
+  - 已經不在清單的編號（已結或不存在）略過，其他照做；確認行列出略過的編號，例：`U-1、U-3 已放棄；U-4 已不在清單，略過`。
 - `U-n` 的代號比對：冒號後的文字（去掉前後空白）與該筆某個選項的代號相同（不分大小寫），而且**只命中一個**才算選了該選項；
   否則整段當自由回答。
 - 使用者沒寫 `U-n`、但明顯在回答剛顯示的暫停（例：未決只有一筆時直接回 `B`）→ 照那一筆處理，確認行寫出 `U-n`；對不到唯一一筆就問是哪一筆。
 - 編號不存在或已結 → 不猜，回一行說明並列出目前未決的編號。
-- 塔台處理後回一行確認，例：`U-3 已收到：B → 恢復 T0123`、`A-2 已收到：完成`。使用者之後更正，照新的回答處理並記決策日誌。
+- 塔台處理後回一行確認，例：`U-3 已收到：B → 恢復 T0123`、`A-2 已收到：完成`；v6.2.0+ 例：`U-3 已放棄 → T0123 維持暫停，等新方向`、
+  `A-2 已略過（未驗）`。使用者之後更正，照新的回答處理並記決策日誌。
+
+**暫停的提問方式**（v6.2.0+；本段是塔台暫停時怎麼問使用者的**唯一權威**，[yolo-mode.md](yolo-mode.md)、[tower-config.md](tower-config.md)、
+[interactive-prompts.md](interactive-prompts.md)、[work-order-system.md](work-order-system.md) 與 `SKILL.md` 只引用）：
+
+- **範圍**：會寫 `awaiting_user` 的暫停——斷點 A／B-1／B-2／C／E、非 yolo 的 `⏸ 合併前確認`、Worker 提問升級給使用者、`tower-question`。
+- **開關**：沿用 [tower-config.md](tower-config.md) 的 `interactive-prompts`（不新增設定鍵）。`on`（預設）＝需求對齊與暫停都用原生選單；`off`＝兩者都用純文字，
+  暫停照 6.1.x 的文字範本（[yolo-mode.md](yolo-mode.md) 各斷點的暫停訊息）。代價是無法「對齊用選單、暫停用文字」，有需求時再加鍵。
+- **`on` 的做法**：
+  1. 先照上方〈誰寫、誰清〉寫 `awaiting_user`（有工單時同時寫 `waiting_user`），**再**開原生選單（Claude Code 的 `AskUserQuestion`）。
+  2. 題目本身寫完整：`U-n`、工單（沒有就寫「—」）、一句話說要決定什麼。選單前面的文字使用者可能看不到，所以不能只寫在前面。
+  3. 選項：照 `options` 列的推薦項排法（推薦項排第一、標「（推薦）」）；每個選項的標籤開頭放和 `options` 相同的代號。
+     v6.2.0+ 放棄項以 `options` 的項數為準（不算選單內建的「其他」）：
+     - `options` 有 1～3 項：最後**一定**加一項「放棄（停下等新方向）」，加上後最多 4 項；選了就照 `U-n：放棄` 處理（上方〈放棄／略過〉）。
+     - `options` 剛好 4 項：沒有空位，不加；改在題目結尾寫「要放棄請在「其他」輸入 放棄」。
+  4. 自由輸入用選單內建的「其他」：內容照 `U-n：<自由文字>` 處理；以「放棄」開頭（例 `放棄 <原因>`）也算放棄，判斷同〈回答格式與解析〉的放棄規則。
+  5. 改用文字範本（不開選單）的兩種資料：`options` 超過 4 項（原生選單最多 4 個選項）；v6.2.0+ `options` 是空陣列（自由回答）——
+     `AskUserQuestion` 每題要 2～4 個選項，只剩「放棄」一項開不出來。
+  6. 在選單、終端打字、BAT 待辦分頁回答都算數；照常移除該筆、清 `waiting_user`、記決策日誌。回覆結尾的 `⏸ 待你決定` 重列照 `SKILL.md` § Output Style（含 `pending_reminder`）。
+  7. **Esc**（v6.2.0+）：使用者在選單按 Esc＝使用者中斷，Claude Code 直接結束這個回合，塔台這一回合不會再輸出。
+     - 該筆已先寫入，照留（不算回答、不算放棄），工單的 `waiting_user` 也留著。
+     - **下一則回覆**照常重列，並在開頭提醒哪幾筆的選單被關掉、仍待決。這一點不受 `pending_reminder: on-change` 限制。
+     - Esc 過不改變之後的提問方式：下一筆仍開選單。要改用文字，請使用者下 `*config interactive-prompts off`；塔台不因前面被 Esc 就自己改用文字。
+- **改用文字範本的安全條件**（`on` 也一樣）：
+  - Codex 塔台：沒有原生選單。
+  - 在 BAT 內，但開工宣告的 `BAT 契約` 不是 `v2`（`不支援（BAT 太舊）`、`未知（宣告失敗）`；下方 § 塔台狀態面板）：無法確定 BAT 在選單開著時會保留 Worker 的通知，
+    沒保留的話 Worker 送來的 Enter 會替使用者選了選項。契約 v2 的 BAT 一定有這個通知保護。
+  - 非 BAT 終端（`略過（非 BAT）`）照 `on` 用原生選單：沒有 Worker 會自動寫進塔台分頁。
+- **競態**：選單開著時 BAT 待辦分頁送出的回答由 BAT 保留，選單關閉後才送到；若使用者已在選單或終端回答同一筆，那一行照上方「編號不存在或已結」處理
+  （回一行說明並列出目前未決的編號），不重複套用。
 
 **`user_inbox: off`**（[tower-config.md](tower-config.md) § 可用選項）：不寫 `awaiting_user`、`user_actions`，退回 6.0.x 寫法（待決只在終端輸出、
-待使用者執行的項目照舊放 `todo`）。`bat_contract`、`ct_version`、`reminders`、`next_ids.user`／`action`、工單 `waiting_user` 照寫，
-回覆結尾的重列也照印（只是資料只在終端，BAT 待辦分頁看不到）。
+待使用者執行的項目照舊放 `todo`）。`bat_contract`、`ct_version`、`inbox_features`（v6.2.0+；終端回覆照樣可以放棄／略過）、`reminders`、`next_ids.user`／`action`、工單 `waiting_user` 照寫，
+回覆結尾的重列也照印（頻率照 `pending_reminder`；只是資料只在終端，BAT 待辦分頁看不到）。
 
 **隱私**：`summary`、`title`、`options`、`command` 不寫祕密、權杖、客戶資料、真實個人資料；需要細節時寫「見 T#### 回報區」。
 內容和 CT 原本就寫進 `_tower-state.md`、決策日誌的同一類，`_ct-workorders/` 公開的專案要不要寫由 `user_inbox` 決定。
@@ -285,6 +354,7 @@ PowerShell `Get-Date -Format "yyyy-MM-ddTHH:mm:ssK"`。`reminders` 的 `due_at`�
 
 **寫入後自檢**：照下方 § YAML frontmatter 字串寫法與寫入後自檢。`check-frontmatter.py` v6.1.0 起對 `schema_kind: tower-state` 的檔另檢查本節的
 型別、格式與上限（只回報，問題代碼見腳本開頭說明）；寫入前塔台自己先確認選項代號符合格式、不重複，不符就改寫，不交給 BAT 退回自由回答。
+v6.2.0 起另檢查 `recommended`（是字串、對得到同一筆 `options` 的代號、`options` 是空陣列時不應有）與 `inbox_features`（字串陣列；不認得的值不報錯）。
 
 完整範例：
 
@@ -293,7 +363,8 @@ PowerShell `Get-Date -Format "yyyy-MM-ddTHH:mm:ssK"`。`reminders` 的 `due_at`�
 schema_kind: tower-state
 summary_version: 1
 bat_contract: 2
-ct_version: "6.1.1"
+ct_version: "6.2.0"
+inbox_features: ["recommended", "dismiss"]
 updated_at: "2026-11-25T03:10:23+0800"
 next_ids:
   workorder: "T0130"
@@ -302,14 +373,23 @@ next_ids:
   action: "A-3"
 todo:
   - "T0124 完成後派 T0125"
+  - "T0121 暫停中（U-2 已放棄），等新方向"
 awaiting_user:
   - id: "U-3"
     workorder: "T0123"
     kind: "decision"
     source: "breakpoint-A"
     summary: "T0123 回報字串不符規格，要怎麼收單"
-    options: ["A 接受為 DONE，續派下一張", "B 接受為 FAILED", "C 退回 ask 模式"]
+    options: ["A 接受為 DONE，續派下一張（推薦）", "B 接受為 FAILED", "C 退回 ask 模式"]
+    recommended: "A"
     created_at: "2026-11-25T03:10:23+08:00"
+  - id: "U-5"
+    workorder: ""
+    kind: "decision"
+    source: "tower-question"
+    summary: "下一階段先做哪個模組（自由回答，沒有推薦項）"
+    options: []
+    created_at: "2026-11-25T03:12:40+08:00"
 user_actions:
   - id: "A-2"
     title: "安裝 0.8.0-pre.2 後做一次完整重裝驗收"

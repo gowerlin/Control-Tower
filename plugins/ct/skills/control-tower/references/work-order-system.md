@@ -346,7 +346,7 @@ T0106（即將派發）affects_files：
 4. **更新進度表**
 4.5. **待使用者執行的項目**（v6.1.0+，BAT ↔ CT 契約 v2）：回報區列出的「待實機／待使用者執行」項目（實機驗收、要使用者自己跑的指令、手動設定），
    在本次寫 `_tower-state.md` 時各寫一筆 `user_actions`（`ref` = 本工單完整 ID），收單確認裡列出新的 `A-n`；不再寫進 `todo`。
-   使用者回 `A-n：完成`／`A-n：失敗 <說明>` 後的處理、欄位與 `user_inbox: off`（退回寫 `todo`）只定義在 [memory-protocol.md](memory-protocol.md) § 契約 v2 欄位。
+   使用者回 `A-n：完成`／`A-n：失敗 <說明>`／`A-n：略過`（v6.2.0+）後的處理、欄位與 `user_inbox: off`（退回寫 `todo`）只定義在 [memory-protocol.md](memory-protocol.md) § 契約 v2 欄位。
 5. **學習記錄**（靜默）：追加觀察到 `_learnings.md`
 6. **決策下一步**：
    - `DONE` → 派發下一張或宣布階段完成
@@ -354,6 +354,8 @@ T0106（即將派發）affects_files：
    - `BLOCKED` → 記錄卡點，評估可並行的工單；frontmatter 有 `tower_question: open`（yolo 提問逾時的備援，v5.5.0+）→ 在 Renew 區段答覆後重派，見 [yolo-mode.md](yolo-mode.md) § Worker 向塔台提問 › 塔台端。不論是否為備援，`BLOCKED` 後 Renew 重派同一張工單時，派工前先照下方 § 重派前回收舊 Worker 分頁
    - `PARTIAL` → 先判斷 blocker 是否仍存在，再照下方 § PARTIAL 當下收尾：塔台一裁示剩餘部分怎麼處理（另開接手單、或判定不需再做），**當下**補〈塔台收尾補記〉並改 `DONE`；
      只有真的在等外部條件的才保留 `PARTIAL`／`BLOCKED`；裁示之前先評估拆分或補充指引
+   - 收單後要使用者選下一步（`tower-question`）：寫待決與提問方式（v6.2.0+ `interactive-prompts: on` 時用原生選單）只定義在
+     [memory-protocol.md](memory-protocol.md) § 契約 v2 欄位〈暫停的提問方式〉
 
 回報確認格式：
 ```

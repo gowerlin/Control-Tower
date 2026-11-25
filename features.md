@@ -7,7 +7,7 @@ description: CT 由哪 8 個 skill 組成、各在哪種 session 做什麼，塔
 const mapRows = [
   ['工單：編號、粒度、模板欄位、重疊檢查', '工單系統'],
   ['派工：四種模式、終端偵測、BAT、降級鏈', '派工：auto-session 與 BAT'],
-  ['塔台要你決定、要你執行的事（U-n／A-n）、BAT 待辦分頁、user_inbox', '待辦分頁（BAT ↔ CT 契約 v2）'],
+  ['塔台要你決定、要你執行的事（U-n／A-n）、BAT 待辦分頁、user_inbox、推薦項與放棄、暫停選單、pending_reminder', '待辦分頁（BAT ↔ CT 契約 v2）'],
   ['yolo 與斷點 A–E', 'yolo 與斷點 A–E'],
   ['Worker 在 yolo 下改問塔台', 'Worker 向塔台提問'],
   ['worktree 隔離與合併工單', 'worktree 隔離與三種合併模式'],
@@ -80,7 +80,7 @@ CT 的功能隨可選元件遞增。每項偵測各自獨立，可以任意組�
 
 設定分四層，上面的蓋過下面的：**session（在塔台裡即時修改）> 專案（`_ct-workorders/_tower-config.yaml`）> 全域（`~/.claude/control-tower-data/config.yaml`）> 預設值**。只想試一下就只改 session；要讓這個專案或所有專案都這樣，再寫進對應的那一層。
 
-全部選項、值域、預設值與寫入方式見[指令參考大全 › `*config`](/reference/commands#config)。6.1.0 起多一個 `user_inbox`（預設 `on`）：要不要把待你決定、待你執行的事寫進 `_tower-state.md` 給 BAT 的待辦分頁讀，見[待辦分頁（BAT ↔ CT 契約 v2）](/deep/features/bat-todo#user-inbox)。
+全部選項、值域、預設值與寫入方式見[指令參考大全 › `*config`](/reference/commands#config)。6.1.0 起多一個 `user_inbox`（預設 `on`）：要不要把待你決定、待你執行的事寫進 `_tower-state.md` 給 BAT 的待辦分頁讀，見[待辦分頁（BAT ↔ CT 契約 v2）](/deep/features/bat-todo#user-inbox)。6.2.0 起再多一個 `pending_reminder`（預設 `every`）：回覆結尾的待決提醒每則都印，或只在清單有變化時印；`interactive-prompts` 的範圍也擴大到塔台暫停（先寫待決再開原生選單），見[待辦分頁 › 暫停改開原生選單](/deep/features/bat-todo#menu)與[提醒頻率](/deep/features/bat-todo#pending-reminder)。
 
 ::: tip Worker 不讀設定檔決定模式
 塔台派工時把模式透過環境變數 `CT_MODE`、`CT_INTERACTIVE` 傳給 Worker；Worker 只從設定讀重試上限、commit 政策這類調諧參數，不用設定檔決定要不要自動回報。這樣同一張工單、同一組參數，在哪個 session 執行都會得到相同的行為。
@@ -113,7 +113,7 @@ CT 管「編排」：工單、派工、驗收、收單；方法論（BMad-Method
 
 - `control-tower/SKILL.md` § Built-In Commands、§ Hard Boundaries
 - `ct-help/SKILL.md` § Command Families
-- CT 安裝與使用指南 § 4.3 Skill 架構（v6.1.1）、§ 5. 四級能力等級、§ 13. Config 速查表（v6.1.1）、§ 14. 命令速查表（v6.1.1）、§ 2.65 v6.0.0（正式版）、§ 2.66 v6.0.1（正式版 PATCH）、§ 2.67 v6.0.2（正式版 PATCH）、§ 2.69 v6.1.0（正式版）、§ 2.70 v6.1.1（正式版 PATCH）
+- CT 安裝與使用指南 § 4.3 Skill 架構（v6.2.0）、§ 5. 四級能力等級、§ 13. Config 速查表（v6.2.0）、§ 14. 命令速查表（v6.2.0）、§ 2.65 v6.0.0（正式版）、§ 2.66 v6.0.1（正式版 PATCH）、§ 2.67 v6.0.2（正式版 PATCH）、§ 2.69 v6.1.0（正式版）、§ 2.70 v6.1.1（正式版 PATCH）、§ 2.71 v6.2.0（正式版 MINOR）
 - CT Guide `references/ecosystem.md` § 八個 Skill 元件、§ 三軌前綴：`*`、`/`、`$`、§ 能力等級（Level 0-3）
 - `control-tower/references/tower-config.md` § `*config` 命令、§ 可用選項、§ 作用域與持久化
 
