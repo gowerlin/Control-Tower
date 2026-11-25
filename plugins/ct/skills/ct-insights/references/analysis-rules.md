@@ -288,7 +288,7 @@ X1–X4 對兩軌都適用；X5 不算 Workflow 訊號，把工單轉去 Playboo
 
 | 參數 | 說明 |
 |---|---|
-| `--projects-dir` | 預設 `~/.claude/projects` |
+| `--projects-dir` | 預設 `$CLAUDE_CONFIG_DIR/projects`；沒設 `CLAUDE_CONFIG_DIR`（或只有空白）時 `~/.claude/projects`（v6.1.1+）。命令列給的值優先 |
 | `--project` | 編碼後的專案目錄名（路徑中英數與 `-` 以外的字元都換成 `-`），可給多次（例：隔離工單的 worktree 路徑另有自己的目錄；同一個 session id 只算一次）；省略時由目前目錄推算 |
 | `--workorders-dir` | `_ct-workorders`：讀工單 frontmatter 的 `id`、`type`、`session_ids`，以及 `_tower-state.md`（含 `_archive/` 下的塔台狀態）的塔台 session id |
 | `--workorders T####,…` | 只算這些工單 |
@@ -485,7 +485,7 @@ Claude Code 預設只保留 session 紀錄 30 天（`cleanupPeriodDays`），換
 | `--json` | 改輸出 `ct-tool-usage/0.1` JSON（見〈報告格式〉） |
 | `--out FILE` | 寫檔而不是 stdout；寫前過自檢 |
 | `--codes-map FILE` | 跨 repo 代號對照。FILE **已存在就沿用其中的代號、不改寫**（同名 repo 依表中順序對應；表裡沒有的 repo 另編新代號，stderr 只報數量）；不存在才寫。FILE 在任何被掃的 git repo 底下 → exit `2`。對照檔不進任何 repo |
-| `--claude-home DIR`、`--claude-json FILE` | 設定來源位置（預設 `~/.claude`、`~/.claude.json`；測試用） |
+| `--claude-home DIR`、`--claude-json FILE` | 設定來源位置（預設 `$CLAUDE_CONFIG_DIR`、`$CLAUDE_CONFIG_DIR/.claude.json`；沒設時 `~/.claude`、`~/.claude.json`，v6.1.1+；測試用） |
 | `--projects-dir`、`--project`、`--workorders-dir`、`--since`、`--until`、`--days`、`--pricing` | 與〈Session 用量統計〉相同。省略 `--project` 時，本 repo 模式取「編碼後名稱是目前 repo 或其子目錄」的專案目錄，再以 session 的 `cwd` 往上找到的 git 根目錄確認屬於目前 repo |
 
 - `--tools` 不接受 `--snapshot-append`、`--facts`、`--facts-from`、`--with-session-ids`、`--sessions`、`--workorders`、`--decision-log` → exit `2`；`--all-projects`、`--keep`、`--out`、`--codes-map` 沒有 `--tools` → exit `2`。

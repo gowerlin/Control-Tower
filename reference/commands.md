@@ -366,9 +366,9 @@ const towerRows = [
 ### `*insights` {#insights}
 
 - **語法**：`*insights`
-- **做什麼**：在塔台角色裡，依 session 與工單歷史做有證據的使用模式分析，不離開塔台。完整報告用 [`/ct-insights`](#ct-insights)。v5.13.0 起，未結 BUG 超過門檻時，報告也帶和 `*sync` 同一行的清理提示。
+- **做什麼**：在塔台角色裡，依 session 與工單歷史做有證據的使用模式分析，不離開塔台。完整報告用 [`/ct-insights`](#ct-insights)。v5.13.0 起，未結 BUG 超過門檻時，報告也帶和 `*sync` 同一行的清理提示。v6.1.1+：讀的 session 紀錄目錄預設跟隨 `CLAUDE_CONFIG_DIR`（設了就讀 `$CLAUDE_CONFIG_DIR/projects`，沒設時 `~/.claude/projects`；塔台收單寫的用量快照也一樣），命令列明確給的位置優先。
 - **起始版本**：v3.4.0
-- **權威出處**：`control-tower/SKILL.md` § Built-In Commands；`ct-insights/SKILL.md` § Scope；`control-tower/references/bug-plan-system.md` § 未結 BUG 清理提示
+- **權威出處**：`control-tower/SKILL.md` § Built-In Commands；`ct-insights/SKILL.md` § Scope；`control-tower/references/bug-plan-system.md` § 未結 BUG 清理提示；6.1.1 起 `ct-insights/references/analysis-rules.md`（`ct-session-stats.py` 的參數說明）
 
 #### `*insights workflow [T#### …]` {#insights-workflow}
 
@@ -380,14 +380,14 @@ const towerRows = [
 #### `*insights sessions [T#### …]` {#insights-sessions}
 
 - **語法**：`*insights sessions`、`*insights sessions T0123 T0124`、`*insights sessions --since 2026-11-01`
-- **做什麼**：讀 Claude Code 留在本機的 session 紀錄，依工單彙總 token 用量與估算成本；工單的 `session_ids`（Worker 收尾時寫、塔台收單時補記）讓原始紀錄清掉之後仍對得上工單。**只讀**，不改工單。產生的候選事實可以用 [`/ct-evolve --facts-from`](#ct-evolve) 接進學習流程。只支援 Claude Code。
+- **做什麼**：讀 Claude Code 留在本機的 session 紀錄，依工單彙總 token 用量與估算成本；工單的 `session_ids`（Worker 收尾時寫、塔台收單時補記）讓原始紀錄清掉之後仍對得上工單。**只讀**，不改工單。產生的候選事實可以用 [`/ct-evolve --facts-from`](#ct-evolve) 接進學習流程。只支援 Claude Code。v6.1.1+：讀的 session 紀錄目錄預設跟隨 `CLAUDE_CONFIG_DIR`（見 [`*insights`](#insights)）。
 - **起始版本**：6.0.0
 - **權威出處**：`ct-insights/references/analysis-rules.md` § Session 用量統計；`ct-exec/SKILL.md` § Phase 4 › Session id
 
 #### `*insights tools` {#insights-tools}
 
 - **語法**：`*insights tools`、`*insights tools --all-projects`、`*insights tools --keep bmad-guide`、`*insights tools --since 2026-10-06 --until 2026-11-05`
-- **做什麼**：用本機 Claude Code 的 session 紀錄，找出每一輪都載入、卻很少或從來沒用到的 skill、plugin、MCP server、agent 類型與內建工具，依工單類型分組，每項寫明層級（專案、使用者、claude.ai 帳號）與要改的設定。**只建議、不改設定**；套用與否由你決定，改完開新 session 才生效。
+- **做什麼**：用本機 Claude Code 的 session 紀錄，找出每一輪都載入、卻很少或從來沒用到的 skill、plugin、MCP server、agent 類型與內建工具，依工單類型分組，每項寫明層級（專案、使用者、claude.ai 帳號）與要改的設定。**只建議、不改設定**；套用與否由你決定，改完開新 session 才生效。v6.1.1+：讀的 session 紀錄與使用者設定位置預設跟隨 `CLAUDE_CONFIG_DIR`（設了就讀 `$CLAUDE_CONFIG_DIR/projects`、`$CLAUDE_CONFIG_DIR`、`$CLAUDE_CONFIG_DIR/.claude.json`，沒設時 `~/.claude/…`）；報告裡顯示的設定位置字串（例 `~/.claude/settings.json`）照舊。
 - **起始版本**：6.0.0
 - **權威出處**：`ct-insights/references/analysis-rules.md` § 工具清單建議
 
@@ -492,7 +492,7 @@ yolo 下塔台另外也接受 `T#### 失敗`。不是這些格式的訊息，會
 - `control-tower/SKILL.md` § Built-In Commands
 - `ct-help/SKILL.md` § Command Families
 - 各 skill 的 `SKILL.md`（`ct-exec`、`ct-done`、`ct-status`、`ct-evolve`、`ct-insights`、`ct-fieldguide`、`control-tower-guide`）
-- CT 安裝與使用指南 § 13. Config 速查表（v6.1.0）、§ 14. 命令速查表（v6.1.0）
+- CT 安裝與使用指南 § 13. Config 速查表（v6.1.1）、§ 14. 命令速查表（v6.1.1）
 - `control-tower/references/tower-config.md` § `*config` 命令、§ 可用選項（表下註明 `gp-prefix` 不是選項）
 - `control-tower/references/multi-tower-protocol.md` § `gp-prefix` 設定（唯一權威定義）
 - `control-tower/references/fieldguide-commands.md`

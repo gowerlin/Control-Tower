@@ -125,6 +125,8 @@ BAT 的讀法與對照版本見 [memory-protocol.md](memory-protocol.md) § BAT 
 ### 注意事項
 
 - 塔台**不主動建立** `_decision-log.md`，僅在環境偵測時提示「🆕 可建立」
+  - 例外（v6.1.1+）：契約 v2 要求記一筆（使用者回答 `U-n`／`A-n`，[memory-protocol.md](memory-protocol.md) § 契約 v2 欄位）而 `_decision-log.md`
+    還不存在時，塔台直接以下方「初始模板」建立再記，不另問使用者。
 - 使用者確認建立後，塔台以空模板初始化（見下方「初始模板」）
 - 決策日誌為 append-only，塔台不刪除或修改已有紀錄；唯一例外是 § 收斂：詳細紀錄**原文搬到封存檔**，不刪除、不改字
 

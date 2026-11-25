@@ -2765,10 +2765,23 @@ def emit_tools(rep: dict, args, out=None, err=None) -> int:
     return EXIT_OK
 
 
+def default_paths(env=None) -> dict:
+    """v6.1.1：三個讀取位置的預設值。CLAUDE_CONFIG_DIR 有值（去掉前後空白後非空）時，
+    Claude Code 把對話紀錄、設定與 .claude.json 都放在那個目錄下；沒有值時維持 ~ 下的原預設。
+    命令列明確傳入的值由 argparse 處理，一律優先。"""
+    cfg = ((os.environ if env is None else env).get("CLAUDE_CONFIG_DIR") or "").strip()
+    if cfg:
+        return {"projects_dir": os.path.join(cfg, "projects"), "claude_home": cfg,
+                "claude_json": os.path.join(cfg, ".claude.json")}
+    return {"projects_dir": "~/.claude/projects", "claude_home": "~/.claude", "claude_json": "~/.claude.json"}
+
+
 def main(argv=None) -> int:
     here = os.path.dirname(os.path.abspath(__file__))
+    dp = default_paths()
     ap = argparse.ArgumentParser(description="Claude Code session JSONL → 工單層級用量統計（只讀、只輸出數字）")
-    ap.add_argument("--projects-dir", default="~/.claude/projects")
+    ap.add_argument("--projects-dir", default=dp["projects_dir"],
+                    help="session 紀錄目錄（預設：`$CLAUDE_CONFIG_DIR/projects`，未設定時 `~/.claude/projects`）")
     ap.add_argument("--project", action="append",
                     help="編碼後的專案目錄名，可給多次；省略時由目前目錄推算（請在 repo 根目錄執行）")
     ap.add_argument("--workorders-dir", help="_ct-workorders 目錄：讀工單 frontmatter id／type／session_ids 與塔台 session id")
@@ -2797,8 +2810,10 @@ def main(argv=None) -> int:
     ap.add_argument("--out", metavar="FILE", help="寫檔而不是 stdout（寫前過自檢）")
     ap.add_argument("--codes-map", metavar="FILE",
                     help="跨 repo 代號對照：檔案已存在就沿用其代號（不改寫），不存在才寫；只准在所有被掃 repo 之外")
-    ap.add_argument("--claude-home", default="~/.claude", help="設定來源（測試用）")
-    ap.add_argument("--claude-json", default="~/.claude.json", help="設定來源（測試用）")
+    ap.add_argument("--claude-home", default=dp["claude_home"],
+                    help="設定來源（預設：`$CLAUDE_CONFIG_DIR`，未設定時 `~/.claude`；測試用）")
+    ap.add_argument("--claude-json", default=dp["claude_json"],
+                    help="設定來源（預設：`$CLAUDE_CONFIG_DIR/.claude.json`，未設定時 `~/.claude.json`；測試用）")
     try:
         args = ap.parse_args(argv)
     except SystemExit as e:

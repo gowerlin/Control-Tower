@@ -627,7 +627,7 @@ CT 自己訂的預算是 400 KB（409,600 bytes），比 BAT 的上限低約 100
 | 為什麼 | yolo 下好幾個 Worker 同時回報時，塔台的提問與總結很快被後面的回合捲走 | § 為什麼：提問被後面的回合淹沒 |
 | 寫什麼 | `bat_contract: 2`、`ct_version`、待你決定 `awaiting_user`（`U-n`）、待你執行 `user_actions`（`A-n`）、`reminders`、`next_ids.user`／`action`；工單另有 `waiting_user`。契約 v1 欄位不動、`summary_version` 不升 | § 欄位一覽：記住名字就好，寫法看權威節 |
 | 什麼時候寫、什麼時候清 | 斷點 A／B-1／B-2／C／E 暫停、Worker 提問升級、塔台自己要你決定 → `U-n`；收單時的待實機項目 → `A-n`；你回答後由塔台移除並記決策日誌，BAT 從不改檔；依賴等你的工單先不派 | § 生命週期：什麼時候寫、什麼時候清 |
-| 怎麼回答 | 一行 `U-3：B`、`U-3：<自由文字>`、`A-2：完成`、`A-2：失敗 <說明>`；待辦分頁送出的是同一行；塔台回一行確認 | § 回答：一行就好 |
+| 怎麼回答 | 一行 `U-3：B`、`U-3：<自由文字>`、`A-2：完成`、`A-2：失敗 <說明>`；待辦分頁送出的是同一行；塔台回一行確認。v6.1.1+：`A-2：失敗` 與塔台複查的實況不符時，塔台不開 BUG，改發一筆 `U-n` 請你裁示（不處理／開 BUG 追查／再發一筆 `A-n` 重驗）；要記回答而決策日誌還不存在時，塔台直接以初始模板建立再記 | § 回答：一行就好 |
 | 回覆結尾重列 | 有待決或待執行項目時，塔台每次回覆的最後一行固定重列，任何終端都有 | § 回覆結尾重列：任何終端都有 |
 | 開工宣告 | 先寫狀態檔，再 `--set-role tower --bat-contract 2`，讀輸出的 `bat-contract:`／`hooks:` 兩行；面板多 `BAT 契約` 欄（見上方 § 塔台分頁角色宣告） | § 開工宣告：先寫狀態檔，再告訴 BAT |
 | 舊 BAT、非 BAT | 需要 BAT ≥ 0.8.0-pre.3；舊 BAT 只重送一次並印降級提示，非 BAT 終端不宣告，兩者都照寫欄位、照樣重列（見下方 § 版本對照表） | § 版本需求：舊 BAT、非 BAT 也能用 |
@@ -697,6 +697,7 @@ CT 從不預先判斷 BAT 版本：一律先照常呼叫，失敗才依 exit cod
 | v6.0.1（正式版 PATCH） | BAT 介面同 v6.0.0-pre.1；CT 寫的 YAML frontmatter 字串寫法與寫入後自檢（含反斜線的值用單引號或正斜線），讓 BAT 塔台面板不再因為 `_tower-state.md` 摘要的雙引號字串裡有 Windows 路徑而整份讀不到；面板契約 v1 不變（欄位、型別、`summary_version: 1`） | 無新門檻（最低仍 `>= 0.7.0-pre.7`） | 見 `three-layer-arch.md` § Tower State（`_tower-state.md`） |
 | v6.0.2（正式版 PATCH） | BAT 介面同 v6.0.0-pre.1；helper 的參數與「內容只走 stdin」不變，只改 CT 怎麼準備 stdin 的內容：題目 JSON 與答覆先用 Write 寫到 scratchpad 檔，再以 `< 檔案` 送入（不用 heredoc）；面板契約 v1 不變 | 無新門檻（最低仍 `>= 0.7.0-pre.7`） | 見 `work-order-lifecycle.md` § Phase 4：Report And Commit（反序收尾） |
 | v6.1.0（正式版 MINOR，取代 6.0.2；6.1.0-pre.1 預覽起） | 待辦分頁（BAT ↔ CT 契約 v2）：塔台把待你決定（`U-n`）、待你執行（`A-n`）、提醒寫進 `_tower-state.md` frontmatter，開工時 `--set-role tower --bat-contract 2` 宣告，BAT 待辦分頁唯讀顯示；契約 v1 欄位與 `summary_version` 不變；已在 BAT 0.8.0-pre.3 的測試版上實機驗證 | BAT ≥ 0.8.0-pre.3（與 CT 6.1.0 同日發佈） | exit `1`＋`Unknown option '--bat-contract'` → 不帶這個參數重送一次、本 session 不再帶，標題與模式照舊；開工面板一行降級提示，沒有待辦分頁，待決事項仍列在每次回覆的結尾（舊 BAT 0.8.0-pre.1 實機驗過）；見上方 § BAT ↔ CT 契約 v2：待辦分頁（v6.1.0+） |
+| v6.1.1（正式版 PATCH，取代 6.1.0） | BAT 介面與契約 v2 欄位同 v6.1.0；`ct-session-stats.py` 的預設讀取位置跟隨 `CLAUDE_CONFIG_DIR`（收單快照在隔離設定目錄也讀得到）；契約 v2 規格補兩句（決策日誌不存在時直接建立再記、`A-n：失敗` 與複查不符時改發 `U-n`） | 無新門檻（契約 v2 仍 BAT ≥ 0.8.0-pre.3，其餘 `>= 0.7.0-pre.7`） | 同 v6.1.0 |
 
 `BAT_HELPER_NODE`（v5.2.1）沒有版本門檻：本機沒有這個變數就用 `node`，只有遠端分頁會由 BAT 注入。
 版號以 CT 的 `version-governance.md` § 歷史版號表 與 `auto-session.md` § 依賴的 BAT 基礎設施 為準；v5.1.0 的 BAT 版本出自 CT `CHANGELOG.md` [5.12.3]：[5.1.0] 原寫 `0.6.1-pre.3`，v5.12.3 依 BAT 塔台回覆更正為 `>= 0.6.1-pre.4`（歷史段落不改）。

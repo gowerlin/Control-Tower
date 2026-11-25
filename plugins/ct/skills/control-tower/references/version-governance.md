@@ -12,7 +12,7 @@ Skill YAML frontmatter 僅放 runtime 需要的欄位，至少包含 `name` 與 
 版本事實來源改用 body 內第一個註解：
 
 ```markdown
-<!-- control-tower-version: 6.1.0 -->
+<!-- control-tower-version: 6.1.1 -->
 ```
 
 同步點：
@@ -310,6 +310,7 @@ codex plugin list --json         # ct@control-tower 的 version
 | v6.0.2 | 2026-11-25（**正式版** PATCH） | PATCH（T0553／D857）：新增 `ct-exec/SKILL.md` § Long Content Via Files（唯一權威）——回報區、長段落、工單補充用 Edit／Write 工具寫進工單，不用 heredoc 或 `cat >>` 附加；腳本、JSON、要送 stdin 的內容先用 Write 寫到 scratchpad 檔，再用短指令執行或以 `<` 送入；指令超過一個畫面、含反斜線或有兩層以上引號就改寫檔；Python 一律 `python -X utf8 -I -B`。`control-tower/SKILL.md`、`ct-done` 引用；`yolo-mode.md` § BAT 通道 的 stdin 寫法與三個範例改成先寫檔；CT 文件與腳本用法說明裡的 python 範例加 `-X utf8 -I -B`；`version-governance.md` 路徑說明補 `MSYS_NO_PATHCONV=1`；`*sync` 新增第 6 步對熱區跑 `check-frontmatter.py`（只回報、不修、不阻擋；權威仍是 `memory-protocol.md`）；`ct-evolve` 產生 skill 候選 `SKILL.md` 時引用 frontmatter 權威節。BAT 塔台面板契約 v1 不變；沒有新設定鍵或命令；方法論契約不變。BAT 最低版本不變 |
 | v6.1.0-pre.1 | 2026-11-25（**預覽，不發布**：只打包、不安裝、不建 Release；與穩定版 6.0.2 並行） | 預覽（MINOR，T0557／D868；PLAN-018）：**BAT ↔ CT 契約 v2**——`memory-protocol.md` 新增 § 契約 v2 欄位（唯一權威）：`_tower-state.md` frontmatter 加 `bat_contract: 2`（整數）、`ct_version`、`awaiting_user`（待你決定 `U-n`）、`user_actions`（待你執行 `A-n`）、`reminders`、`next_ids.user`／`action`，工單加 `waiting_user`；誰寫誰清、回答格式（`U-n：…`、`A-n：完成`、`A-n：失敗 …`）、隱私、新欄位時間寫 `+08:00`、筆數上限；§ 大小預算 明寫含 frontmatter；§ 塔台狀態面板 加 `BAT 契約` 欄與提示行。`auto-session.md` § 塔台分頁角色宣告：先寫 `bat_contract` 再 `--set-role tower --bat-contract 2`、解析 `bat-contract:`／`hooks:`、舊 BAT 不帶參數重送一次、非 BAT 終端照寫欄位。`yolo-mode.md` 斷點 A／B-1／B-2／C／E 與提問升級寫 `awaiting_user`＋`waiting_user`、暫停訊息帶 `U-n`；`work-order-system.md` 派工時依賴的工單在等使用者就不派、收單把待使用者執行的項目寫成 `user_actions`；`SKILL.md` § Output Style 回覆結尾重列待決；新設定 `user_inbox`（`on`／`off`）；`check-frontmatter.py` 檢查契約 v2 欄位（新增警告層級，只給筆數上限）；`ct-help` 新增〈與 BAT 協作〉。`summary_version` 不升、契約 v1 欄位不變；方法論契約不變。需要支援契約 v2 的 BAT（BAT ≥ 0.8.0-pre.3）；舊 BAT 降級運作 |
 | v6.1.0 | 2026-11-25（**正式版** MINOR，取代 6.0.2 成為穩定版） | MINOR（T0562／D879；PLAN-018）：自 6.1.0-pre.1 定稿，**規範內容與 6.1.0-pre.1 相同**（BAT ↔ CT 契約 v2，見上一列），只改版號、預覽標示與文件。在 BAT 0.8.0-pre.3 的測試版上實機驗證：開工宣告與 `bat-contract:`／`hooks:` 解析、舊 BAT 降級（只重送一次＋降級提示）、待決與待執行的寫入／回答／移除、回覆結尾重列、通知保護、回合訊息卡、`bat-hooks` plugin 並存、CT guard 照常；CHANGELOG `[6.1.0]` 的〈已知未驗〉依結果改寫。需要支援契約 v2 的 BAT（BAT ≥ 0.8.0-pre.3）；舊 BAT 降級運作 |
+| v6.1.1 | 2026-11-25（**正式版** PATCH，取代 6.1.0 成為穩定版） | PATCH（T0564／D882）：`ct-session-stats.py` 三個預設讀取位置（`--projects-dir`／`--claude-home`／`--claude-json`）跟隨 `CLAUDE_CONFIG_DIR`（有值時 `<dir>/projects`、`<dir>`、`<dir>/.claude.json`；沒有值或只有空白時維持 `~` 下的原預設；命令列明確給值優先），修正設了 `CLAUDE_CONFIG_DIR` 時用量快照讀不到資料；規格補兩句：`decision-log-system.md` 契約 v2 要求記一筆而 `_decision-log.md` 不存在時直接以初始模板建立、`memory-protocol.md` `A-n：失敗` 回報與塔台複查實況不符時改發一筆 `U-n`。契約 v2 欄位、BAT 最低版號 0.8.0-pre.3、設定鍵與命令都不變 |
 
 > v4.x ~ v5.0.2 各列以 `docs/CHANGELOG.md` 對應版本段為準。
 >

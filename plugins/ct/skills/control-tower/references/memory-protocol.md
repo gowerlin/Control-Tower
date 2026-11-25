@@ -64,9 +64,9 @@
 schema_kind: tower-state
 summary_version: 1
 bat_contract: 2
-ct_version: "6.1.0"
+ct_version: "6.1.1"
 updated_at: "2026-10-25T19:21:43+0800"
-session: "2026-10-25 17:48 塔台 session（CT v6.1.0）"
+session: "2026-10-25 17:48 塔台 session（CT v6.1.1）"
 next_ids:
   workorder: "T0306"
   decision: "D341"
@@ -191,7 +191,7 @@ todo:
 | 欄位 | 型別 | 寫法 |
 |---|---|---|
 | `bat_contract` | 整數 `2`，**不加引號** | CT 6.1.0 起**每次**寫 `_tower-state.md` 都寫；`user_inbox: off`、非 BAT 終端也寫（契約版本和要不要寫清單是兩件事） |
-| `ct_version` | 字串 | 每次寫入都寫，值取自已安裝的 `control-tower/SKILL.md` 版本註解 `<!-- control-tower-version: X -->` 的 `X`（例 `"6.1.0"`）；BAT 只顯示、不比較 |
+| `ct_version` | 字串 | 每次寫入都寫，值取自已安裝的 `control-tower/SKILL.md` 版本註解 `<!-- control-tower-version: X -->` 的 `X`（例 `"6.1.1"`）；BAT 只顯示、不比較 |
 | `next_ids.user`／`next_ids.action` | 字串 `"U-n"`／`"A-n"` | 下一個可用編號（見下方〈編號〉） |
 | `awaiting_user` | 陣列，≤ 20 筆 | 待你決定；沒有項目時不寫這個鍵 |
 | `user_actions` | 陣列，≤ 20 筆 | 待你執行；沒有項目時不寫這個鍵 |
@@ -245,11 +245,14 @@ todo:
     需求對齊時一來一往的提問不寫。
   - 不寫：斷點 D（不暫停，使用者到 Worker 分頁處理）、使用者中斷。
   - 對使用者顯示的暫停訊息帶上同一個 `U-n`。
-  - **移除**：使用者回答後，在同一次寫入移除該筆、清掉工單的 `waiting_user`、決策日誌記一筆（含 `U-n`）。工單取消、重開或那件事不再需要決定時，
+  - **移除**：使用者回答後，在同一次寫入移除該筆、清掉工單的 `waiting_user`、決策日誌記一筆（含 `U-n`；`_decision-log.md` 還不存在時見
+    [decision-log-system.md](decision-log-system.md) § 注意事項 的 v6.1.1+ 例外）。工單取消、重開或那件事不再需要決定時，
     同樣一併移除，決策日誌記原因。
 - **`user_actions`**：收單時，回報區列出的「待實機／待使用者執行」項目各寫一筆（[work-order-system.md](work-order-system.md) § 回報處理流程）；
   塔台自己發現要使用者執行的事也可以寫。使用者回 `A-n：完成` → 移除＋決策日誌；回 `A-n：失敗 <說明>` → 移除＋決策日誌，
-  塔台依內容開 BUG 或重開工單。原本會寫進 `todo` 的同類項目改寫這裡，`todo` 不重複列。
+  塔台依內容開 BUG 或重開工單。v6.1.1+：塔台複查後若與回報不符（例：回報失敗，但塔台看到的實況是成功），不開 BUG、不重開，
+  改發一筆 `awaiting_user`（`source: "tower-question"`，選項至少含「不處理」「開 BUG 追查」「再發一筆 A-n 重驗」），決策日誌寫明比對結果。
+  原本會寫進 `todo` 的同類項目改寫這裡，`todo` 不重複列。
 - **`reminders`**：專案的定期事項（例：每週日誌清查、到某日重跑掃描）。塔台做完時更新 `last_at`／`due_at`；不再需要時移除。
 - **不自動遷移**：升級到 6.1.0 時不批次改寫既有的 `todo`；塔台下次處理到該項時再搬到對應清單。
 - 三個清單只在 frontmatter（本文不重抄；依本文重寫摘要時原樣保留，見上方 § 機器可讀摘要 › 維護時機）。
@@ -290,7 +293,7 @@ PowerShell `Get-Date -Format "yyyy-MM-ddTHH:mm:ssK"`。`reminders` 的 `due_at`�
 schema_kind: tower-state
 summary_version: 1
 bat_contract: 2
-ct_version: "6.1.0"
+ct_version: "6.1.1"
 updated_at: "2026-11-25T03:10:23+0800"
 next_ids:
   workorder: "T0130"

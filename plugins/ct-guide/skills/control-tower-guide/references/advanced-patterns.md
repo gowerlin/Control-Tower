@@ -381,7 +381,7 @@ Worker 遇到問題時，塔台依序建議三層防線：
 它把同一則訊息拆成的多筆紀錄去重（不去重 token 會灌大一倍多），依「工單 frontmatter `session_ids` → 第一則 `/ct-exec T####` → 分頁標題 → BAT log（可選）」歸到工單，
 子代理另列；**塔台用量另列、不攤分**——塔台大部分用量發生在沒有 Worker 執行的時候，硬攤只會量到並行度。成本是依價目表換算的等價 API 成本，標「估」；
 「卡住」看連續 10 次工具結果裡的失敗數（≥ 3 只是 🔵 觀察），不看 turn 數。session 紀錄 30 天後會被清掉，所以塔台收單時對該工單寫一筆只有數字的快照
-（`_ct-workorders/_insights/session-stats/<YYYY-MM>.json`），之後的跨期比較與給 ct-evolve 的候選事實（見下方 § ct-evolve › Session 證據）都從快照來。每次輸出前腳本自己跑隱私自檢，
+（`_ct-workorders/_insights/session-stats/<YYYY-MM>.json`），之後的跨期比較與給 ct-evolve 的候選事實（見下方 § ct-evolve › Session 證據）都從快照來。v6.1.1 起腳本讀的位置跟隨 `CLAUDE_CONFIG_DIR`：設了就讀 `$CLAUDE_CONFIG_DIR/projects`（`*insights tools` 另讀該目錄下的設定與 `.claude.json`），沒設才讀 `~/.claude/projects`；6.1.0 以前在隔離設定目錄裡收單，快照只會回「資料不可用」。每次輸出前腳本自己跑隱私自檢，
 命中路徑、指令片段、信箱或權杖就不輸出。設計理由與一張資料流圖見 `preview-methodology.md` § beta.10：session 用量統計；權威：CT `ct-insights/references/analysis-rules.md` § Session 用量統計。
 
 **工具清單建議（v6.0.0-beta.12+）**：`*insights tools [--all-projects] [--keep …]` 用同一支腳本（`--tools`）回答「哪些 skill、plugin、MCP server、agent 類型與內建工具一直載入、卻很少或從來沒用到」。

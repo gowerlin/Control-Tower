@@ -113,7 +113,7 @@ v5 的差別在「派工」與「回報」兩端可以由 BAT 自動化，依 `a
 一張分頁從宣告、派工、通知到回收的完整路徑與設計理由，見 `bat-integration.md` § 一張分頁的生命週期。
 
 v6.0.0-beta.10 起在收單這一端再加兩步，都在任何 `--close-worker` **之前**：先用 BAT MCP 讀 Worker 分頁的 `claudeSessionId` 補進工單 `session_ids`（備援，分頁關掉就讀不到了），
-再對這張工單寫一筆 session 用量快照。兩步拿不到資料都只跳過或註一句，不影響收單結果。塔台啟動時也在開工條目記自己的 session id。
+再對這張工單寫一筆 session 用量快照（設了 `CLAUDE_CONFIG_DIR` 時改讀該目錄下的 session 紀錄，v6.1.1+）。兩步拿不到資料都只跳過或註一句，不影響收單結果。塔台啟動時也在開工條目記自己的 session id。
 設計理由見 `preview-methodology.md` § beta.10：session 用量統計；權威：CT `work-order-system.md` § 收單補記 session id、§ 收單快照。
 
 v5.3.0 起，帶 `isolation: worktree` 的工單在迴圈尾端多一段**合併**：Worker 的成果在分支 `ct/T####` 上，要合併回 `main` 才算進了主線。

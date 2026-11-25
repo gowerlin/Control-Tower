@@ -47,6 +47,12 @@ yolo 下塔台同時看好幾個 Worker。一個 Worker 碰到斷點、塔台停
 
 **清掉**：你回答後，塔台在同一次寫入移除那一筆、清掉工單的 `waiting_user`，並在決策日誌記一筆。`A-n` 回「完成」或「失敗」都移除；失敗的後續由塔台開 BUG 或重開工單承接，不讓同一筆一直掛著。
 
+**`A-n：失敗` 但塔台複查結果不同（6.1.1 起寫進規格）。** 塔台收到失敗回報後會自己複查；複查結果與回報不符時（例：你回報失敗，塔台看到的實況是成功），不開 BUG、也不重開工單，改發一筆 `U-n` 請你裁示，選項至少有「不處理」「開 BUG 追查」「再發一筆 `A-n` 重驗」，決策日誌寫明比對結果。
+
+**決策日誌還不存在時（6.1.1 起寫進規格）。** 塔台平常不主動建立 `_decision-log.md`；但你回答 `U-n`／`A-n`、要記一筆而它還不存在時，塔台直接以初始模板建立再記，不另外問你。
+
+這兩件事是 6.1.0 實機驗收時塔台已經這樣做、判定合理的做法，6.1.1 補進規格，欄位與回答格式都沒變。
+
 **依賴的工單在等你 → 先不派。** 派工前塔台看 `depends_on`：依賴的工單有 `waiting_user`，這張就先不派，印一行說明在等哪一題；其他工單照常派。
 
 **不自動遷移。** 升到 6.1.0 時，舊 `todo` 裡「等你決定」「等你實機驗收」的項目不會被批次改寫，塔台下次處理到那一項時再搬。
@@ -148,17 +154,18 @@ CT 只看這一次呼叫的輸出；BAT MCP 雖然也查得到這個分頁的契
 - 回覆結尾重列（每則回覆、兩邊都空不印、斷點 A 暫停時、舊 BAT 下也重列）
 - 通知保護、回合訊息卡、`bat-hooks` plugin 並存（`hooks: ok`、卡片不重複）、CT 的長指令防護照常
 
-還沒實機驗過的路徑：`hooks: none` 與 `plugin-outdated` 的提示行；「BAT 認得參數但不支援 v2」的兩種輸出；非 BAT 終端與 Codex 塔台；斷點 B-1、B-2、C、E 與 Worker 提問升級寫待決；工單的 `waiting_user` 與「依賴的工單在等你時先不派」；收單時自動寫 `A-n`；`user_inbox: off`、`reminders` 與筆數警告。完整清單見[更版紀錄 v6.1.0](/versions/releases#v6-1-0)。
+還沒實機驗過的路徑：`hooks: none` 與 `plugin-outdated` 的提示行；「BAT 認得參數但不支援 v2」的兩種輸出；非 BAT 終端與 Codex 塔台；斷點 B-1、B-2、C、E 與 Worker 提問升級寫待決；工單的 `waiting_user` 與「依賴的工單在等你時先不派」；收單時自動寫 `A-n`；`user_inbox: off`、`reminders` 與筆數警告。完整清單見[更版紀錄 v6.1.0](/versions/releases#v6-1-0)。6.1.1 補進規格的兩句（見[什麼時候寫、什麼時候清](#lifecycle)）是照 6.1.0 驗收時的實況寫的，換上 6.1.1 後還沒在新的塔台 session 再觀察（見[更版紀錄 v6.1.1](/versions/releases#v6-1-1)）。
 
 ## 延伸閱讀 {#further-reading}
 
-- `control-tower/references/memory-protocol.md` § 契約 v2 欄位（v6.1.0+）（欄位、上限、回答格式的唯一權威）
+- `control-tower/references/memory-protocol.md` § 契約 v2 欄位（v6.1.0+）（欄位、上限、回答格式的唯一權威；6.1.1 起含 `A-n：失敗` 與複查不符的處理）
+- `control-tower/references/decision-log-system.md` § 注意事項（6.1.1 起：決策日誌還不存在時直接建立再記）
 - `control-tower/references/auto-session.md` § 塔台分頁角色宣告（`--set-role tower`，v5.2.0+）（開工宣告、降級提示、`hooks:` 提示）
 - `control-tower/references/tower-config.md` § 可用選項（`user_inbox`）
 - `control-tower/SKILL.md` § Output Style（回覆結尾重列）
 - `ct-help/SKILL.md` § 與 BAT 協作（Working With BAT, v6.1.0+）
 - `control-tower-guide/references/bat-integration.md` § BAT ↔ CT 契約 v2：待辦分頁（v6.1.0+）、`preview-bat-contract-v2.md`（預覽期間的專章，保留作參考）
-- CT `CHANGELOG.md` `[6.1.0]`；CT 安裝與使用指南 § 2.69
+- CT `CHANGELOG.md` `[6.1.0]`、`[6.1.1]`；CT 安裝與使用指南 § 2.69、§ 2.70
 
 ::: warning 摘要不具權威
 Portal 是摘要，不具權威，與 reference 有出入時以 reference 為準。

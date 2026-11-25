@@ -90,6 +90,8 @@ BAT 視窗裡的指揮塔面板（總覽、決策、臭蟲、待辦池、工單�
 - **`*insights sessions`**：依工單彙總 token 用量與估算成本，回答「這張工單、這次塔台對話用了多少」。Worker 收尾時把自己的 session id 寫進工單的 `session_ids`，塔台收單時補記，所以原始紀錄清掉之後仍對得上工單。統計出的候選事實可以用 `/ct-evolve --facts-from` 接進學習流程。只支援 Claude Code。
 - **`*insights tools`**：找出每一輪 context 都載入、卻很少或從來沒用到的 skill、plugin、MCP server、agent 類型與內建工具，依工單類型分組，寫明在哪一層（專案、使用者、claude.ai 帳號）用哪個設定關掉。**只建議、不改設定**，要不要套用由你決定，改完開新 session 才生效。
 
+**讀哪個目錄（v6.1.1 起）。** 這兩個子命令與塔台收單時寫的用量快照，都由 `ct-insights` 附帶的 `ct-session-stats.py` 讀 Claude Code 的紀錄。預設位置跟著 `CLAUDE_CONFIG_DIR` 走：設了（去掉前後空白後不是空的）就讀 `$CLAUDE_CONFIG_DIR/projects`（session 紀錄）、`$CLAUDE_CONFIG_DIR`（使用者設定）與 `$CLAUDE_CONFIG_DIR/.claude.json`；沒設時讀 `~/.claude/projects`、`~/.claude`、`~/.claude.json`；命令列明確給的 `--projects-dir`、`--claude-home`、`--claude-json` 一律優先。6.1.0 以前三個位置寫死在家目錄，在隔離設定目錄裡跑的塔台收單時讀不到紀錄，快照只能跳過；沒設 `CLAUDE_CONFIG_DIR` 的人行為不變。
+
 ## FIELDGUIDE：把做法沉澱成規範 {#fieldguide}
 
 FIELDGUIDE 是專案的 coding 教戰手冊，分三層：L1 設計哲學、L2 決策樹、L3 本專案的具體快照。塔台的 `*fieldguide` 指令只做讀取和分析，所有寫入都開工單交給 `/ct-fieldguide` 在 Worker session 執行：
@@ -130,7 +132,7 @@ Worker 遇到問題時，塔台依序建議三層：
 - `ct-status/SKILL.md`（§ Modes、§ Read Order、§ Landing Zone Check、§ Status Buckets、§ Output）
 - `control-tower/references/decision-log-system.md` § 格式規格、§ 塔台操作流程、§ 與 `*sync` 的關係、§ 收斂
 - `control-tower/references/memory-protocol.md` § BAT 塔台面板讀取契約（§ 大小預算、§ 各檔要求、§ 值域對照（嚴重度／優先級））、§ YAML frontmatter 字串寫法與寫入後自檢（v6.0.1+）
-- `ct-insights/references/analysis-rules.md` § Session 用量統計（`*insights sessions`）、§ 工具清單建議（`*insights tools`）；`ct-evolve/SKILL.md` § Session Evidence
+- `ct-insights/references/analysis-rules.md` § Session 用量統計（`*insights sessions`）、§ 工具清單建議（`*insights tools`）（v6.1.1 起預設路徑跟隨 `CLAUDE_CONFIG_DIR`）；`ct-evolve/SKILL.md` § Session Evidence
 - `ct-insights/SKILL.md`（§ Scope、§ Analysis Flow、§ Report Rules）、`ct-insights/references/report-template.md` § 工單健康度（5 項指標）、§ 完整報告結構（Project / Global）
 - `spec/CT設計規格-ct-insights使用模式分析.md` § 三、分析維度、§ 四、三個作用域的詳細行為
 - `control-tower/references/fieldguide-commands.md`（§ 命令總覽）、`ct-fieldguide/SKILL.md`

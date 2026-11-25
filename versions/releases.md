@@ -1,13 +1,13 @@
 ---
 title: 更版紀錄
-description: BMad Control Tower 近 10 版的更版紀錄（最新 v6.1.0），更早的版本見演進史。
+description: BMad Control Tower 近 10 版的更版紀錄（最新 v6.1.1），更早的版本見演進史。
 ---
 
 <!-- 本頁由 scripts/sync-ct-release.mjs 從 CT CHANGELOG 產生，請勿手改；要改內容請改來源後重跑。 -->
 
 # 更版紀錄
 
-目前版本 **v6.1.0**（2026-11-25）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 65 版（v2.1.1 ～ v5.13.1）請看[演進史](./evolution)。
+目前版本 **v6.1.1**（2026-11-25）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 66 版（v2.1.1 ～ v5.14.0）請看[演進史](./evolution)。
 
 本頁只列正式版。預發行版的改動已彙整在對應正式版的段落：v6.0.0-pre.1 ～ v6.0.0-rc.1（14 版）彙整在 v6.0.0，逐版說明保留在「實驗功能」的[預發行專章](../preview/methodology-adapters)作為歷史參考；v6.1.0-pre.1（1 版）彙整在 v6.1.0。
 
@@ -16,6 +16,65 @@ description: BMad Control Tower 近 10 版的更版紀錄（最新 v6.1.0），�
 :::
 
 ::: v-pre
+
+## 6.1.1 <small>2026-11-25</small> {#v6-1-1}
+
+
+> **修正：設了 `CLAUDE_CONFIG_DIR` 時，收單的用量快照讀不到資料。** Claude Code 設了 `CLAUDE_CONFIG_DIR` 時，對話紀錄（`projects/`）、使用者設定與 `.claude.json`
+> 都放在那個目錄下；`ct-session-stats.py` 的三個預設讀取位置卻寫死在家目錄（`~/.claude/projects`、`~/.claude`、`~/.claude.json`），
+> 所以在隔離設定目錄裡的塔台每次收單寫快照都回 exit `4`（資料不可用），只能照規則跳過。本版讓三個預設跟著 `CLAUDE_CONFIG_DIR` 走。
+> 另把 6.1.0 實機驗收時塔台已經做對、但規格沒有寫明的兩件事補進規格：決策日誌還不存在時怎麼記契約 v2 的回答，以及 `A-n：失敗` 的回報與塔台複查結果不符時怎麼辦。
+> **契約 v2 欄位不變**；BAT 最低版本不變（契約 v2 需要 BAT ≥ 0.8.0-pre.3，其餘功能 `>= 0.7.0-pre.7`）；沒有新設定鍵或命令。
+> **plugin**：6.1.1 上架 marketplace `control-tower`（`ct@control-tower`、`ct-guide@control-tower` 6.1.1）；zip 手動安裝照舊支援。
+> **下載**：GitHub Release `ct-v6.1.1`（Latest）；6.1.0 成為上一個穩定版，Release `ct-v6.1.0` 仍可下載。
+> 方法論契約仍 `ct-methodology-adapter/v1`，**契約不變**；內建 `bmad.yaml` 0.2.1、`ct-adapter-pstack` 0.2.6（只改版號註解）。
+
+### 升級說明
+
+**從 `6.1.0` 升級**：只換 skill 檔案；沒有新設定鍵、新的 frontmatter 欄位或新命令，舊工單、舊快照與 `_tower-state.md` 照常。
+
+- 建議 8 個 skill 一起換（8 個 `SKILL.md` 版本註解都變了）。程式有改的是 `ct-insights`（`ct-session-stats.py` 預設路徑與說明）；規則有改的是 `control-tower`
+  （`decision-log-system.md`、`memory-protocol.md` 各補一句）；其餘 6 個只改版號。
+- 沒設 `CLAUDE_CONFIG_DIR` 的人行為不變：預設仍讀 `~/.claude/projects`、`~/.claude`、`~/.claude.json`，快照結果與 6.1.0 相同。
+- 新規則從換版後新開的 session 起生效；已開著的塔台與 Worker session 仍照舊版規則。
+- plugin 使用者：marketplace 更新後把 `ct@control-tower`、`ct-guide@control-tower` 升到 6.1.1（安裝指南 § 4.1〈用 plugin marketplace 安裝／升級〉）。
+
+### Fixed
+
+- **設了 `CLAUDE_CONFIG_DIR` 時用量快照讀不到資料**：`ct-insights/scripts/ct-session-stats.py` 的三個預設讀取位置改成跟隨 `CLAUDE_CONFIG_DIR`：
+  - 有值（去掉前後空白後非空）時：`--projects-dir` = `$CLAUDE_CONFIG_DIR/projects`、`--claude-home` = `$CLAUDE_CONFIG_DIR`、`--claude-json` = `$CLAUDE_CONFIG_DIR/.claude.json`
+  - 沒有值或只有空白時：維持 `~/.claude/projects`、`~/.claude`、`~/.claude.json`
+  - 命令列明確給的值一律優先
+  - 影響收單快照、`*insights sessions` 與 `*insights tools`（`--tools` 讀設定來源的位置也一併跟隨）；`--help` 與 `ct-insights/references/analysis-rules.md` 的參數說明同步改寫
+  - 位置依 Claude Code 官方文件：設了 `CLAUDE_CONFIG_DIR` 時，`~/.claude` 下的路徑都改在該目錄下，`.claude.json` 也一樣
+
+### Changed
+
+- `decision-log-system.md` § 注意事項：「塔台不主動建立 `_decision-log.md`」後補一條例外——契約 v2 要求記一筆（使用者回答 `U-n`／`A-n`）而決策日誌還不存在時，
+  塔台直接以初始模板建立再記，不另問使用者；`memory-protocol.md` § 契約 v2 欄位 › 誰寫、誰清 的「決策日誌記一筆」加上指向這條例外的連結
+- `memory-protocol.md` § 契約 v2 欄位 › 誰寫、誰清：`A-n：失敗 <說明>` 的處理補一句——塔台複查後若與回報不符（例：回報失敗，但塔台看到的實況是成功），
+  不開 BUG、不重開工單，改發一筆 `awaiting_user`（`source: "tower-question"`，選項至少含「不處理」「開 BUG 追查」「再發一筆 A-n 重驗」），決策日誌寫明比對結果
+- 上面兩句都是把 6.1.0 實機驗收時塔台已經採取、且判定合理的做法寫進規格，沒有新增欄位或改變既有欄位的語意
+- 版號：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表（加 6.1.1 列）、`methodology-adapters.md` 版本歷史（加 6.1.1 列，契約不變）、
+  `memory-protocol.md` 的 `ct_version` 範例值、`bmad.yaml` 版號註解；`ct-adapter-pstack` 版號 6.1.1（`adapter_version` 仍 0.2.6）
+- 安裝指南：新增 § 2.70 本版變更；§ 1、§ 4.1、§ 4.3 版號；§ 14 `*insights` 與 `*insights tools` 兩列補「預設跟隨 `CLAUDE_CONFIG_DIR`」
+
+### Unchanged
+
+- **BAT ↔ CT 契約 v2** 的欄位、型別、寫入／移除規則、回答格式與開工宣告；契約 v1 欄位與 `summary_version`
+- BAT 最低版本（契約 v2 需要 BAT ≥ 0.8.0-pre.3；其餘功能 `>= 0.7.0-pre.7`）、BAT helper 的參數與 exit code
+- 設定鍵與預設值、狀態值、frontmatter 欄位、命令、派工命令
+- `ct-session-stats.py` 的輸出格式、歸屬規則、隱私自檢與 exit code（`generator` 版號仍 `0.2.0`）；報告裡顯示的設定位置字串（例 `~/.claude/settings.json`）照舊
+- 方法論契約 `ct-methodology-adapter/v1`、adapter 描述檔
+- zip 手動安裝流程與發行物版面（全量 zip、8 個單一 skill zip、`ct-adapter-pstack` zip、Guide zip），不含 `scripts/tests/`；plugin 規則
+- 歷史段落（本檔 `[6.1.0]` 以前的段落、版號表舊列、安裝指南 § 2.69 以前的章節）與「v6.1.0+」等引入標記不改
+
+### Known unverified（已知未驗）
+
+`[6.1.0]` 的 7 項不變。本版另有：
+
+- 在設了 `CLAUDE_CONFIG_DIR` 的真實塔台 session 裡收單、寫出用量快照：發版前只用單元測試與指令實跑驗過（設定目錄指到有紀錄的目錄能讀到、指到空目錄回 exit `4`），尚未在隔離設定目錄的塔台實機觀察
+- 兩處規格補句在新塔台 session 的實際行為：規格依 6.1.0 驗收時的實況寫成，換上 6.1.1 後尚未再觀察
 
 ## 6.1.0 <small>2026-11-25</small> {#v6-1-0}
 
@@ -449,44 +508,12 @@ RC 期間沒有新驗證到的項目；下列 41 項與 `[6.0.0-rc.1]` 相同，
 - zip 手動安裝流程、發行物版面（全量 zip、8 個單一 skill zip、Guide zip）、plugin 名稱與內容組成不變
 - 歷史段落（本檔舊段落、版號表舊列、安裝指南舊章節）不改
 
-## 5.14.0 <small>2026-10-30</small> {#v5-14-0}
-
-
-> **MINOR：CT 另提供 plugin marketplace 安裝（Claude Code、Codex）；zip 手動安裝照舊。**
-> marketplace `control-tower` 放在本站的公開 repo 根目錄（指令見安裝頁）；CT plugin `ct`（8 個 skill）、教學 plugin `ct-guide`；beta 不上架。
-> BAT 介面不變、最低 BAT 版本不變。**Codex 搭配 BAT 派工請繼續用 zip 手動安裝**（BAT 對 Codex 送 `$ct-exec`，plugin 版在 Codex 只能用 `$ct:ct-exec` 呼叫）。升級只換 skill 檔案（見安裝指南 § 2.56）。
-
-### Added
-
-- `version-governance.md` § 安裝／升級流程 › plugin 安裝／升級（唯一權威）：安裝（`claude plugin marketplace add`（加本站的公開 repo，指令見安裝頁）→ `claude plugin install ct@control-tower`；`codex plugin marketplace add` → `codex plugin add ct@control-tower`）、升級、從 zip 手動安裝遷移（**先備份並移除**手動安裝，否則 `/ct-exec`、`$ct-exec` 會用手動那份，plugin 版靜默不生效）、版號確認（`plugin list --json`）、回退
-- `auto-session.md` § 依安裝方式的 skill 呼叫字串（唯一權威）：Claude 手動／plugin 都用 `/ct-exec T####`（完整寫法 `/ct:ct-exec`）；Codex 手動 `$ct-exec T####`、plugin `$ct:ct-exec T####`；BAT 派工對 Codex 只支援手動安裝；Codex 寫法一律單引號
-- 安裝指南 § 4.1〈用 plugin marketplace 安裝／升級〉、§ 2.56
-
-### Changed
-
-- `data-layer-architecture.md` § 寫入規則：Layer 1 路徑加上 plugin 安裝路徑（`~/.claude/plugins/`、`CLAUDE_CODE_PLUGIN_CACHE_DIR`、`$CODEX_HOME/plugins/`、`$CODEX_HOME/.tmp/marketplaces/`）；Q2 補 plugin 機制、Q3 補 plugin 安裝的授權（只能用 plugin 指令）、Q4 註明 plugin 不備份。`control-tower/SKILL.md`、`ct-evolve/SKILL.md` 改為只引用權威，不再列路徑
-- `ct-insights` 預篩腳本的路徑改用「已載入的 `ct-insights` skill 所在目錄」，不再寫死 `~/.claude/skills`／`~/.codex/skills`（plugin 安裝時 `*insights workflow` 才找得到腳本）
-- `ct-help`、8 個 `agents/openai.yaml` 的 `default_prompt`、安裝指南 § 4.2／§ 4.3／§ 14：呼叫寫法補 plugin 安裝（Codex 用 `$ct:<skill>`）；非 BAT 開分頁／剪貼簿的 `<agent-cli>` 為 `codex` 時改用 Codex 寫法
-- 版號：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表；安裝指南新增 § 2.56，§ 1〈目前版本一覽〉、§ 4.1 版號範例與發行物檔名同步（`OLD=5.13.1`、`VER=5.14.0`）
-
-### Fixed
-
-- `auto-session.md` § Worker 側讀取規則寫死 `~/.claude/skills/ct-exec/SKILL.md`（plugin 安裝與 Codex 下都錯），改相對連結；原文指向的兩個小節名稱已不存在，改指 `ct-exec/SKILL.md` § Mode And Environment
-- `tower-config.md` `worker_max_retries`、`worker_strikeout_action` 兩列的 `session-guardrails.md` 連結層級錯（`../` → `../../`）；`enhancement-integration.md` 指向 `data-layer-architecture.md` 的連結層級錯
-
-### Unchanged
-
-- zip 手動安裝流程、發行物版面（全量 zip、8 個單一 skill zip、Guide zip）不變；claude.ai 仍上傳單一 skill zip
-- BAT 介面、派工命令（`--skill`／`--workorder`）、斷點 A 正則、設定、工單欄位、狀態值不變
-- 8 個 skill 一律放在同一個 plugin（`../` 相對連結依賴它們是兄弟目錄）
-- 歷史段落（本檔舊段落、版號表舊列、安裝指南舊章節）不改
-
 :::
 
 ## 延伸閱讀 {#further-reading}
 
-- CT `CHANGELOG.md`（共 75 個版本；本頁列最近 10 版）
+- CT `CHANGELOG.md`（共 76 個版本；本頁列最近 10 版）
 - CT `version-governance.md` § 歷史版號表
-- [演進史](./evolution)：更早的 65 版與九個世代
+- [演進史](./evolution)：更早的 66 版與九個世代
 
 Portal 是摘要，不具權威；與 CT reference 有出入時，以 reference 為準。
