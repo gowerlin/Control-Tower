@@ -27,8 +27,29 @@ const RELEASES_MD = path.join(SITE, 'versions', 'releases.md')
 // 去識別改寫表：[{ version, pattern（正則，不寫敏感原值）, replace, reason }]；每筆都必須命中，否則報錯（來源改了要回來更新）
 // pattern 裡的 {id} 代表任一個內部 id（ID_SOURCE）、{ref} 代表任一個回函／契約條目（REF_SOURCE），改寫表本身就不必寫出原值
 const REWRITES = path.join(SITE, 'data', 'release-rewrites.json')
-// 預發行版的逐版說明所在的專章（從 versions/releases.md 連過去）
-const PREVIEW_PAGE = '../preview/methodology-adapters'
+// 預發行版的逐版說明所在的專章（從 versions/releases.md 連過去），依併入的正式版號對應。
+// 沒有專章的正式版（例 6.1.0：預覽內容直接寫進正式頁）只寫「已彙整在 vX 的段落」
+const PREVIEW_PAGES = { '6.0.0': '../preview/methodology-adapters' }
+
+// 預發行段落依併入的正式版號分組（CHANGELOG 由新到舊），各組一句；有專章的加連結
+function prereleaseNote(skipped) {
+  const groups = []
+  for (const v of skipped) {
+    const base = v.replace(/-.*$/, '')
+    const g = groups.at(-1)
+    if (g && g.base === base) g.list.push(v)
+    else groups.push({ base, list: [v] })
+  }
+  const parts = groups.reverse().map(({ base, list }) => {
+    const range = list.length === 1 ? `v${list[0]}` : `v${list.at(-1)} ～ v${list[0]}`
+    const page = PREVIEW_PAGES[base]
+    return (
+      `${range}（${list.length} 版）彙整在 v${base}` +
+      (page ? `，逐版說明保留在「實驗功能」的[預發行專章](${page})作為歷史參考` : '')
+    )
+  })
+  return `本頁只列正式版。預發行版的改動已彙整在對應正式版的段落：${parts.join('；')}。`
+}
 
 // 內部 id：工單號、塔台決策號、BUG／PLAN 編號。CHANGELOG 給維護者看，公開站不需要這些出處
 const ID_SOURCE = String.raw`\b(?:CT-T[0-9]{3}|T[0-9]{4}|D[0-9]{3}|BUG-[0-9]{3}|PLAN-[0-9]{3})\b`
@@ -375,13 +396,7 @@ function main() {
     `目前版本 **v${version}**（${release.releasedAt}）。這裡列出最近 ${full.length} 版的完整紀錄，最新的在最上面；` +
       `更早的 ${older.length} 版（v${older.at(-1)?.version ?? '—'} ～ v${older[0]?.version ?? '—'}）請看[演進史](./evolution)。`,
     '',
-    ...(skipped.length
-      ? [
-          `本頁只列正式版。預發行版 v${skipped.at(-1)} ～ v${skipped[0]}（${skipped.length} 版）的改動已彙整在 v${skipped[0].replace(/-.*$/, '')} 的段落，` +
-            `逐版說明保留在「實驗功能」的[預發行專章](${PREVIEW_PAGE})作為歷史參考。`,
-          ''
-        ]
-      : []),
+    ...(skipped.length ? [prereleaseNote(skipped), ''] : []),
     '::: tip 摘要不具權威',
     '本頁照錄 CT 的 CHANGELOG，只拿掉工單、決策、驗收回函等內部編號與出處註記。規則的權威定義在 CT 各 skill 與 references，兩者有出入時以 CT 本體為準。',
     ':::',

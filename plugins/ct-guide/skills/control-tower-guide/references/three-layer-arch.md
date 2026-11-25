@@ -341,3 +341,6 @@ v5.13.0／v6.0.0-beta.3 起兩個索引的格式有唯一權威（CT `bug-plan-s
 為什麼由寫的一方自檢、而不是要讀者放寬：讀者不只一個，CT 寫的 frontmatter 也不只摘要（工單、BUG／PLAN／EXP、`_handover`／`_reply` 都有），在寫入點擋下最便宜；契約 v1 本身不動，單引號字串在 YAML 裡一樣是字串。規則以 CT `memory-protocol.md` § YAML frontmatter 字串寫法與寫入後自檢 為準。
 
 > **v6**：這份摘要 v6 自 `6.0.0-pre.1` 起就有，beta.3～6.0.1 欄位都沒有改（beta.10 的塔台 session id 記在開工條目，不加摘要欄位；6.0.1 只補字串寫法與寫入後自檢）；穩定版到 5.13.0 才補進同一份契約 v1。v6 預覽時的說明與 BAT 版本門檻見 `preview-methodology.md` § `_tower-state.md` 機器可讀摘要。
+
+> **v6.1.0+（BAT ↔ CT 契約 v2）**：摘要另加契約 v2 欄位（`bat_contract`、`ct_version`、`awaiting_user`、`user_actions`、`reminders`、`next_ids.user`／`action`）；
+> 契約 v1 欄位不動、`summary_version` 不升（兩個版號的差別）；`check-frontmatter.py` 另檢查這些欄位。見 `preview-bat-contract-v2.md` § 欄位一覽：記住名字就好，寫法看權威節。

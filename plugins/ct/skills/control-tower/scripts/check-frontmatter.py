@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""check-frontmatter.py — CT 寫的 YAML frontmatter 寫入後自檢（T0549；v6.0.1 起隨 control-tower 發行）。
+"""check-frontmatter.py — CT 寫的 YAML frontmatter 寫入後自檢（T0549；v6.0.1 起隨 control-tower 發行；v6.1.0 起另檢查契約 v2 欄位，T0557）。
 
 規則的權威是 control-tower/references/memory-protocol.md § YAML frontmatter 字串寫法與寫入後自檢。
 本腳本只做其中「可機器檢查」的部分，規則有變以權威檔為準，再改這裡。
@@ -33,8 +33,21 @@
   yaml-error            （有 PyYAML 時）完整解析失敗；只印 PyYAML 的問題描述，不印原文
   not-mapping           （有 PyYAML 時）frontmatter 頂層不是 mapping
 
-輸出：只印檔名、行號、欄號與問題類型，不印檔案原文。
-exit 0 = 全部通過；1 = 有問題；2 = 用法錯誤或路徑不存在。
+契約 v2 欄位（v6.1.0 起；權威 memory-protocol.md § 契約 v2 欄位）。上面的語法檢查都通過後才做；
+只對 schema_kind: tower-state 的檔檢查 v2 欄位（沒有這些欄位的 6.0.x 狀態檔照舊通過），waiting-user 對任何檔都檢查：
+  v2-type               bat_contract 不是整數（加了引號也算）；清單或清單項目的形狀不對（例：awaiting_user 不是清單）
+  v2-missing            清單項目缺少必填鍵（awaiting_user：id、summary；user_actions：id、title；reminders：id、title、due_at）
+  v2-id                 id 格式不符（awaiting_user ^U-\\d+$、user_actions ^A-\\d+$、reminders ^[a-z0-9-]{1,40}$）
+  v2-option             options 的項目不是「<代號> <說明>」（代號 ^[A-Za-z0-9]{1,3}$），或同一筆的代號重複（不分大小寫）
+  v2-length             summary／title 超過 120 字、command 超過 300 字
+  v2-date               reminders 的 due_at（或 last_at）不是可解析的 ISO 日期或日期時間
+  v2-next-id            next_ids.user 不是 "U-n"、next_ids.action 不是 "A-n"
+  waiting-user          工單 frontmatter 的 waiting_user 不是 "U-n"
+  v2-count（警告）      awaiting_user 超過 20 筆、user_actions 超過 20 筆或 reminders 超過 10 筆；只警告，不影響 exit code
+  v2-skipped（警告）    本腳本的小型解析器看不懂這份 frontmatter，契約 v2 欄位沒有檢查（語法檢查照常）
+
+輸出：只印檔名、行號、欄號與問題類型，不印檔案原文。問題印成「- FAIL …」，警告印成「- WARN …」（格式相同）。
+exit 0 = 全部通過（可以有警告）；1 = 有問題；2 = 用法錯誤或路徑不存在。
 
 所有輸入只讀，不寫任何檔。
 """
@@ -79,9 +92,13 @@ class FileReport:
     def __init__(self, path):
         self.path = path
         self.items = []  # (line, col, code, message)；line／col 從 1 起算，0 表示不適用
+        self.warnings = []  # 同上格式；只警告，不影響 exit code（v6.1.0+）
 
     def add(self, line, col, code, msg=None):
         self.items.append((line, col, code, msg or PROBLEM_TEXT.get(code, code)))
+
+    def warn(self, line, col, code, msg):
+        self.warnings.append((line, col, code, msg))
 
 
 # ---------------------------------------------------------------- 掃描器
@@ -343,6 +360,390 @@ class Scanner:
             i += 1
 
 
+# ---------------------------------------------------------------- 契約 v2 欄位（v6.1.0+）
+#
+# 權威：memory-protocol.md § 契約 v2 欄位。只在上面的語法檢查全部通過後才跑，所以這裡的小型解析器
+# 只需要看懂 CT 會寫的 YAML 子集（區塊 mapping／清單、引號字串、單層 [ ] 清單）；看不懂的寫法跳過不判斷。
+
+V2_LISTS = ('awaiting_user', 'user_actions', 'reminders')
+V2_LIMITS = {'awaiting_user': 20, 'user_actions': 20, 'reminders': 10}
+V2_ID_RE = {
+    'awaiting_user': (re.compile(r'^U-[0-9]+$'), 'U-<數字>'),
+    'user_actions': (re.compile(r'^A-[0-9]+$'), 'A-<數字>'),
+    'reminders': (re.compile(r'^[a-z0-9-]{1,40}$'), '1～40 個小寫英數字或 -'),
+}
+V2_REQUIRED = {
+    'awaiting_user': ('id', 'summary'),
+    'user_actions': ('id', 'title'),
+    'reminders': ('id', 'title', 'due_at'),
+}
+V2_LEN_LIMITS = {'summary': 120, 'title': 120, 'command': 300}
+V2_OPTION_RE = re.compile(r'^([A-Za-z0-9]{1,3})[ \t]+[^ \t]')
+V2_INT_RE = re.compile(r'^[-+]?[0-9]+$')
+V2_DATE_RE = re.compile(r'^([0-9]{4})-([0-9]{2})-([0-9]{2})'
+                        r'(?:[Tt ]([0-9]{2}):([0-9]{2})(?::([0-9]{2})(?:[.,][0-9]+)?)?'
+                        r'(?:[Zz]|[+-]([0-9]{2})(?::?([0-9]{2}))?)?)?$')
+KEY_RE = re.compile(r'^([A-Za-z0-9_][A-Za-z0-9_. -]*?)[ \t]*:(?:[ \t]+|$)')
+
+
+class Node:
+    """kind：'map'（value = {鍵: (節點, 鍵的行, 鍵的欄)}）／'seq'（value = [節點]）／'scalar'。
+    scalar 的 style：'plain'／'double'／'single'／'block'／'other'（看不懂的寫法，value 為 None）。line／col 從 0 起算。"""
+    __slots__ = ('kind', 'value', 'style', 'line', 'col')
+
+    def __init__(self, kind, value, line, col, style=None):
+        self.kind = kind
+        self.value = value
+        self.style = style
+        self.line = line
+        self.col = col
+
+
+def _indent(s):
+    return len(s) - len(s.lstrip(' '))
+
+
+def _meaningful(s):
+    t = s.strip()
+    return t != '' and not t.startswith('#')
+
+
+def _is_item(content):
+    return content[:1] == '-' and (len(content) == 1 or content[1] in ' \t')
+
+
+def _quote_end(text, k):
+    """text[k] 是引號；回傳結尾引號之後的位置，沒閉合回傳 None。"""
+    q = text[k]
+    m = k + 1
+    while m < len(text):
+        c = text[m]
+        if q == '"' and c == BS:
+            m += 2
+            continue
+        if c == q:
+            if q == "'" and m + 1 < len(text) and text[m + 1] == "'":
+                m += 2
+                continue
+            return m + 1
+        m += 1
+    return None
+
+
+def _decode_double(body):
+    out = []
+    k = 0
+    while k < len(body):
+        c = body[k]
+        if c == BS and k + 1 < len(body):
+            e = body[k + 1]
+            if e in HEX_ESCAPES:
+                n = HEX_ESCAPES[e]
+                try:
+                    out.append(chr(int(body[k + 2:k + 2 + n], 16)))
+                    k += 2 + n
+                    continue
+                except ValueError:
+                    pass
+            out.append({'n': chr(10), 't': chr(9), '0': chr(0)}.get(e, e))
+            k += 2
+            continue
+        out.append(c)
+        k += 1
+    return ''.join(out)
+
+
+def _scalar(text, line, col):
+    t = text.strip()
+    if t[:1] in ('"', "'"):
+        end = _quote_end(t, 0)
+        if end is None:
+            return Node('scalar', None, line, col, 'other')
+        body = t[1:end - 1]
+        if t[0] == '"':
+            return Node('scalar', _decode_double(body), line, col, 'double')
+        return Node('scalar', body.replace("''", "'"), line, col, 'single')
+    m = re.search(r'[ \t]#', t)
+    if m:
+        t = t[:m.start()]
+    t = t.strip()
+    return Node('scalar', t if t else None, line, col, 'plain')
+
+
+def _split_flow(text):
+    """text 以 [ 或 { 開頭；回傳 (頂層項目的原文清單, 結尾之後的文字)，沒閉合回傳 None。"""
+    items, cur, k, depth = [], [], 1, 1
+    while k < len(text):
+        c = text[k]
+        if c in ('"', "'"):
+            end = _quote_end(text, k)
+            if end is None:
+                return None
+            cur.append(text[k:end])
+            k = end
+            continue
+        if c in '[{':
+            depth += 1
+        elif c in ']}':
+            depth -= 1
+            if depth == 0:
+                items.append(''.join(cur))
+                return [x.strip() for x in items if x.strip()], text[k + 1:]
+        elif c == ',' and depth == 1:
+            items.append(''.join(cur))
+            cur = []
+            k += 1
+            continue
+        cur.append(c)
+        k += 1
+    return None
+
+
+class MiniYaml:
+    def __init__(self, lines):
+        self.lines = list(lines)
+        self.n = len(self.lines)
+
+    def next_meaningful(self, i):
+        while i < self.n and not _meaningful(self.lines[i]):
+            i += 1
+        return i
+
+    def parse_node(self, i, min_indent):
+        i = self.next_meaningful(i)
+        if i >= self.n:
+            return None, i
+        ind = _indent(self.lines[i])
+        if ind < min_indent:
+            return None, i
+        if _is_item(self.lines[i][ind:]):
+            return self.parse_seq(i, ind)
+        return self.parse_map(i, ind)
+
+    def parse_map(self, i, ind):
+        node = Node('map', {}, i, ind)
+        while True:
+            i = self.next_meaningful(i)
+            if i >= self.n:
+                break
+            line = self.lines[i]
+            li = _indent(line)
+            if li < ind:
+                break
+            if li > ind:
+                i += 1  # 看不懂的縮排：跳過
+                continue
+            content = line[ind:]
+            if _is_item(content):
+                break
+            m = KEY_RE.match(content)
+            if not m:
+                i += 1
+                continue
+            key = m.group(1).strip()
+            key_line = i
+            vj = ind + m.end()
+            if not _meaningful(line[vj:]):
+                j = self.next_meaningful(i + 1)
+                if j < self.n and _indent(self.lines[j]) == ind and _is_item(self.lines[j][ind:]):
+                    val, i = self.parse_seq(j, ind)
+                elif j < self.n and _indent(self.lines[j]) > ind:
+                    val, i = self.parse_node(j, ind + 1)
+                else:
+                    val, i = Node('scalar', None, i, vj, 'plain'), i + 1
+            else:
+                val, i = self.inline(i, vj, ind)
+            node.value[key] = (val, key_line, ind)
+        return node, i
+
+    def parse_seq(self, i, ind):
+        node = Node('seq', [], i, ind)
+        while True:
+            i = self.next_meaningful(i)
+            if i >= self.n:
+                break
+            line = self.lines[i]
+            li = _indent(line)
+            if li != ind or not _is_item(line[ind:]):
+                if li > ind:
+                    i += 1
+                    continue
+                break
+            k = ind + 1
+            while k < len(line) and line[k] in ' \t':
+                k += 1
+            rest = line[k:]
+            item_line = i
+            if not _meaningful(rest):
+                val, i = self.parse_node(i + 1, ind + 1)
+                if val is None:
+                    val = Node('scalar', None, item_line, k, 'plain')
+            elif rest[:1] not in ('"', "'", '[', '{') and KEY_RE.match(rest):
+                self.lines[i] = ' ' * k + rest  # 「- 鍵: 值」：把「- 」當成縮排，往下當 mapping 讀
+                val, i = self.parse_map(i, k)
+            elif _is_item(rest):
+                self.lines[i] = ' ' * k + rest
+                val, i = self.parse_seq(i, k)
+            else:
+                val, i = self.inline(i, k, ind)
+            val.line, val.col = item_line, k
+            node.value.append(val)
+        return node, i
+
+    def _join_until(self, i, t, done):
+        """從第 i 行的 t 開始，必要時接下一行，直到 done(text) 不是 None。回傳 (text, 最後一行)。"""
+        text, j = t, i
+        while done(text) is None and j + 1 < self.n:
+            j += 1
+            text += ' ' + self.lines[j].strip()
+        return text, j
+
+    def inline(self, i, vj, ind):
+        line = self.lines[i]
+        t = line[vj:].lstrip(' \t')
+        col = len(line) - len(t)
+        if t[:1] in '|>' and BLOCK_SCALAR_RE.match(t):
+            j = i + 1
+            while j < self.n and (not self.lines[j].strip() or _indent(self.lines[j]) > ind):
+                j += 1
+            text = ' '.join(self.lines[x].strip() for x in range(i + 1, j))
+            return Node('scalar', text, i, col, 'block'), j
+        if t[:1] in '[{':
+            text, j = self._join_until(i, t, _split_flow)
+            got = _split_flow(text)
+            if got is None or t[0] == '{':
+                return Node('scalar', None, i, col, 'other'), j + 1
+            return Node('seq', [_scalar(x, i, col) for x in got[0]], i, col), j + 1
+        if t[:1] in ('"', "'"):
+            text, j = self._join_until(i, t, lambda s: _quote_end(s, 0))
+            return _scalar(text, i, col), j + 1
+        j = i + 1
+        while j < self.n and self.lines[j].strip() and _indent(self.lines[j]) > ind:
+            j += 1  # 多行純量的續行
+        return _scalar(t, i, col), j
+
+
+def _str_value(node):
+    if node is None or node.kind != 'scalar' or node.style in ('other', 'block') or node.value is None:
+        return None
+    return node.value
+
+
+def _valid_date(s):
+    m = V2_DATE_RE.match(s)
+    if not m:
+        return False
+    import datetime
+    try:
+        datetime.date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    except ValueError:
+        return False
+    hh, mm, ss, tzh, tzm = m.group(4), m.group(5), m.group(6), m.group(7), m.group(8)
+    if hh is not None and (int(hh) > 23 or int(mm) > 59 or (ss is not None and int(ss) > 59)):
+        return False
+    if tzh is not None and (int(tzh) > 23 or (tzm is not None and int(tzm) > 59)):
+        return False
+    return True
+
+
+def check_contract_v2(fm_lines, base, rep):
+    tree, _ = MiniYaml(fm_lines).parse_node(0, 0)
+    if tree is None or tree.kind != 'map':
+        return
+    top = tree.value
+
+    def at(line, col):
+        return base + line, col + 1
+
+    # 工單（或任何檔）的 waiting_user
+    if 'waiting_user' in top:
+        node, kl, kc = top['waiting_user']
+        v = _str_value(node)
+        if v is None or not V2_ID_RE['awaiting_user'][0].match(v):
+            rep.add(*at(kl, kc), 'waiting-user', 'waiting_user 要寫成 "U-<數字>"')
+
+    kind = top.get('schema_kind')
+    if kind is None or _str_value(kind[0]) != 'tower-state':
+        return
+
+    if 'bat_contract' in top:
+        node, kl, kc = top['bat_contract']
+        if node.kind != 'scalar' or node.style != 'plain' or node.value is None or not V2_INT_RE.match(node.value):
+            rep.add(*at(kl, kc), 'v2-type', 'bat_contract 要是整數（不加引號）')
+
+    if 'next_ids' in top:
+        node = top['next_ids'][0]
+        if node.kind == 'map':
+            for key, (rx, shown) in (('user', V2_ID_RE['awaiting_user']), ('action', V2_ID_RE['user_actions'])):
+                if key in node.value:
+                    sub, kl, kc = node.value[key]
+                    v = _str_value(sub)
+                    if v is None or not rx.match(v):
+                        rep.add(*at(kl, kc), 'v2-next-id', 'next_ids.%s 要寫成 "%s"' % (key, shown))
+
+    for name in V2_LISTS:
+        if name not in top:
+            continue
+        node, kl, kc = top[name]
+        if node.kind == 'scalar' and node.value is None and node.style == 'plain':
+            continue  # 空值 = 沒有項目
+        if node.kind != 'seq':
+            rep.add(*at(kl, kc), 'v2-type', name + ' 要是清單')
+            continue
+        if len(node.value) > V2_LIMITS[name]:
+            rep.warn(*at(kl, kc), 'v2-count', '%s 有 %d 筆，超過上限 %d（只警告；請先處理或移除過時項目）'
+                     % (name, len(node.value), V2_LIMITS[name]))
+        for item in node.value:
+            if item.kind != 'map':
+                rep.add(*at(item.line, item.col), 'v2-type', name + ' 的項目要是「鍵: 值」的 mapping')
+                continue
+            fields = item.value
+            for req in V2_REQUIRED[name]:
+                if req not in fields or _str_value(fields[req][0]) is None:
+                    rep.add(*at(item.line, item.col), 'v2-missing', '%s 的項目缺少 %s' % (name, req))
+            if 'id' in fields:
+                v = _str_value(fields['id'][0])
+                rx, shown = V2_ID_RE[name]
+                if v is not None and not rx.match(v):
+                    rep.add(*at(fields['id'][1], fields['id'][2]), 'v2-id', '%s 的 id 要符合 %s' % (name, shown))
+            for key, limit in V2_LEN_LIMITS.items():
+                if key not in fields:
+                    continue
+                sub, sl, sc = fields[key]
+                if sub.kind != 'scalar':
+                    rep.add(*at(sl, sc), 'v2-type', '%s 的 %s 要是字串' % (name, key))
+                    continue
+                v = _str_value(sub)
+                if v is not None and len(v) > limit:
+                    rep.add(*at(sl, sc), 'v2-length', '%s 的 %s 超過 %d 字（目前 %d 字）' % (name, key, limit, len(v)))
+            if name == 'awaiting_user' and 'options' in fields:
+                sub, sl, sc = fields['options']
+                if sub.kind == 'scalar' and sub.value is None and sub.style == 'plain':
+                    pass
+                elif sub.kind != 'seq':
+                    rep.add(*at(sl, sc), 'v2-type', 'awaiting_user 的 options 要是清單（自由回答時寫 []）')
+                else:
+                    seen = set()
+                    for opt in sub.value:
+                        v = _str_value(opt)
+                        m = V2_OPTION_RE.match(v) if v is not None else None
+                        if not m:
+                            rep.add(*at(opt.line, opt.col), 'v2-option',
+                                    '選項要寫成「<代號> <說明>」，代號是 1～3 個英數字')
+                            continue
+                        code = m.group(1).lower()
+                        if code in seen:
+                            rep.add(*at(opt.line, opt.col), 'v2-option', '同一筆的選項代號重複（不分大小寫）')
+                        seen.add(code)
+            if name == 'reminders':
+                for key in ('due_at', 'last_at'):
+                    if key in fields:
+                        v = _str_value(fields[key][0])
+                        if v is not None and not _valid_date(v):
+                            rep.add(*at(fields[key][1], fields[key][2]), 'v2-date',
+                                    'reminders 的 %s 不是可解析的 ISO 日期或日期時間' % key)
+
+
 # ---------------------------------------------------------------- 檔案層
 
 def split_frontmatter(text, rep, explicit):
@@ -406,6 +807,11 @@ def check_file(path, explicit, use_yaml):
     Scanner(fm_lines, base, rep).run()
     if use_yaml and not rep.items:
         yaml_check(fm_lines, base, rep)
+    if not rep.items:
+        try:
+            check_contract_v2(fm_lines, base, rep)
+        except Exception as e:  # 小型解析器看不懂時不擋檢查，只記一行警告
+            rep.warn(0, 0, 'v2-skipped', '契約 v2 欄位檢查略過（' + type(e).__name__ + '）')
     return rep, True
 
 
@@ -453,7 +859,7 @@ def main(argv=None):
     if missing:
         return 2
 
-    n_checked = n_skipped = n_bad_files = n_items = 0
+    n_checked = n_skipped = n_bad_files = n_items = n_warn = 0
     yaml_used = False
     for path, explicit in files:
         rep, has_fm = check_file(path, explicit, not args.no_yaml)
@@ -461,14 +867,17 @@ def main(argv=None):
             n_skipped += 1
             continue
         n_checked += 1
-        if rep.items:
-            n_bad_files += 1
-            n_items += len(rep.items)
+        n_warn += len(rep.warnings)
+        if rep.items or rep.warnings:
+            if rep.items:
+                n_bad_files += 1
+                n_items += len(rep.items)
             if not args.quiet:
                 print('## ' + path)
-                for line, col, code, msg in rep.items:
-                    where = '第 %d 行第 %d 欄' % (line, col) if line else '（整檔）'
-                    print('- FAIL %s %s：%s' % (code, where, msg))
+                for level, entries in (('FAIL', rep.items), ('WARN', rep.warnings)):
+                    for line, col, code, msg in entries:
+                        where = '第 %d 行第 %d 欄' % (line, col) if line else '（整檔）'
+                        print('- %s %s %s：%s' % (level, code, where, msg))
         elif args.verbose and not args.quiet:
             print('## ' + path)
             print('- PASS')
@@ -479,6 +888,8 @@ def main(argv=None):
         except ImportError:
             yaml_used = False
     how = '另以 PyYAML 完整解析' if yaml_used else '只用標準函式庫檢查'
+    if n_warn:
+        how += '；警告 %d 處' % n_warn
     if n_bad_files:
         print('結論：FAIL（%d 檔有問題、共 %d 處；檢查 %d 檔、略過沒有 frontmatter 的 %d 檔；%s）'
               % (n_bad_files, n_items, n_checked, n_skipped, how))

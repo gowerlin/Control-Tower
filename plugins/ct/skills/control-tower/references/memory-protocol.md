@@ -11,12 +11,12 @@
 #### 機器可讀摘要（YAML frontmatter）
 
 > v6.0.0 新增。本小節是 `_tower-state.md` 機器可讀摘要的**唯一權威定義**，也是 CT 對外（BAT 等外部讀者）的契約；
-> 其他文件提到「塔台狀態摘要」都指這裡。欄位依 BAT 契約 v1（BAT D184 回覆稿），**欄位名、型別與語意不得自行修改**，
-> 要改先通知 BAT（見下方相容規則）。
+> 其他文件提到「塔台狀態摘要」都指這裡。欄位依 BAT 契約 v1（BAT D184 回覆稿），v6.1.0 起依 **BAT ↔ CT 契約 v2**（BAT 與 CT 雙方使用者核定）
+> 加上下方 § 契約 v2 欄位；**欄位名、型別與語意不得自行修改**，要改先通知 BAT（見下方相容規則）。
 
 **位置**：`_tower-state.md` 第一行 `---` 起的 YAML frontmatter，以下一行 `---` 結束；其後的 Markdown 本文（下方標準區段）照舊。
 
-**欄位**：
+**欄位**（前 6 列是契約 v1，全部保留、語意不變；後 6 列是契約 v2，v6.1.0+，細節只寫在下方 § 契約 v2 欄位）：
 
 | 欄位 | 必填 | 型別 | 內容 |
 |------|------|------|------|
@@ -26,12 +26,20 @@
 | `session` | 選填 | 字串，自由文字 | 目前塔台 session 的說明（例：啟動時間＋CT 版號） |
 | `next_ids` | 選填 | 開放 map（鍵 → 字串） | 鍵由 CT 決定，外部讀者照原樣顯示，**檔案中的順序即顯示順序** |
 | `todo` | 選填 | 字串陣列 | 待辦；外部讀者只顯示**前 5 則** |
+| `bat_contract` | v2 必填 | 整數，目前 `2`；**不加引號** | 契約版本。CT 6.1.0 起每次寫入都寫 |
+| `ct_version` | v2 必填 | 字串 | 寫入時的 CT 版號 |
+| `awaiting_user` | 選填 | 陣列 | 待你決定 |
+| `user_actions` | 選填 | 陣列 | 待你執行 |
+| `reminders` | 選填 | 陣列 | 到期提醒 |
+| `next_ids.user`／`next_ids.action` | 選填 | 字串 `"U-n"`／`"A-n"` | `next_ids` 裡的兩個鍵：下一個待決／待執行編號 |
 
 **CT 的取值慣例**：
 
 - `next_ids` 寫**下一個可用編號**（本文 § 🔢 編號追蹤 的最大編號 + 1，不是最大編號本身）：`workorder: "T0306"`、`decision: "D341"`；
-  專案有啟用 BUG／PLAN 時才加 `bug: "BUG-###"`、`plan: "PLAN-###"`。順序固定為 `workorder`、`decision`、`bug`、`plan`。
+  專案有啟用 BUG／PLAN 時才加 `bug: "BUG-###"`、`plan: "PLAN-###"`；v6.1.0+ 再加 `user: "U-n"`、`action: "A-n"`（下方 § 契約 v2 欄位 › 編號）。
+  順序固定為 `workorder`、`decision`、`bug`、`plan`、`user`、`action`。
 - `todo` 取自本文 § 🌅 起手式 › 立即待辦 與 § ⏳ 待處理事項：最重要的放前面，一則一句。可以多於 5 則，但第 6 則起外部讀者看不到。
+  v6.1.0+：要使用者決定的事放 `awaiting_user`、要使用者自己執行的事放 `user_actions`，`todo` 不重複列（下方 § 契約 v2 欄位）。
 - **進行中工單不放進摘要**：外部讀者從 `_ct-workorders/T*.md` 的 frontmatter `status` 自己算，避免兩份資料不一致。
   `todo` 可以寫「等 T#### 完成後做某事」這類待辦，但不要拿它當進行中清單。
 
@@ -40,10 +48,12 @@
 - 讀者忽略未知鍵、不顯示缺少的選填欄位；YAML 解析失敗時讀者當作沒有摘要。
 - **新增欄位不升版**（`summary_version` 維持 `1`）。只有**改掉既有欄位的名稱、型別或語意**才升 `summary_version`，且必須**先通知 BAT**
   （依 [cross-project-coordination.md](cross-project-coordination.md)），等 BAT 回覆再改。
+- 契約 v2（v6.1.0+）的欄位是新增，`summary_version` 不升。`bat_contract` 是專門的契約版本欄位，和 `summary_version`（摘要格式版號）是兩件事；
+  契約要升 v3 同樣先通知 BAT、雙方核定後才改。
 
 **YAML 寫法**：
 
-- 字串值一律加引號（含 `updated_at`、`next_ids` 的值、每則 `todo`），避免 `:`、`#`、全形符號或時間格式被誤解析；`summary_version` 是整數不加引號。
+- 字串值一律加引號（含 `updated_at`、`next_ids` 的值、每則 `todo`），避免 `:`、`#`、全形符號或時間格式被誤解析；`summary_version`、`bat_contract` 是整數不加引號。
   不含反斜線時用雙引號；**含反斜線 `\`（例：Windows 路徑）時用單引號或改成正斜線**（v6.0.1+）。
 - 寫完必須能被一般 YAML parser 解析，每次寫入後自檢。字串寫法、正反例與自檢方法的唯一權威是下方 § YAML frontmatter 字串寫法與寫入後自檢。
 
@@ -53,13 +63,17 @@
 ---
 schema_kind: tower-state
 summary_version: 1
+bat_contract: 2
+ct_version: "6.1.0"
 updated_at: "2026-10-25T19:21:43+0800"
-session: "2026-10-25 17:48 塔台 session（CT v6.0.0）"
+session: "2026-10-25 17:48 塔台 session（CT v6.1.0）"
 next_ids:
   workorder: "T0306"
   decision: "D341"
   bug: "BUG-012"
   plan: "PLAN-004"
+  user: "U-1"
+  action: "A-1"
 todo:
   - "T0299 完成後開 I4（Worker 端）"
   - "I6b：打包＋Guide 同版號＋Portal 預覽專章"
@@ -67,13 +81,17 @@ todo:
 ---
 ```
 
+（有待決、待執行或提醒項目時的完整範例見下方 § 契約 v2 欄位。）
+
 **維護時機**：
 
 - 塔台**每次寫入** `_tower-state.md` 都同步更新摘要（至少刷新 `updated_at`，其餘欄位有變就改）：啟動、派工、收單、決策、
-  `*rescan`、收工（Session 結束前）、`*pause`／`*resume`，以及下方 § 自動更新時機 列的每一項。
+  `*rescan`、收工（Session 結束前）、`*pause`／`*resume`，以及下方 § 自動更新時機 列的每一項。v6.1.0+ 每次寫入也寫 `bat_contract: 2` 與
+  `ct_version`（下方 § 契約 v2 欄位）。
 - **Fast Path 恢復**：摘要只供外部顯示，塔台恢復狀態**以本文為準**。摘要與本文不一致（例：`next_ids` 不等於 § 🔢 編號追蹤 的最大編號 + 1、
   `todo` 過時）時以本文為準，並在這次寫入時依本文重寫摘要。
-- **Full Scan／`*rescan`**：重建本文時一併依新本文重建摘要。
+  例外（v6.1.0+）：`awaiting_user`、`user_actions`、`reminders` 三個清單**只存在 frontmatter**（本文不重抄），依本文重寫摘要時原樣保留，不得清掉。
+- **Full Scan／`*rescan`**：重建本文時一併依新本文重建摘要（同上，三個清單原樣保留）。
 - **舊專案沒有摘要**：不是錯誤，恢復啟動不提示補齊（摘要不屬於下方 7 個必要區段）；塔台下次寫入 `_tower-state.md` 時直接補上。不需要遷移工具。
 - **首次啟動**（從標準模板建立 `_tower-state.md`）：同時寫入摘要。
 
@@ -81,10 +99,14 @@ todo:
 ---
 schema_kind: tower-state
 summary_version: 1
+bat_contract: 2
+ct_version: "<CT 版號>"
 updated_at: "<datetime>"
 next_ids:
   workorder: "T####"
   decision: "D###"
+  user: "U-1"
+  action: "A-1"
 todo:
   - "<最緊急事項>"
 ---
@@ -125,6 +147,8 @@ todo:
 | BUG | BUG-### |
 | PLAN | PLAN-### |
 | 決策 | D### |
+| 待你決定 | U-n（還沒用過寫「—」） |
+| 待你執行 | A-n（還沒用過寫「—」） |
 
 ---
 
@@ -147,6 +171,156 @@ todo:
 > 最後掃描：<datetime>
 
 <Full Scan 結果；`*rescan` 時刷新>
+```
+
+#### 契約 v2 欄位（v6.1.0+）
+
+> v6.1.0 新增（6.1.0-pre.1 預覽時加入，6.1.0 納入正式版）。本小節是 **BAT ↔ CT 契約 v2** 在 CT 端的**唯一權威定義**：上方 § 機器可讀摘要 的 v2 欄位、誰寫誰清、回答格式、
+> 隱私、時區與筆數。[auto-session.md](auto-session.md)（開工宣告）、[yolo-mode.md](yolo-mode.md)（斷點與提問）、
+> [work-order-system.md](work-order-system.md)（派工與收單）、[work-order-template.md](work-order-template.md)（工單 `waiting_user`）、
+> [tower-config.md](tower-config.md)（`user_inbox`）與 `SKILL.md`（回覆結尾重列）只寫自己那一步並引用這裡，不重抄規則。
+> 依據：BAT 與 CT 雙方使用者核定的契約 v2（BAT GitHub #24）；BAT 待辦分頁怎麼讀、怎麼顯示以 BAT 文件為準。
+> 契約 v1 的欄位全部保留、語意不變；`summary_version` 不升。
+
+**用途**：塔台需要使用者決定或執行的事寫進 frontmatter，Better Agent Terminal（BAT）的「待辦」分頁唯讀顯示，
+使用者不必在終端往回捲找塔台的提問。塔台開工時也向 BAT 宣告契約版本（[auto-session.md](auto-session.md) § 塔台分頁角色宣告），
+兩邊都是 v2 時 BAT 的新功能才啟用。在舊 BAT 或 BAT 以外的終端照樣寫這些欄位，待決事項另外列在每次回覆的結尾（`SKILL.md` § Output Style）。
+
+**頂層欄位**
+
+| 欄位 | 型別 | 寫法 |
+|---|---|---|
+| `bat_contract` | 整數 `2`，**不加引號** | CT 6.1.0 起**每次**寫 `_tower-state.md` 都寫；`user_inbox: off`、非 BAT 終端也寫（契約版本和要不要寫清單是兩件事） |
+| `ct_version` | 字串 | 每次寫入都寫，值取自已安裝的 `control-tower/SKILL.md` 版本註解 `<!-- control-tower-version: X -->` 的 `X`（例 `"6.1.0"`）；BAT 只顯示、不比較 |
+| `next_ids.user`／`next_ids.action` | 字串 `"U-n"`／`"A-n"` | 下一個可用編號（見下方〈編號〉） |
+| `awaiting_user` | 陣列，≤ 20 筆 | 待你決定；沒有項目時不寫這個鍵 |
+| `user_actions` | 陣列，≤ 20 筆 | 待你執行；沒有項目時不寫這個鍵 |
+| `reminders` | 陣列，≤ 10 筆 | 到期提醒；沒有項目時不寫這個鍵 |
+
+**`awaiting_user[]` 每筆**
+
+| 鍵 | 型別 | 內容 |
+|---|---|---|
+| `id` | 字串，`^U-\d+$` | 待決編號 |
+| `workorder` | 字串 | 相關工單完整 ID（含前綴）；沒有工單時空字串 `""` |
+| `kind` | 字串 | 目前只有 `"decision"` |
+| `source` | 字串 | `breakpoint-A`／`breakpoint-B-1`／`breakpoint-B-2`／`breakpoint-C`／`breakpoint-E`／`worker-question`／`tower-question`（觸發點見下方〈誰寫、誰清〉） |
+| `summary` | 字串，≤ 120 字 | 一句話說要決定什麼 |
+| `options` | 字串陣列，≤ 6 項 | 每項 `<代號> <說明>`；代號 `^[A-Za-z0-9]{1,3}$`、同一筆內不重複（不分大小寫也不重複）。要自由回答時空陣列 `[]`；「其他」不列成選項（使用者本來就可以回自由文字） |
+| `created_at` | 字串 | 寫入時間（見下方〈時區〉） |
+
+**`user_actions[]` 每筆**
+
+| 鍵 | 型別 | 內容 |
+|---|---|---|
+| `id` | 字串，`^A-\d+$` | 待執行編號 |
+| `title` | 字串，≤ 120 字 | 要使用者做什麼 |
+| `ref` | 字串 | 來源（工單完整 ID、決策 D###、BUG／PLAN 編號）；沒有時空字串 |
+| `kind` | 字串 | `verify`（實機驗收）／`run`（要使用者自己跑的指令）／`manual`（手動操作或設定） |
+| `command` | 字串，≤ 300 字 | 選填：使用者要執行的指令。含反斜線時用單引號或改正斜線（下方 § YAML frontmatter 字串寫法與寫入後自檢）；不放權杖、祕密 |
+| `created_at` | 字串 | 寫入時間 |
+
+**`reminders[]` 每筆**
+
+| 鍵 | 型別 | 內容 |
+|---|---|---|
+| `id` | 字串，`^[a-z0-9-]{1,40}$` | 必填；例 `"weekly-log-review"` |
+| `title` | 字串，≤ 120 字 | 必填 |
+| `due_at` | 字串，ISO 日期或日期時間 | 必填；下一次到期，例 `"2026-12-02"` |
+| `last_at` | 字串，ISO 日期或日期時間 | 選填；上次做完的時間 |
+| `ref` | 字串 | 選填；來源（本地規則編號、PLAN 編號等） |
+
+**編號**
+
+- `U-n`、`A-n` 在專案內遞增、**不重用**（已移除的編號也不再發）。本文 § 🔢 編號追蹤 記最大編號，`next_ids.user`／`next_ids.action` = 最大編號 + 1，
+  和其他 `next_ids` 的慣例相同；還沒用過時是 `"U-1"`／`"A-1"`（第一次寫入 v2 欄位時就寫）。
+
+**誰寫、誰清**
+
+- **`awaiting_user`**：塔台停下來要使用者決定時，在**同一次寫入**加一筆；那件事有工單時，工單 frontmatter 同時加 `waiting_user: "U-n"`
+  （[work-order-template.md](work-order-template.md) § `waiting_user`）。觸發點：
+  - yolo 斷點 A／B-1／B-2／C 暫停、斷點 E（含非 yolo 的 `⏸ 合併前確認`）——`source` 對應 `breakpoint-<斷點>`（[yolo-mode.md](yolo-mode.md) § 斷點判準）；
+  - Worker 提問升級給使用者（`⏸ YOLO PAUSED — 提問需要你決定`）——`worker-question`（[yolo-mode.md](yolo-mode.md) § Worker 向塔台提問 › 塔台端）；
+  - 塔台自己停下來等使用者決定、而且不是同一輪對話就接著做的事（例：收單後要使用者選下一步、跨專案文件要使用者核定）——`tower-question`。
+    需求對齊時一來一往的提問不寫。
+  - 不寫：斷點 D（不暫停，使用者到 Worker 分頁處理）、使用者中斷。
+  - 對使用者顯示的暫停訊息帶上同一個 `U-n`。
+  - **移除**：使用者回答後，在同一次寫入移除該筆、清掉工單的 `waiting_user`、決策日誌記一筆（含 `U-n`）。工單取消、重開或那件事不再需要決定時，
+    同樣一併移除，決策日誌記原因。
+- **`user_actions`**：收單時，回報區列出的「待實機／待使用者執行」項目各寫一筆（[work-order-system.md](work-order-system.md) § 回報處理流程）；
+  塔台自己發現要使用者執行的事也可以寫。使用者回 `A-n：完成` → 移除＋決策日誌；回 `A-n：失敗 <說明>` → 移除＋決策日誌，
+  塔台依內容開 BUG 或重開工單。原本會寫進 `todo` 的同類項目改寫這裡，`todo` 不重複列。
+- **`reminders`**：專案的定期事項（例：每週日誌清查、到某日重跑掃描）。塔台做完時更新 `last_at`／`due_at`；不再需要時移除。
+- **不自動遷移**：升級到 6.1.0 時不批次改寫既有的 `todo`；塔台下次處理到該項時再搬到對應清單。
+- 三個清單只在 frontmatter（本文不重抄；依本文重寫摘要時原樣保留，見上方 § 機器可讀摘要 › 維護時機）。
+- **BAT 只讀**：BAT 不改 CT 的任何檔（包含已回答的項目）；清單裡的項目消失就是已結。
+
+**回答格式與解析**
+
+- 使用者回答的格式：`U-n：<代號或自由文字>`、`A-n：完成`、`A-n：失敗 <說明>`。全形 `：` 與半形 `:` 都接受，冒號前後的空白忽略。
+  一則訊息有好幾行回答時逐行處理。
+- 回答可能是使用者手打，也可能是 BAT 面板送進塔台分頁的同一行文字，CT 不區分。
+- `U-n` 的代號比對：冒號後的文字（去掉前後空白）與該筆某個選項的代號相同（不分大小寫），而且**只命中一個**才算選了該選項；
+  否則整段當自由回答。
+- 使用者沒寫 `U-n`、但明顯在回答剛顯示的暫停（例：未決只有一筆時直接回 `B`）→ 照那一筆處理，確認行寫出 `U-n`；對不到唯一一筆就問是哪一筆。
+- 編號不存在或已結 → 不猜，回一行說明並列出目前未決的編號。
+- 塔台處理後回一行確認，例：`U-3 已收到：B → 恢復 T0123`、`A-2 已收到：完成`。使用者之後更正，照新的回答處理並記決策日誌。
+
+**`user_inbox: off`**（[tower-config.md](tower-config.md) § 可用選項）：不寫 `awaiting_user`、`user_actions`，退回 6.0.x 寫法（待決只在終端輸出、
+待使用者執行的項目照舊放 `todo`）。`bat_contract`、`ct_version`、`reminders`、`next_ids.user`／`action`、工單 `waiting_user` 照寫，
+回覆結尾的重列也照印（只是資料只在終端，BAT 待辦分頁看不到）。
+
+**隱私**：`summary`、`title`、`options`、`command` 不寫祕密、權杖、客戶資料、真實個人資料；需要細節時寫「見 T#### 回報區」。
+內容和 CT 原本就寫進 `_tower-state.md`、決策日誌的同一類，`_ct-workorders/` 公開的專案要不要寫由 `user_inbox` 決定。
+
+**時區**：契約 v2 新欄位的日期時間一律寫成 `+08:00` 這種帶冒號的時區：`date "+%Y-%m-%dT%H:%M:%S%:z"`（Git Bash 的 GNU date 支援 `%:z`）；
+PowerShell `Get-Date -Format "yyyy-MM-ddTHH:mm:ssK"`。`reminders` 的 `due_at`／`last_at` 可以只寫日期。既有欄位（`updated_at` 等）維持 `+0800`，不改。
+同樣取自系統時間，不得手打。
+
+**筆數與大小**：`awaiting_user` ≤ 20、`user_actions` ≤ 20、`reminders` ≤ 10；單筆約 0.5 KB 以內。超過時塔台狀態面板多一行提示
+（下方 § 塔台狀態面板），不擋流程；先處理或移除過時的項目。整份 `_tower-state.md`（含 frontmatter）受下方 § BAT 塔台面板讀取契約 › 大小預算 約束。
+
+**寫入後自檢**：照下方 § YAML frontmatter 字串寫法與寫入後自檢。`check-frontmatter.py` v6.1.0 起對 `schema_kind: tower-state` 的檔另檢查本節的
+型別、格式與上限（只回報，問題代碼見腳本開頭說明）；寫入前塔台自己先確認選項代號符合格式、不重複，不符就改寫，不交給 BAT 退回自由回答。
+
+完整範例：
+
+```yaml
+---
+schema_kind: tower-state
+summary_version: 1
+bat_contract: 2
+ct_version: "6.1.0"
+updated_at: "2026-11-25T03:10:23+0800"
+next_ids:
+  workorder: "T0130"
+  decision: "D045"
+  user: "U-6"
+  action: "A-3"
+todo:
+  - "T0124 完成後派 T0125"
+awaiting_user:
+  - id: "U-3"
+    workorder: "T0123"
+    kind: "decision"
+    source: "breakpoint-A"
+    summary: "T0123 回報字串不符規格，要怎麼收單"
+    options: ["A 接受為 DONE，續派下一張", "B 接受為 FAILED", "C 退回 ask 模式"]
+    created_at: "2026-11-25T03:10:23+08:00"
+user_actions:
+  - id: "A-2"
+    title: "安裝 0.8.0-pre.2 後做一次完整重裝驗收"
+    ref: "T0120"
+    kind: "verify"
+    command: 'pwsh -NoProfile -File e2e\manual\reinstall-acceptance.ps1'
+    created_at: "2026-11-25T03:02:00+08:00"
+reminders:
+  - id: "weekly-log-review"
+    title: "每週日誌清查"
+    ref: "PLAN-012"
+    last_at: "2026-11-18"
+    due_at: "2026-12-02"
+---
 ```
 
 ### 必要區段（7 個）
@@ -189,7 +363,7 @@ todo:
 - **格式**：開工條目文字裡寫「塔台 session」後接以反引號包住的 uuid，例：`` 塔台 session `<uuid>` ``（`<uuid>` 換成實際的 session id）。
   統計腳本只認這個寫法（「塔台 session」、空白、反引號、uuid、反引號）。
 - **拿不到**（變數沒設、不是 UUID、Codex 或其他執行環境、MCP 不可用）：寫「session id 未知」，**不阻擋啟動**。
-- **不加進機器可讀摘要**：frontmatter 欄位不變（BAT 塔台面板契約 v1 不動）；`session` 欄位照舊是自由文字，不放 session id。
+- **不加進機器可讀摘要**：frontmatter 沒有這個欄位（契約 v1、v2 都沒有）；`session` 欄位照舊是自由文字，不放 session id。
 - 開工條目日後被收斂或 `*rescan` 移除時，session id 跟著消失：不必另外保存。統計會退回用第一則訊息 `/control-tower` 與分頁標題判斷塔台；
   已寫好的收單快照（只有數字）不受影響。
 
@@ -211,11 +385,15 @@ todo:
 > 各檔的完整格式仍在各自的權威段（下方 § 各檔要求 列出位置），本節只寫 BAT 依賴的部分；其他文件提到「BAT 讀得到」「大小預算」都引用這裡。
 > 對照版本：BAT `0.7.1-pre.9`（讀檔、塔台狀態、決策日誌、臭蟲索引與待辦池解析器以 `0.7.1-pre.8` 對照；pre.9 改的讀檔失敗提示與 `critical` 讀法依 BAT 通知，D420／D421）。BAT 改了解析規則，以 BAT 的通知為準再改本節。
 > 這裡的「BAT 塔台面板」是 BAT 視窗裡的指揮塔面板（總覽、決策、臭蟲、待辦池、工單各頁），不是上方 § 塔台狀態面板（塔台啟動時自己輸出的面板）。
+> **契約 v2**（v6.1.0+）：`_tower-state.md` frontmatter 多了上方 § 契約 v2 欄位，BAT 的「待辦」分頁讀它們；BAT 以狀態檔的 `bat_contract`
+> 與塔台分頁的宣告（[auto-session.md](auto-session.md) § 塔台分頁角色宣告）判斷雙方是否都是 v2。契約 v1 的讀法（本節以下各段）不變。
 
 ### 大小預算
 
 - **BAT 讀檔上限 524,288 bytes**（512 KiB）。超過就整檔不讀。
 - **CT 預算 409,600 bytes（400 KB）**。預算到上限之間的空間，留給提示後到收斂前的幾個 session。
+- 以**整個檔**計，`_tower-state.md` 的 frontmatter（含契約 v2 的三個清單）也算在內。`_tower-state.md` 超過預算時先整理 `todo` 的長文
+  （一則一句），再照下方 `<收斂方式>` 收斂本文。
 - 一律以**磁碟上的 UTF-8 位元組**計，不用字元數估算（中文一字 3 bytes）。量法：bash `stat -c %s <file>`；PowerShell `(Get-Item <file>).Length`。
 - **適用檔案**：`_tower-state.md`、`_decision-log.md`、`_bug-tracker.md`、`_backlog.md`、`_tower-config.yaml`，以及熱區每一張 `T*.md`、`BUG-*.md`、`PLAN-*.md`
   （BAT 讀這些檔都走同一個讀檔函式，上限相同）。
@@ -250,11 +428,11 @@ todo:
 
 | 檔 | BAT 依賴的格式（摘要） | 完整格式的權威段 |
 |---|---|---|
-| `_tower-state.md` | frontmatter 摘要契約 v1 | 上方 § 機器可讀摘要（YAML frontmatter） |
+| `_tower-state.md` | frontmatter 摘要：契約 v1 欄位＋契約 v2 欄位（v6.1.0+，`bat_contract: 2`） | 上方 § 機器可讀摘要（YAML frontmatter）、§ 契約 v2 欄位 |
 | `_decision-log.md` | 索引表表頭 `ID`；每列 `\|` 開頭與結尾；儲存格內沒有 `\|`；索引表涵蓋熱檔每一筆決策；詳細紀錄標題 `### D### YYYY-MM-DD — 標題`；熱檔沒有其他含 `ID` 欄的表格 | [decision-log-system.md](decision-log-system.md) § 格式規則 |
 | `_bug-tracker.md` | 狀態只看 `##` 區段標題；`ID` 以 `BUG-` 開頭；嚴重度格子含英文等級；時間欄 `報修時間`／`關閉時間`；`相關工單` 欄 | [bug-plan-system.md](bug-plan-system.md) § 索引格式 |
 | `_backlog.md` | `ID` 以 `PLAN-` 開頭；優先級格子含英文等級；Active 列的 `狀態` 欄蓋過區段；`## Dropped` 表頭 `ID`；只放 BUG 列的區段 BAT 會略過 | [bug-plan-system.md](bug-plan-system.md) § 索引格式 |
-| `T*.md`、`BUG-*.md`、`PLAN-*.md` | frontmatter `schema_version: 1`（整數）、`schema_kind`、`status`；沒有 frontmatter 才讀本文元資料 | [work-order-template.md](work-order-template.md) § PLAN-034 Sprint 2 transition、[bug-plan-system.md](bug-plan-system.md) § PLAN-034 Sprint 2 transition |
+| `T*.md`、`BUG-*.md`、`PLAN-*.md` | frontmatter `schema_version: 1`（整數）、`schema_kind`、`status`；沒有 frontmatter 才讀本文元資料。v6.1.0+ 工單的 `waiting_user: "U-n"`（契約 v2，BAT 顯示 ⏸） | [work-order-template.md](work-order-template.md) § PLAN-034 Sprint 2 transition、[bug-plan-system.md](bug-plan-system.md) § PLAN-034 Sprint 2 transition |
 | `tower-config.md` § 可用選項 | 表格標題 `### 可用選項` 與欄序 `選項 \| 有效值 \| 預設 \| 說明`（BAT 總覽的預設層讀它）。**可以新增列，不得改標題或欄序** | [tower-config.md](tower-config.md) § 可用選項 |
 
 `_ct-workorders/_insights/`（v6.0.0-beta.10+，例：`_insights/session-stats/<YYYY-MM>.json` 統計快照）**不在** BAT 塔台面板讀取範圍，也不受上方大小預算約束；
@@ -290,7 +468,7 @@ BUG 狀態值：CT 的 BUG enum（[bug-plan-system.md](bug-plan-system.md) § BU
 ### 共通規則
 
 - **frontmatter 從檔案第一個位元組開始**（第一行就是 `---`）。檔案開頭不要 BOM：除了 `_tower-state.md`，BAT 遇到 BOM 開頭的檔不認 frontmatter。
-- `_tower-state.md` 的摘要欄位與 `tower-config.md` 的 `### 可用選項` 標題與欄序是 BAT 依賴；要改先依 [cross-project-coordination.md](cross-project-coordination.md) 通知 BAT。
+- `_tower-state.md` 的摘要欄位（含契約 v2 欄位）、工單的 `waiting_user` 與 `tower-config.md` 的 `### 可用選項` 標題與欄序是 BAT 依賴；要改先依 [cross-project-coordination.md](cross-project-coordination.md) 通知 BAT。
 - 本節以外改到上表任一檔的格式時，先對照本節；會影響 BAT 讀法的改動同樣先通知 BAT。
 - frontmatter 的字串寫法與寫入後自檢見下方 § YAML frontmatter 字串寫法與寫入後自檢。
 
@@ -328,8 +506,8 @@ CT 寫入或修改 frontmatter 的每一個檔：
 | 含反斜線 `\`（Windows 路徑、跳脫字元、正規表示式等） | **單引號**：`'%USERPROFILE%\Documents\proj'`。單引號內不處理跳脫，只有 `'` 本身要寫成兩個 `''`。是路徑的話也可以把分隔改成正斜線後照常用雙引號：`"%USERPROFILE%/Documents/proj"`。**雙引號字串內不寫反斜線** |
 | 含雙引號 `"` | 單引號：`'他說 "好" 了'` |
 | 其他自由文字（`title`、`todo`、`session`、`delivered` 這類人寫的句子） | **一律加引號**，不含 `\` 和 `"` 時用雙引號（照現行範本）。不加引號時哪些寫法會被 YAML 當成語法，見表下 |
-| 時間戳（`created_at`、`updated_at` 等） | 照舊雙引號：`"2026-11-25T00:44:38+0800"`（不含反斜線，安全） |
-| 整數（`schema_version`、`summary_version`、`renew_count` 等）、範本規定不加引號的列舉值與 ID（`status: IN_PROGRESS`、`id: T0549`） | 照各檔範本，不加引號 |
+| 時間戳（`created_at`、`updated_at` 等） | 照舊雙引號：`"2026-11-25T00:44:38+0800"`（不含反斜線，安全）；契約 v2 新欄位寫 `+08:00`（上方 § 契約 v2 欄位 › 時區） |
+| 整數（`schema_version`、`summary_version`、`bat_contract`、`renew_count` 等）、範本規定不加引號的列舉值與 ID（`status: IN_PROGRESS`、`id: T0549`） | 照各檔範本，不加引號 |
 
 - 不加引號會被 YAML 當成語法的自由文字：含 `: `（冒號加空白）或以冒號結尾、含 ` #`（空白加井號，後面會被當成註解而消失），
   或以 `` ` ``、`*`、`&`、`!`、`[`、`{`、`>`、`|`、`%`、`@`、`'`、`"`、`,`、`- `、`? ` 開頭。
@@ -434,6 +612,7 @@ Startup Protocol 顯示面板那一步（[../SKILL.md](../SKILL.md) § Startup P
 | BAT | `可派發` / `不可派發` / `shell env visibility mismatch` / `不可派發（Worker 分頁）`；環境有 `BAT_TOWER_TERMINAL_ID` 時一律取 `不可派發（Worker 分頁）`（v5.2.5+），不再看前三個值 | 前三個值的判定規則見 [auto-session.md](auto-session.md) § BAT 內部終端路由 › 偵測條件（mismatch 依該處規則仍可派發，標出是為了排查）；Worker 分頁依同檔 § BAT 內部終端路由 › 範圍權杖與分頁角色，只看 env，不另跑掃描 |
 | auto-session | 生效值與來源層（`session` / `project` / `global` / `defaults`） | [tower-config.md](tower-config.md) § 三層設定架構 |
 | 分頁標題 | `已設定` / `不支援（BAT 太舊）` / `略過（非 BAT）` | 何時取哪個值見 [auto-session.md](auto-session.md) § 塔台分頁角色宣告（第 1 點呼叫條件、第 5 點 exit code），本節不複述 |
+| BAT 契約（v6.1.0+） | `v2` / `不支援（BAT 太舊）` / `未知（宣告失敗）` / `略過（非 BAT）` | 同一次宣告的結果；何時取哪個值見 [auto-session.md](auto-session.md) § 塔台分頁角色宣告 第 5 點，本節不複述 |
 | 立即待辦 | 待辦清單 | `_tower-state.md` § 🌅 起手式 › 立即待辦 |
 
 **塔台 session 名稱提示**（v5.9.0+，BAT `>= 0.7.1-pre.1`）：不是欄位，是面板最後加的一行提示。
@@ -446,6 +625,13 @@ Startup Protocol 顯示面板那一步（[../SKILL.md](../SKILL.md) § Startup P
 - 只在啟動時判斷一次，不重複提示；不阻擋啟動；不替使用者改名、不要求 BAT 改名。
 - 判斷「以 ` · Tower` 結尾」而不是「含 `Tower`」：工作區名稱本身可能含 `Tower`（例 `BMad-Control-Tower · <短 id>`）。
   名稱格式見 [cross-project-coordination.md](cross-project-coordination.md) § 跨 session 選收件人，欄位見 [auto-session.md](auto-session.md) § BAT MCP 唯讀 tool。
+
+**契約 v2 提示行**（v6.1.0+）：也不是欄位，是 `分頁標題`、`BAT 契約` 之後、`立即待辦` 之前的提示，各一行、沒有就不印：
+
+- **降級提示**：`BAT 契約` 是 `不支援（BAT 太舊）` 時印一行；文字只定義在 [auto-session.md](auto-session.md) § 塔台分頁角色宣告 第 5 點（含 BAT 最低版號），本節不複述。
+- **hooks 提示**：同一次宣告輸出 `hooks: none (<代號>)`（或 BAT 回報 plugin 過舊）時印一行；代號與文字對照只在同處，`hooks: ok …`、`hooks: n/a (codex)` 不印。
+- **筆數提示**：`awaiting_user` 超過 20 筆、`user_actions` 超過 20 筆或 `reminders` 超過 10 筆時印一行
+  `⚠️ 待辦清單筆數超過上限（<清單> <N> 筆，上限 <M>）：請先處理或移除過時項目`；不擋啟動（上限見上方 § 契約 v2 欄位）。
 
 auto-session 生效值為 `yolo` 時，面板**下方**接 YOLO 警語區塊；位置、字樣與內容以
 [yolo-mode.md](yolo-mode.md) § 啟動面板警語 為準，本節不複述。
@@ -463,6 +649,10 @@ auto-session 生效值為 `yolo` 時，面板**下方**接 YOLO 警語區塊；�
   BAT：<可派發 | 不可派發 | shell env visibility mismatch | 不可派發（Worker 分頁）>
   auto-session：<yolo|ask|off|on>（來源：<session|project|global|defaults>）
   分頁標題：<已設定 | 不支援（BAT 太舊）| 略過（非 BAT）>
+  BAT 契約：<v2 | 不支援（BAT 太舊）| 未知（宣告失敗）| 略過（非 BAT）>
+  [⚠️ <降級提示>]                                   ← 只在 BAT 契約為「不支援（BAT 太舊）」時
+  [<hooks 提示>]                                    ← 只在 hooks: none／plugin 過舊時
+  [⚠️ 待辦清單筆數超過上限（…）]                     ← 只在超過上限時
   立即待辦：
     1. <取自 _tower-state.md § 起手式>
   [提示：用 BAT「以塔台開啟 Claude」開塔台，其他專案的塔台就能在跨 session 清單直接找到你]   ← 只在上方顯示條件成立時

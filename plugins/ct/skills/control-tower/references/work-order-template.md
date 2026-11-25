@@ -1043,6 +1043,7 @@ landing_check:                       # 可選；僅塔台可填，Worker 不得�
 # isolation: worktree                # 可選（v5.3.0+）；預設不隔離 = 不寫此行。要隔離才取消註解，見下方 `isolation`
 # session_ids:                      # 選填（v6.0.0-beta.10+）；Worker 收尾寫、塔台收單補記，建立工單時不寫，見下方 `session_ids`
 #   - "<uuid>"
+# waiting_user: "U-n"               # 選填（v6.1.0+）；塔台寫：這張單在等使用者決定，回答後塔台刪除，見下方 `waiting_user`
 methodology:                         # 可選（v6.0.0+）；沒有任何層由方法論 adapter 負責時整段不寫，見下方 `methodology`
   request_kind: <需求類型>
   resolved_from:                     # 每層各記（鍵同 layers）
@@ -1228,6 +1229,18 @@ session_ids:
 - YAML block list、每個值加引號；去重；值只能是 UUID 或 `unavailable`。session id 不是秘密，但這是「環境變數只列名稱」唯一允許寫值的地方，
   不得順帶寫其他變數或任何權杖（[auto-session.md](auto-session.md) § BAT 內部終端路由 › 偵測條件）。
 - 沒有這個欄位的工單（含所有舊工單）照常；統計改用第一則訊息與分頁標題歸屬。
+
+#### `waiting_user`（v6.1.0+，選填，BAT ↔ CT 契約 v2）
+
+```yaml
+waiting_user: "U-3"   # 塔台寫：這張單在等使用者決定 U-3
+```
+
+- 值是 `_tower-state.md` frontmatter `awaiting_user` 某一筆的 `id`（字串，`^U-\d+$`，加引號）。只有塔台寫、塔台清：塔台停下來要使用者決定、
+  而那件事屬於這張工單時寫入，使用者回答後刪除這一行。寫入與清除的時機只定義在 [memory-protocol.md](memory-protocol.md) § 契約 v2 欄位。
+- 工單狀態照舊，不因此新增狀態：已派出、Worker 在等 → 維持原狀態（例 `IN_PROGRESS`）；還沒派、或塔台要等使用者才能決定下一步 → 照現行規則 `BLOCKED`。
+- 效果：`depends_on` 指到這張單的工單暫不派（[work-order-system.md](work-order-system.md) § 派發流程 第 2.6 步）；BAT 在工單清單顯示 ⏸。
+- Worker 不寫、不改這個欄位。沒有這個欄位 = 沒有在等使用者。
 
 #### `methodology`（v6.0.0+，選用）
 

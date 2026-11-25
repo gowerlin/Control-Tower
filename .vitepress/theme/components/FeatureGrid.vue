@@ -51,7 +51,7 @@ const ROUTES: Feature[] = [
   },
   {
     title: '進階：設計理念與功能深入',
-    body: '想知道規則是什麼、為什麼這樣定：7 篇設計理念、11 篇功能深入。',
+    body: '想知道規則是什麼、為什麼這樣定：7 篇設計理念、12 篇功能深入。',
     link: '/deep/'
   },
   {
@@ -72,10 +72,11 @@ const PRINCIPLES: Feature[] = [
   { title: '會學習的系統', body: '從觀察到 Playbook 再到 Skill，也讓系統公開質疑自己。', link: '/deep/principles/learning' }
 ]
 
-// /deep/ 總覽：功能深入 11 篇
+// /deep/ 總覽：功能深入 12 篇
 const FEATURES: Feature[] = [
   { title: '工單系統', body: '編號、粒度、模板欄位、overlap check 與回報處理。', link: '/deep/features/work-orders' },
   { title: '派工：auto-session 與 BAT', body: '四種派工模式、成功判讀、啟動確認與降級鏈。', link: '/deep/features/dispatch' },
+  { title: '待辦分頁（BAT ↔ CT 契約 v2）', body: '塔台把要你決定、要你執行的事寫進檔案，BAT 待辦分頁唯讀顯示，回覆結尾重列。', link: '/deep/features/bat-todo' },
   { title: 'yolo 與斷點 A–E', body: '自主推進，以及五種斷點什麼時候停下來。', link: '/deep/features/yolo' },
   { title: 'Worker 向塔台提問', body: 'yolo 下 Worker 改問塔台：提問通道、工單通道與逾時備援。', link: '/deep/features/worker-questions' },
   { title: 'worktree 隔離與合併', body: '隔離派工時 Worker 的規則、直接合併判準與三種合併模式。', link: '/deep/features/worktree-merge' },

@@ -31,6 +31,7 @@ import ShellLoop from './components/ShellLoop.vue'
 import StatsCounter from './components/StatsCounter.vue'
 import TicketLife from './components/TicketLife.vue'
 import TicketStates from './components/TicketStates.vue'
+import TodoFlow from './components/TodoFlow.vue'
 import VersionBadge from './components/VersionBadge.vue'
 import VersionMatrix from './components/VersionMatrix.vue'
 import './portal-layout/layout.css'
@@ -70,6 +71,7 @@ export default {
     app.component('StatsCounter', StatsCounter)
     app.component('TicketLife', TicketLife)
     app.component('TicketStates', TicketStates)
+    app.component('TodoFlow', TodoFlow)
     app.component('VersionBadge', VersionBadge)
     app.component('VersionMatrix', VersionMatrix)
   }

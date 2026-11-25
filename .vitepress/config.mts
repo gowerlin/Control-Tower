@@ -191,6 +191,7 @@ const sidebar: DefaultTheme.SidebarItem[] = [
       { text: '總覽', link: '/deep/#features' },
       { text: '工單系統', link: '/deep/features/work-orders' },
       { text: '派工：auto-session 與 BAT', link: '/deep/features/dispatch' },
+      { text: '待辦分頁（BAT ↔ CT 契約 v2）', link: '/deep/features/bat-todo' },
       { text: 'yolo 與斷點 A–E', link: '/deep/features/yolo' },
       { text: 'Worker 向塔台提問', link: '/deep/features/worker-questions' },
       { text: 'worktree 隔離與合併', link: '/deep/features/worktree-merge' },

@@ -2,7 +2,7 @@
 name: ct-help
 description: "Control Tower help skill for explaining the Tower and Worker ecosystem, commands, prefixes, workflow, BAT and YOLO concepts, methodology adapters, state files, onboarding, and common confusion. Use when the user invokes $ct-help or /ct-help, is new to Control Tower, asks how to use ct-exec, ct-done, ct-status, ct-evolve, ct-fieldguide, or asks what a Tower command means."
 ---
-<!-- ct-help-version: 6.0.2 -->
+<!-- ct-help-version: 6.1.0 -->
 
 # ct-help
 
@@ -109,6 +109,36 @@ Key concepts:
 - Under `CT_MODE=yolo` (v5.5.0+) a Worker asks Tower, not the user (`T#### 提問`, answered in the work order); breakpoint D tells the user when a Worker tab is `blocked` waiting for them. See `../control-tower/references/yolo-mode.md`.
 - `BAT_TOWER_TERMINAL_ID` is not required in Tower before dispatch.
 - If helper shells cannot see `BAT_*`, native PowerShell may still see them; avoid false non-BAT conclusions. Check names only (bash: `compgen -e | grep -E '^(BAT|CT)_' | sort`), never print the values, and read each named exception with its own command (`control-tower/references/auto-session.md` § BAT 內部終端路由 › 偵測條件).
+
+## 與 BAT 協作（Working With BAT, v6.1.0+）
+
+Summaries only; the CT rules live in `../control-tower/references/memory-protocol.md` § 契約 v2 欄位 (fields, answers) and
+`../control-tower/references/auto-session.md` § 塔台分頁角色宣告 (startup declaration, `hooks:` hints). BAT's own install steps are in BAT's docs.
+
+- **What contract v2 is**: an agreement between Better Agent Terminal (BAT) and CT. CT writes whatever needs the user into the frontmatter of
+  `_ct-workorders/_tower-state.md`; BAT shows it read-only in its right-side 「待辦」 (inbox) tab, so a question from the Tower is not lost
+  when later turns scroll it away. At startup the Tower tells BAT it speaks contract v2 (`--set-role tower --bat-contract 2`); BAT turns its new
+  features on for that Tower tab only when both sides are v2.
+- **What the inbox tab shows**: 「待你決定」 (decisions the Tower stopped for, numbered `U-n`, with their options), 「待你執行」 (things only you
+  can do, such as an on-device check or a command to run, numbered `A-n`), reminders that are due, and the work orders marked ⏸ while they
+  wait for you. BAT never edits CT files; an item that disappears is done.
+- **How to answer** (type it in the Tower tab, or use BAT's answer box, which sends the same line): `U-3：B` (an option code) or
+  `U-3：<your own words>`; `A-2：完成`; `A-2：失敗 <what went wrong>`. Full-width `：` and `:` both work. The Tower replies with one
+  confirmation line, for example 「U-3 已收到：B → 恢復 T0123」.
+- **Any terminal**: while something waits for you, every Tower reply ends with one line such as
+  `⏸ 待你決定：U-3（T0123）；🙋 待你執行：A-2（…）`. This works without BAT and with an old BAT.
+- **Not writing the lists**: `*config user_inbox off` (add `--save project` to keep it) stops CT from writing the decision and to-do lists into
+  the file; the reply-end line still appears.
+- **Two kinds of hooks, not the same thing**:
+  - BAT's hooks report to BAT what the Tower's Claude is doing (turn ended, waiting on a dialog, the last message for the turn cards).
+    BAT adds them by itself to the Claude tabs it opens. You need BAT's optional `bat-hooks` plugin only when you start `claude` by hand in a
+    shell tab, put `--settings` in the agent's custom arguments, or turned off BAT MCP in BAT's Settings. At startup the Tower prints one line
+    when BAT reports `hooks: none (<reason>)`, with what to do.
+  - CT's own hooks are a separate matter and not part of contract v2.
+  - CT never installs a plugin for you and never changes your claude settings.
+- **Versions**: both sides must be new enough — BAT 0.8.0-pre.3 or later and CT 6.1.0 or later. If either side is
+  older, BAT's inbox tab says which version is needed and stays off; an old BAT simply has no inbox tab, and the Tower prints one fallback
+  line at startup and keeps working.
 
 ## Claude Code Workflow (v5.11.0+)
 

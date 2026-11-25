@@ -1516,6 +1516,152 @@
   }
 }
 
+/* ---------- 契約 v2：CT 寫、BAT 讀、你回答（TodoFlow） ---------- */
+
+.vp-doc .todo-flow {
+  margin: 28px 0;
+}
+
+.todo-flow p {
+  margin: 0;
+  line-height: 1.7;
+}
+
+.todo-flow .tf-steps,
+.todo-flow .tf-row {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.todo-flow .tf-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.todo-flow .tf-step {
+  position: relative;
+  margin: 0;
+}
+
+/* 步驟之間的連接線與箭頭 */
+.todo-flow .tf-step + .tf-step::before {
+  content: '';
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  width: 2px;
+  height: 22px;
+  margin-left: -1px;
+  background: var(--vp-c-text-3);
+}
+
+.todo-flow .tf-step + .tf-step::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  margin-left: -6px;
+  border: 6px solid transparent;
+  border-bottom: 0;
+  border-top-color: var(--vp-c-text-3);
+}
+
+.todo-flow .tf-label {
+  margin-bottom: 8px;
+  font-family: var(--ct-font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--vp-c-text-2);
+}
+
+.todo-flow .tf-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.todo-flow .tf-row.is-single {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+}
+
+.todo-flow .tf-row.is-single .tf-box {
+  width: min(100%, 460px);
+}
+
+.todo-flow .tf-box {
+  margin: 0;
+  padding: 14px 18px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  background: var(--vp-c-bg-soft);
+  box-sizing: border-box;
+}
+
+.todo-flow .tf-box.is-tower {
+  border-color: var(--ct-signal);
+  background: var(--ct-raised);
+}
+
+.todo-flow .tf-box.is-file {
+  border-style: dashed;
+  border-color: var(--vp-c-text-3);
+}
+
+.todo-flow .tf-box.is-bat {
+  border-color: var(--ct-bat);
+}
+
+.todo-flow .tf-box.is-you {
+  border-color: var(--ct-you);
+}
+
+.todo-flow .tf-who {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.todo-flow .tf-box.is-tower .tf-who {
+  color: var(--ct-signal-text);
+}
+
+.todo-flow .tf-box.is-bat .tf-who {
+  color: var(--ct-bat);
+}
+
+.todo-flow .tf-box.is-you .tf-who {
+  color: var(--ct-you);
+}
+
+.todo-flow .tf-text {
+  margin-top: 4px;
+  font-size: 15px;
+  color: var(--vp-c-text-2);
+}
+
+.todo-flow .tf-note {
+  margin-top: 24px;
+  padding: 14px 18px;
+  border: 1px dashed var(--vp-c-divider);
+  border-radius: 12px;
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--vp-c-text-2);
+}
+
+.todo-flow .tf-note b {
+  color: var(--vp-c-text-1);
+}
+
+@media (max-width: 639px) {
+  .todo-flow .tf-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+}
+
 /* ---------- 功能導覽類元件（BAT /control-tower-tour 沿用） ---------- */
 
 /* 工單狀態用的流程色（BAT 設計語言 § 4）。「執行中」不用琥珀（Portal 主色），改用靛藍；狀態一律配符號 */

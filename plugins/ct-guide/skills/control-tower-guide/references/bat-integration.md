@@ -185,6 +185,9 @@ BAT `>= 0.7.1-pre.1` 啟動 claude 分頁時用 `--name` 給的名稱（例 `BMa
 > 呼叫條件、指令參數、PowerShell 寫法、exit code 對照與防注入規則以 CT 的 `auto-session.md` § 塔台分頁角色宣告、§ 安全邊界 為準；
 > 面板欄位定義見 CT 的 `memory-protocol.md` § 塔台狀態面板。本節只講設計理由。
 
+> **v6.1.0+（BAT ↔ CT 契約 v2）**：同一個宣告另帶 `--bat-contract 2`，先寫狀態檔再宣告、讀輸出的 `bat-contract:`／`hooks:` 兩行，
+> 舊 BAT 不認得這個參數時只重送一次；面板多一欄 `BAT 契約`。見本章 § BAT ↔ CT 契約 v2：待辦分頁（v6.1.0+）與 `preview-bat-contract-v2.md` § 開工宣告：先寫狀態檔，再告訴 BAT。
+
 ---
 
 ## 派工：建立 Worker 分頁
@@ -605,6 +608,34 @@ CT 自己訂的預算是 400 KB（409,600 bytes），比 BAT 的上限低約 100
 > 大小預算、各頁表現、各檔 BAT 依賴的格式與值域對照，以 CT `memory-protocol.md` § BAT 塔台面板讀取契約 為唯一權威（對照 BAT `0.7.1-pre.9`：解析器仍以 pre.8 對照，pre.9 改的讀檔失敗提示與 `critical` 讀法依 BAT 通知）；
 > 各檔的完整格式在該節列出的權威段。BAT 改了解析規則，以 BAT 的通知為準再改 CT。
 
+> **v6.1.0+**：讀取契約升為**契約 v2**——v1 欄位全部保留、`summary_version` 不升，`_tower-state.md` frontmatter 另加 `bat_contract`、
+> 待你決定（`U-n`）、待你執行（`A-n`）、提醒，BAT 新增的「待辦」分頁唯讀顯示；大小預算明寫含 frontmatter。見下一節 § BAT ↔ CT 契約 v2：待辦分頁（v6.1.0+）。
+
+---
+
+## BAT ↔ CT 契約 v2：待辦分頁（v6.1.0+）
+
+> 6.1.0 起屬正式版（6.1.0-pre.1 預覽時加入，已在 BAT 0.8.0-pre.3 的測試版上實機驗證）。本節是簡述與索引：為什麼這樣設計、怎麼用、實機驗了什麼，
+> 詳見 `preview-bat-contract-v2.md`（預覽期間寫的專章，保留作為參考）；確切欄位、上限與訊息字樣以 CT `memory-protocol.md` § 契約 v2 欄位（唯一權威）
+> 與 `auto-session.md` § 塔台分頁角色宣告 為準，本節不重抄。
+
+**一句話**：塔台要你做的事，從「終端裡的一段話」變成「檔案裡的一筆資料」——CT 寫進 `_tower-state.md` 的 frontmatter，BAT 的「待辦」分頁唯讀顯示；
+不用 BAT 的人也一樣，有東西在等你時，塔台每次回覆的最後一行都會重列一次。
+
+| 概念 | 簡述 | 詳見 `preview-bat-contract-v2.md` |
+|------|------|------|
+| 為什麼 | yolo 下好幾個 Worker 同時回報時，塔台的提問與總結很快被後面的回合捲走 | § 為什麼：提問被後面的回合淹沒 |
+| 寫什麼 | `bat_contract: 2`、`ct_version`、待你決定 `awaiting_user`（`U-n`）、待你執行 `user_actions`（`A-n`）、`reminders`、`next_ids.user`／`action`；工單另有 `waiting_user`。契約 v1 欄位不動、`summary_version` 不升 | § 欄位一覽：記住名字就好，寫法看權威節 |
+| 什麼時候寫、什麼時候清 | 斷點 A／B-1／B-2／C／E 暫停、Worker 提問升級、塔台自己要你決定 → `U-n`；收單時的待實機項目 → `A-n`；你回答後由塔台移除並記決策日誌，BAT 從不改檔；依賴等你的工單先不派 | § 生命週期：什麼時候寫、什麼時候清 |
+| 怎麼回答 | 一行 `U-3：B`、`U-3：<自由文字>`、`A-2：完成`、`A-2：失敗 <說明>`；待辦分頁送出的是同一行；塔台回一行確認 | § 回答：一行就好 |
+| 回覆結尾重列 | 有待決或待執行項目時，塔台每次回覆的最後一行固定重列，任何終端都有 | § 回覆結尾重列：任何終端都有 |
+| 開工宣告 | 先寫狀態檔，再 `--set-role tower --bat-contract 2`，讀輸出的 `bat-contract:`／`hooks:` 兩行；面板多 `BAT 契約` 欄（見上方 § 塔台分頁角色宣告） | § 開工宣告：先寫狀態檔，再告訴 BAT |
+| 舊 BAT、非 BAT | 需要 BAT ≥ 0.8.0-pre.3；舊 BAT 只重送一次並印降級提示，非 BAT 終端不宣告，兩者都照寫欄位、照樣重列（見下方 § 版本對照表） | § 版本需求：舊 BAT、非 BAT 也能用 |
+| 設定與檢查 | `user_inbox: off`、隱私、新欄位時間寫 `+08:00`、筆數上限、`check-frontmatter.py` 的 v2 檢查（`WARN` 層級） | § `user_inbox: off`、隱私、時區、筆數與自檢 |
+| 驗了什麼 | 開工宣告與解析、舊 BAT 降級、待決與待執行的寫入／回答／移除、回覆結尾重列、通知保護、回合訊息卡都實機驗過；還沒驗的路徑另列 | § 已知未驗 |
+
+流程圖照 `diagrams.md` § 21（現成 SVG 在專章 § 圖：CT 寫、BAT 讀、你回答）。使用者端怎麼操作，指向 `ct-help` § 與 BAT 協作（Working With BAT, v6.1.0+）。
+
 ---
 
 ## 版本對照表
@@ -665,6 +696,7 @@ CT 從不預先判斷 BAT 版本：一律先照常呼叫，失敗才依 exit cod
 | v6.0.0（正式版，取代 5.15.0 成為穩定版） | BAT 介面同 v6.0.0-pre.1；相對 rc.1 沒有功能或規則變更；CT plugin 6.0.0 起上架（Codex 用 plugin 又要接 BAT 派工需 BAT `>= 0.7.2-pre.1`，同 5.14.2） | 無新門檻（最低仍 `>= 0.7.0-pre.7`） | 見 `preview-methodology.md` § 6.0.0：納入正式版 |
 | v6.0.1（正式版 PATCH） | BAT 介面同 v6.0.0-pre.1；CT 寫的 YAML frontmatter 字串寫法與寫入後自檢（含反斜線的值用單引號或正斜線），讓 BAT 塔台面板不再因為 `_tower-state.md` 摘要的雙引號字串裡有 Windows 路徑而整份讀不到；面板契約 v1 不變（欄位、型別、`summary_version: 1`） | 無新門檻（最低仍 `>= 0.7.0-pre.7`） | 見 `three-layer-arch.md` § Tower State（`_tower-state.md`） |
 | v6.0.2（正式版 PATCH） | BAT 介面同 v6.0.0-pre.1；helper 的參數與「內容只走 stdin」不變，只改 CT 怎麼準備 stdin 的內容：題目 JSON 與答覆先用 Write 寫到 scratchpad 檔，再以 `< 檔案` 送入（不用 heredoc）；面板契約 v1 不變 | 無新門檻（最低仍 `>= 0.7.0-pre.7`） | 見 `work-order-lifecycle.md` § Phase 4：Report And Commit（反序收尾） |
+| v6.1.0（正式版 MINOR，取代 6.0.2；6.1.0-pre.1 預覽起） | 待辦分頁（BAT ↔ CT 契約 v2）：塔台把待你決定（`U-n`）、待你執行（`A-n`）、提醒寫進 `_tower-state.md` frontmatter，開工時 `--set-role tower --bat-contract 2` 宣告，BAT 待辦分頁唯讀顯示；契約 v1 欄位與 `summary_version` 不變；已在 BAT 0.8.0-pre.3 的測試版上實機驗證 | BAT ≥ 0.8.0-pre.3（與 CT 6.1.0 同日發佈） | exit `1`＋`Unknown option '--bat-contract'` → 不帶這個參數重送一次、本 session 不再帶，標題與模式照舊；開工面板一行降級提示，沒有待辦分頁，待決事項仍列在每次回覆的結尾（舊 BAT 0.8.0-pre.1 實機驗過）；見上方 § BAT ↔ CT 契約 v2：待辦分頁（v6.1.0+） |
 
 `BAT_HELPER_NODE`（v5.2.1）沒有版本門檻：本機沒有這個變數就用 `node`，只有遠端分頁會由 BAT 注入。
 版號以 CT 的 `version-governance.md` § 歷史版號表 與 `auto-session.md` § 依賴的 BAT 基礎設施 為準；v5.1.0 的 BAT 版本出自 CT `CHANGELOG.md` [5.12.3]：[5.1.0] 原寫 `0.6.1-pre.3`，v5.12.3 依 BAT 塔台回覆更正為 `>= 0.6.1-pre.4`（歷史段落不改）。

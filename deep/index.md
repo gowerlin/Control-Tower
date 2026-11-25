@@ -1,11 +1,11 @@
 ---
 title: 進階：總覽
-description: 進階區的地圖：設計理念 7 篇講 CT 為什麼這樣設計，功能深入 11 篇講每個機制怎麼運作，附建議閱讀順序。
+description: 進階區的地圖：設計理念 7 篇講 CT 為什麼這樣設計，功能深入 12 篇講每個機制怎麼運作，附建議閱讀順序。
 ---
 
 # 進階：總覽
 
-<p class="ct-lead">進階區給已經會用 CT、想知道「為什麼這樣設計」的人。設計理念 7 篇講背後的原則，功能深入 11 篇講每個機制的規則；每篇都同時回答「規則是什麼」和「為什麼這樣定」。</p>
+<p class="ct-lead">進階區給已經會用 CT、想知道「為什麼這樣設計」的人。設計理念 7 篇講背後的原則，功能深入 12 篇講每個機制的規則；每篇都同時回答「規則是什麼」和「為什麼這樣定」。</p>
 
 如果你還沒用過 CT，建議先讀 [為什麼需要 CT](/why) 和 [一張工單的一生](/lifecycle)，再回到這裡。
 
@@ -17,7 +17,7 @@ description: 進階區的地圖：設計理念 7 篇講 CT 為什麼這樣設計
 
 ## 功能深入 {#features}
 
-這 11 篇逐一拆解 CT 的機制：工單、派工、yolo 與斷點、Worker 提問、worktree 隔離與合併、落點檢查、中斷與 Renew、多種單據、學習與 Workflow、跨塔台協作、觀測工具。每篇都會連回對應的設計理念。
+這 12 篇逐一拆解 CT 的機制：工單、派工、待辦分頁、yolo 與斷點、Worker 提問、worktree 隔離與合併、落點檢查、中斷與 Renew、多種單據、學習與 Workflow、跨塔台協作、觀測工具。每篇都會連回對應的設計理念。
 
 <FeatureGrid set="features" />
 
@@ -31,7 +31,7 @@ description: 進階區的地圖：設計理念 7 篇講 CT 為什麼這樣設計
 
 接著依你的需要挑：
 
-- **要開始用 yolo 或 BAT 自動派工**：[可逆與不可逆的界線](/deep/principles/boundaries) → [派工](/deep/features/dispatch) → [yolo 與斷點](/deep/features/yolo) → [Worker 向塔台提問](/deep/features/worker-questions)。
+- **要開始用 yolo 或 BAT 自動派工**：[可逆與不可逆的界線](/deep/principles/boundaries) → [派工](/deep/features/dispatch) → [yolo 與斷點](/deep/features/yolo) → [Worker 向塔台提問](/deep/features/worker-questions) → [待辦分頁](/deep/features/bat-todo)。
 - **要用 worktree 隔離並行開發**：[可逆與不可逆的界線](/deep/principles/boundaries) → [worktree 隔離與合併](/deep/features/worktree-merge) → [落點檢查](/deep/features/landing-check)。
 - **要讓 CT 累積經驗、跨專案共用**：[三層資料與記憶](/deep/principles/data-layers) → [會學習的系統](/deep/principles/learning) → [自我學習、Playbook 與 Workflow](/deep/features/learning-playbook-workflow)。
 - **要維護規則、寫 skill，或想知道 CT 怎麼管自己的文件**：[治理](/deep/principles/governance)。

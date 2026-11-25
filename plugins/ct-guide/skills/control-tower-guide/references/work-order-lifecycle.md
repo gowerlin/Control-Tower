@@ -89,6 +89,8 @@ status: IN_PROGRESS
 
 > 欄位的完整寫法與值域以 CT 的 `work-order-template.md` 為準；本節只講每個欄位為什麼存在。
 > 字串值怎麼加引號（`title` 這類自由文字寫到 Windows 路徑時用單引號或正斜線）與寫完的自檢（v6.0.1），理由見 `three-layer-arch.md` § Tower State（`_tower-state.md`），規則以 CT `memory-protocol.md` § YAML frontmatter 字串寫法與寫入後自檢 為準。
+>
+> **v6.1.0+（BAT ↔ CT 契約 v2）**：工單多一個選填欄位 `waiting_user: "U-n"`（這張在等你決定哪一題；只有塔台寫和清），`depends_on` 指到它的工單先不派。見 `preview-bat-contract-v2.md` § 生命週期：什麼時候寫、什麼時候清。
 
 ---
 
@@ -773,6 +775,8 @@ BAT 通道裡，Worker 每次等最多 45 秒，兩次之間不能隔超過 120 
 
 這條線和斷點 C「擴大範圍是人的決定」同一個道理：塔台能自主的只有「在既定範圍內怎麼做」。
 提問本身不是斷點，不算 Renew，也不計入 `yolo_max_retries`。
+
+> **v6.1.0+（BAT ↔ CT 契約 v2）**：升級給使用者的那一題同時寫成待你決定（`U-n`，`source: worker-question`）；收單時回報區的「待實機／待使用者執行」項目寫成待你執行（`A-n`），不再放 `todo`。見 `preview-bat-contract-v2.md`。
 
 ### 等不到答覆：退回 BLOCKED + Renew
 

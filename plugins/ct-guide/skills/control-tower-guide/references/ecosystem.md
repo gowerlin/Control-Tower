@@ -226,6 +226,7 @@ v5.14.1 起 zip 手動安裝與 plugin 安裝的 bmad-guide 都偵測得到（�
 
 > **v6.0.0+**：另有 `methodology` 等 9 個方法論設定鍵（主方法論、各層、子代理寫入、注入檢查、adapter 路徑）；全部預設時行為與上表相同。是什麼見 `integration.md` § 方法論轉接（v6.0.0+），設計理由見 `preview-methodology.md` § 抽換 vs 分層疊加。
 > 上表 BUG／PLAN／EXP 三列是 v6 的新預設；設定明寫 `false` 的照舊。見 `preview-methodology.md` § BUG／PLAN／EXP 預設開啟。全域設定的位置照 `CLAUDE_CONFIG_DIR` 解讀，見同章 § 全域路徑：`CLAUDE_CONFIG_DIR`／`CODEX_HOME`。
+> **v6.1.0+（BAT ↔ CT 契約 v2）**：另有 `user_inbox`（`on` 預設／`off`）：`off` 時塔台不把待你決定、待你執行寫進 `_tower-state.md`，回覆結尾照樣重列。見 `preview-bat-contract-v2.md` § `user_inbox: off`、隱私、時區、筆數與自檢。
 
 設定的四層覆蓋：**Session > Project > Global > Default**（見 `three-layer-arch.md`）。
 

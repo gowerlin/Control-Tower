@@ -1149,57 +1149,111 @@ Tower 啟動時向 BAT 宣告「這個分頁是塔台」以及目前生效的 au
 `<Agent 顯示名> · Tower`（例 `Claude CLI · Tower`，與 Worker 分頁 `Claude CLI · Worker · T####` 對應；
 使用者改過名就保留），並以 `--mode` 判斷塔台分頁是否為 yolo 分頁。標題由 BAT 組出並套用，CT 只負責呼叫。
 
+v6.1.0+ 同一個呼叫另帶 `--bat-contract 2`，向 BAT 宣告這個塔台使用 **BAT ↔ CT 契約 v2**（欄位與規則的權威在
+[memory-protocol.md](memory-protocol.md) § 契約 v2 欄位）。BAT 以「每個塔台分頁的宣告」決定要不要對這個分頁啟用契約 v2 的新功能
+（待辦分頁、通知保護、回合訊息卡），所以**每次** `--set-role` 都要帶它：BAT 每次 `--set-role` 都覆寫宣告，不帶就等於沒宣告。
+參數與輸出以 BAT 的 `--set-role` 契約修訂（R11：新增 `--bat-contract`，只在帶這個參數時多輸出 `bat-contract:`、`hooks:` 兩行，
+不帶時輸出逐字不變）為準，CT 不得更改。
+
 **1. 呼叫條件**
 
 - 只在 **Tower session** 呼叫。
 - `BAT_SESSION=1`，且 `BAT_REMOTE_PORT`、`BAT_REMOTE_TOKEN`、`BAT_TERMINAL_ID` 都存在。
 - **不需要** `BAT_WORKSPACE_ID`，也**不需要** `BAT_TOWER_TERMINAL_ID`（與派工條件不同：本呼叫不建立分頁，只設定自己）。
-- env 不齊或非 BAT 環境 → **略過，不嘗試**。
+- env 不齊或非 BAT 環境 → **略過，不嘗試**。契約 v2 的欄位照常寫（[memory-protocol.md](memory-protocol.md) § 契約 v2 欄位），
+  回覆結尾的待決重列照常印（`SKILL.md` § Output Style）。Claude 面板開的塔台沒有 `BAT_*` env，同樣當成非 BAT 終端。
 - env 判讀沿用上方 § 偵測條件 的 PowerShell 複查與 `shell env visibility mismatch` 規則，不另立判讀方式。
 
 **2. 指令**
 
 ```bash
-"${BAT_HELPER_NODE:-node}" "<helper>\\bat-terminal.mjs" --set-role tower --mode <yolo|ask|off|on> --agent <claude|codex>
+"${BAT_HELPER_NODE:-node}" "<helper>\\bat-terminal.mjs" --set-role tower --bat-contract 2 --mode <yolo|ask|off|on> --agent <claude|codex>
 ```
 
 PowerShell（不支援 `${VAR:-default}` 時的等價寫法，參數完全相同）：
 
 ```powershell
 $n = if ($env:BAT_HELPER_NODE) { $env:BAT_HELPER_NODE } else { 'node' }
-& $n "<helper>\bat-terminal.mjs" --set-role tower --mode <yolo|ask|off|on> --agent <claude|codex>
+& $n "<helper>\bat-terminal.mjs" --set-role tower --bat-contract 2 --mode <yolo|ask|off|on> --agent <claude|codex>
 ```
 
 - `<helper>`：解析方式同上方 § 執行方式（`BAT_HELPER_DIR` 優先，未設定才 fallback 到 BAT 安裝目錄；Windows 路徑，不轉 POSIX）。
 - `"${BAT_HELPER_NODE:-node}"` 與 PowerShell 的 `$n`：解析規則見上方 § 執行方式 的「Node 解析」（所有 helper 呼叫共用）。
+- `--bat-contract 2`（v6.1.0+）：本 session 已判定這個 BAT 不認得這個參數（第 5 點的舊 BAT 重送）之後就不再帶。
 - `--mode`：session > project > global > defaults 解析後**生效的** `auto-session` 值（見 [tower-config.md](tower-config.md) § 三層設定架構），只能是 `yolo` / `ask` / `off` / `on`。
 - `--agent`：Claude Code 塔台 → `claude`；Codex 塔台 → `codex`。只是顯示名提示，分頁本身有 agent 設定時 BAT 以分頁為準。
 - **不傳** `--terminal-id`（BAT 預設取 `BAT_TERMINAL_ID`，即塔台自己的分頁）。
 
-**3. 時機**
+**3. 時機與順序**
 
 Startup Protocol 完成 BAT 偵測與設定載入之後、顯示狀態面板之前呼叫一次。每次 `/control-tower`
-／`$control-tower` 啟動都呼叫（同一分頁重複啟動也照常呼叫，BAT 端冪等）。
+／`$control-tower` 啟動都呼叫（同一分頁重複啟動也照常呼叫，BAT 端冪等）。v6.1.0+ 依序：
+
+1. `_tower-state.md` frontmatter 沒有 `bat_contract: 2`（含沒有這個檔、首次啟動）→ **先寫入**（照 [memory-protocol.md](memory-protocol.md)
+   § 機器可讀摘要 的同一次寫入規則，含 `updated_at`、`ct_version`；寫完自檢）。這樣 BAT 看到分頁宣告時，狀態檔已經是 v2。
+2. 呼叫第 2 點的指令。
+3. 依第 5 點解析 exit code 與 stdout 的 `bat-contract:`、`hooks:` 兩行。
 
 **4. 模式變更時再呼叫**
 
 session 中 auto-session 的生效值改變時（`*config auto-session <m>`，含 `--save`；或任何改變生效值的流程），
 用新的 `--mode` 再呼叫一次。不帶 `--mode` **不會清除** BAT 記錄的模式，所以每次呼叫都要帶 `--mode`。
+v6.1.0+ 再呼叫時也帶 `--bat-contract 2`（本 session 判定為舊 BAT 的除外），否則 BAT 會把契約宣告清掉；再呼叫的輸出只看 exit code，
+`bat-contract:`／`hooks:` 不重新提示。
 
-**5. exit code**
+**5. exit code 與輸出**
 
 | exit code | 意義 | 塔台處理 |
 |---|---|---|
-| `0` | 已處理（標題已套用，或因使用者命名而保留） | 面板記「已設定」 |
-| 任何非 `0`（含 `3` NOT_FOUND、`1` 用法錯誤／連線失敗／權杖不允許／BAT 太舊） | 不支援 / 未設定 | 面板記「不支援（BAT 太舊）」；**不重試、不改用其他方式、不影響 Tower 啟動**；stderr 含 `Forbidden` 時多一句原因提示（見 § BAT 內部終端路由 › 範圍權杖與分頁角色 第 5 點） |
+| `0` | 已處理（標題已套用，或因使用者命名而保留） | 面板 `分頁標題` 記「已設定」；`BAT 契約` 依下表解析 stdout |
+| `1`，且 stderr 含 `Unknown option '--bat-contract'`（v6.1.0+） | 舊 BAT：helper 不認得 `--bat-contract`，**沒有**設定角色 | **只重送一次**、不帶 `--bat-contract`（其他參數相同），本 session 之後都不再帶。重送的結果照本表其他列決定 `分頁標題`；`BAT 契約` 記「不支援（BAT 太舊）」並印降級提示。重送那次的輸出**不**解析 `bat-contract:`／`hooks:` |
+| 其他非 `0`（含 `3` NOT_FOUND、`1` 用法錯誤／連線失敗／權杖不允許／BAT 太舊） | 不支援 / 未設定 | `分頁標題` 記「不支援（BAT 太舊）」、`BAT 契約` 記「未知（宣告失敗）」；**不重試、不改用其他方式、不影響 Tower 啟動**；stderr 含 `Forbidden` 時多一句原因提示（見 § BAT 內部終端路由 › 範圍權杖與分頁角色 第 5 點） |
 
-判斷**只看 exit code**，stdout / stderr 不參與判斷；唯一例外是 stderr 含 `Forbidden` 時用來挑選提示文字（不改變上表的處理），見 § BAT 內部終端路由 › 範圍權杖與分頁角色 第 5 點。成功時 stdout 的 `✓ Tower role set: <id>`、`  mode: <m>` 與
+exit `0` 時（只看帶 `--bat-contract 2` 的那一次）解析 stdout，**允許行首空白**（BAT 以兩個空白縮排），其他行照舊不解析：
+
+| stdout | `BAT 契約` | 提示 |
+|---|---|---|
+| 有一行 `bat-contract: 2` | `v2` | 不印 |
+| 有一行 `bat-contract: 2 (requested <n>: unsupported)` | `不支援（BAT 太舊）` | 降級提示 |
+| 沒有 `bat-contract:` 行（不應發生） | `不支援（BAT 太舊）` | 降級提示；**不重送**（角色已設定成功） |
+
+降級提示（**BAT 最低版號只寫在這裡**；其他檔案提到時寫法與這行相同）：
+
+```
+⚠️ 這版 BAT 不支援 BAT ↔ CT 契約 v2（需要 BAT ≥ 0.8.0-pre.3）：待辦分頁、通知保護、回合訊息卡不可用；待決事項仍會列在每次回覆的結尾。
+```
+
+`hooks:` 行（同一次 exit `0` 的輸出；只有帶 `--bat-contract` 時 BAT 才輸出）說明這個塔台分頁有沒有 BAT 的 claude hooks：
+
+| `hooks:` 的值 | 面板 |
+|---|---|
+| `ok …`（例 `ok (injected, set 2)`） | 不印；括號內含 `plugin-outdated` 時印下表 `plugin-outdated` 那一行 |
+| `n/a (codex)` | 不印 |
+| `none (<代號>)` | 依下表印一行：前綴「這個塔台沒有 BAT hooks：回合訊息卡與對話框保護不可用。」＋原因與怎麼修 |
+| 沒有 `hooks:` 行 | 不印 |
+
+| 代號 | 原因與怎麼修（接在前綴之後） |
+|---|---|
+| `settings-off` | 原因：BAT 的 Settings › BAT MCP 已關閉。打開它並重開塔台，或安裝 `bat-hooks` plugin。 |
+| `user-settings-arg` | 原因：這個 agent 的自訂參數已有 `--settings`。拿掉它，或安裝 `bat-hooks` plugin。 |
+| `claude-hooks-disabled` | 原因：claude 設定檔設了 `disableAllHooks`。這是你自己的設定；要使用請拿掉。 |
+| `managed-hooks-only` | 原因：組織的 managed 設定只允許 managed hooks。請洽管理者。 |
+| `no-report` | 原因：claude 啟動後沒有任何 hook 回報，可能是專案的 `.claude/settings*.json` 關了 hooks。 |
+| `not-launched-by-bat` | 原因：這個 claude 不是 BAT 開的（在 shell 手打）。改用 BAT「以塔台開啟 Claude」，或安裝 `bat-hooks` plugin。 |
+| `no-endpoint`／`script-missing`／`unrepresentable-path` | 原因：BAT 的 helper 異常。請重開 BAT；仍然如此請重新安裝 BAT。 |
+| `plugin-outdated` | （不加前綴）`bat-hooks` plugin 比這版 BAT 舊，有些事件不會回報：請執行 `claude plugin update bat-hooks@better-agent-terminal`。 |
+| 其他（不認得的代號） | 照原文印 `這個塔台沒有 BAT hooks：hooks: none (<代號>)`，不猜原因 |
+
+- 文字可以精簡，意思不變。CT 不替使用者安裝 plugin、不改 claude 設定；`bat-hooks` plugin 怎麼裝見 BAT 文件，概念說明見 `ct-help` § 與 BAT 協作。
+- CT 不讀 BAT MCP 的 `towerContract`、`hooksStatus` 欄位判斷契約版本；只看本點這次呼叫的輸出。
+
+判斷**以 exit code 為主**：除了上面兩張表的 `bat-contract:`／`hooks:` 行（v6.1.0+）與 stderr 的 `Unknown option '--bat-contract'`，stdout / stderr 不參與判斷；另一個例外是 stderr 含 `Forbidden` 時用來挑選提示文字（不改變上表的處理），見 § BAT 內部終端路由 › 範圍權杖與分頁角色 第 5 點。成功時 stdout 的 `✓ Tower role set: <id>`、`  mode: <m>` 與
 stderr 的 `set-role: <CODE>` 只當診斷參考。
 
 **6. 狀態面板**
 
-面板的 `分頁標題` 欄位（格式與值域）定義在 [memory-protocol.md](memory-protocol.md) § 塔台狀態面板。取值規則在本小節：
-第 5 點的 exit code 決定 `已設定` / `不支援（BAT 太舊）`；依第 1 點 env 不齊或非 BAT 而未呼叫 → `略過（非 BAT）`。
+面板的 `分頁標題`、`BAT 契約` 欄位與提示行（格式與位置）定義在 [memory-protocol.md](memory-protocol.md) § 塔台狀態面板。取值規則在本小節：
+第 5 點決定 `已設定` / `不支援（BAT 太舊）` 與 `BAT 契約` 的值；依第 1 點 env 不齊或非 BAT 而未呼叫 → 兩欄都是 `略過（非 BAT）`。
 
 **7. 禁止**
 
@@ -1214,6 +1268,9 @@ stderr 的 `set-role: <CODE>` 只當診斷參考。
 - 新 helper + 舊 BAT app：印 `set-role: UNSUPPORTED`，exit `1`。
 
 兩者都依第 5 點視為不支援。安全白名單與防注入規則見下方 § 安全邊界。
+
+`--bat-contract`（v6.1.0+）需要支援契約 v2 的 BAT（BAT ≥ 0.8.0-pre.3，同第 5 點降級提示）。
+更舊的 helper 印 `Unknown option '--bat-contract'`、exit `1`、不設定角色，CT 依第 5 點不帶這個參數重送一次，標題與模式照舊可用。
 
 ### 對使用者描述分頁（v5.2.5+）
 
@@ -1294,7 +1351,7 @@ BAT 路由插入現有降級鏈的**最高優先位置**：
 | `BAT_HELPER_DIR` | BAT 安裝目錄下的 `scripts` 子目錄；helper 路徑優先來源 |
 | `scripts/bat-terminal.mjs` | 零依賴 Node.js CLI，WebSocket invoke 建立終端 |
 | `scripts/bat-notify.mjs` | 零依賴 Node.js CLI，雙管道通知（PTY write + terminal:notify） |
-| `bat-terminal.mjs --set-role tower --mode <m>` | v5.2.0+ 塔台分頁角色宣告；需 BAT **`>= 0.6.1-pre.6`**（T0562 + T0565），更舊的 BAT 回 exit `1` 視為不支援。見 § 塔台分頁角色宣告 |
+| `bat-terminal.mjs --set-role tower --mode <m>` | v5.2.0+ 塔台分頁角色宣告；需 BAT **`>= 0.6.1-pre.6`**（T0562 + T0565），更舊的 BAT 回 exit `1` 視為不支援。v6.1.0+ 另帶 `--bat-contract 2`（契約 v2，需要支援契約 v2 的 BAT；舊 BAT 不帶重送一次）。見 § 塔台分頁角色宣告 |
 | `BAT_HELPER_NODE` | 遠端分頁的 bundle node 路徑（本機無此變數 → `node`）；所有 helper 呼叫都用，規則見 § 執行方式 的「Node 解析」 |
 | `CT_HOME` / `CT_WORKTREE` / `CT_WORKTREE_BRANCH` / `CT_WORKTREE_BASE` | v5.3.0+ 隔離派出的 Worker 分頁才有；需 BAT **`>= 0.7.0-pre.2`**。見 § worktree 隔離派工 |
 | `bat-terminal.mjs --worktree-status` / `mcp__bat__*` | v5.3.0+ 唯讀查詢；需 BAT **`>= 0.7.0-pre.2`**；分頁關閉後仍可查 `--worktree-status`（`source`）需 BAT **`>= 0.7.0-pre.4`**（v5.4.0+）。見 § BAT MCP 唯讀 tool 與 [merge-workorder.md](merge-workorder.md) |
@@ -1508,7 +1565,7 @@ BAT 內部終端（BAT_SESSION=1）
 | 查詢隔離 Worker 狀態 | `"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --worktree-status <工單 ID> --notify-id "$BAT_TERMINAL_ID"` | BAT（v5.3.0+，唯讀；見 [merge-workorder.md](merge-workorder.md) § 合併判準資料來源） |
 | 塔台直接合併（模式 ①） | [merge-workorder.md](merge-workorder.md) § 直接合併的做法 列出的 git 指令（整合 worktree `--no-ff`、`main` 只 `--ff-only`） | git（v5.3.0+，僅直接合併五條判準全部成立時；其他 git 寫入操作不在此列） |
 | 答覆 Worker 的 BAT 題目 | `"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --answer <questionId> --notify-id "$BAT_TERMINAL_ID" [--choice <n>]`，答覆文字只從 stdin 傳入 | BAT（v5.7.0+，BAT `>= 0.7.0-pre.7`，僅 yolo 塔台收到 `T#### 提問` 時；用法與 exit code 見 [yolo-mode.md](yolo-mode.md) § Worker 向塔台提問 › 塔台端 第 3 點；helper 路徑 fallback 同上） |
-| 宣告塔台分頁角色 | `"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --set-role tower --mode <yolo\|ask\|off\|on> --agent <claude\|codex>` | BAT（v5.2.0+，僅 Tower session；啟動時與 auto-session 生效值改變時；條件、PowerShell 寫法與 exit code 處理見 § 塔台分頁角色宣告；helper 路徑 fallback 同上） |
+| 宣告塔台分頁角色 | `"${BAT_HELPER_NODE:-node}" "$BAT_HELPER_DIR\\bat-terminal.mjs" --set-role tower --bat-contract 2 --mode <yolo\|ask\|off\|on> --agent <claude\|codex>` | BAT（v5.2.0+，僅 Tower session；啟動時與 auto-session 生效值改變時；`--bat-contract 2` v6.1.0+，舊 BAT 不帶重送一次；條件、PowerShell 寫法、exit code 與輸出解析見 § 塔台分頁角色宣告；helper 路徑 fallback 同上） |
 
 ### 安全規則
 

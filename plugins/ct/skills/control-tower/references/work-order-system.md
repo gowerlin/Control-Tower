@@ -180,6 +180,9 @@ your-project/
    `warn`（預設）偵測到注入開著 → 工單**自動加** `### 方法論邊界`（範本：[work-order-template.md](work-order-template.md) 標準模板的 `### 方法論邊界`；
    注入的方法論不負責本單任何一層用【不使用】變體，負責某層用【只允許】變體），沒有 `methodology` 的工單也加；`block` → 不派；`off` → 略過。
 2.5. **派發前 overlap check**（v4.4.0+）：比對本次工單的 `affects_files` 與目前 IN_PROGRESS 工單的 `affects_files`，依交集嚴重度決定 BLOCK / WARN / 放行（見下方「派發前 overlap check」）
+2.6. **依賴等使用者**（v6.1.0+，BAT ↔ CT 契約 v2）：本單 `depends_on` 指到的工單 frontmatter 有 `waiting_user`（在等使用者決定 `U-n`）→ **這張不派**，
+   顯示一行 `⏸ <本單> 暫不派發：依賴的 <工單> 在等你決定 <U-n>`；其他工單照常派發。使用者回答、清掉 `waiting_user` 後再派。
+   `waiting_user` 的寫入與清除見 [memory-protocol.md](memory-protocol.md) § 契約 v2 欄位，本檔不複述。
 3. **產生工單檔案**：寫入 `_ct-workorders/T<編號>-<描述>.md`（見 work-order-template.md）
 4. **畫面顯示摘要**：
 
@@ -341,6 +344,9 @@ T0106（即將派發）affects_files：
 2. **複查主方法論 tracker**（bmad 時為 `sprint-status.yaml`；位置見 adapter `tracker`）與 `### 方法論狀態回寫`：該回寫沒回寫則塔台補更新；主方法論沒有 `tracker` 就跳過（§ 主方法論 tracker 同步）
 3. **品質閘門檢查**：若為審查類工單且回報包含 CRITICAL/HIGH 發現 → 強制派發修正工單
 4. **更新進度表**
+4.5. **待使用者執行的項目**（v6.1.0+，BAT ↔ CT 契約 v2）：回報區列出的「待實機／待使用者執行」項目（實機驗收、要使用者自己跑的指令、手動設定），
+   在本次寫 `_tower-state.md` 時各寫一筆 `user_actions`（`ref` = 本工單完整 ID），收單確認裡列出新的 `A-n`；不再寫進 `todo`。
+   使用者回 `A-n：完成`／`A-n：失敗 <說明>` 後的處理、欄位與 `user_inbox: off`（退回寫 `todo`）只定義在 [memory-protocol.md](memory-protocol.md) § 契約 v2 欄位。
 5. **學習記錄**（靜默）：追加觀察到 `_learnings.md`
 6. **決策下一步**：
    - `DONE` → 派發下一張或宣布階段完成

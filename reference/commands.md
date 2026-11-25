@@ -17,7 +17,7 @@ const twoCliRows = [
 ]
 const towerRows = [
   ['*rescan', '完整掃描，刷新塔台狀態檔的環境快照', '—', 'v4.0.1'],
-  ['*config', '檢視或修改塔台設定', '[選項] [值] [--save project|global]、reset [選項]、methodology', 'v3.2.0（methodology：6.0.0）'],
+  ['*config', '檢視或修改塔台設定', '[選項] [值] [--save project|global]、reset [選項]、methodology', 'v3.2.0（methodology：6.0.0；user_inbox：6.1.0）'],
   ['*help', '不離開塔台查使用說明', '[主題]：commands、workflow、config、workorder、status、tips、methodology', 'v3.2.0（methodology：6.0.0）'],
   ['*sync', '以工單檔為事實來源，校準塔台記憶、工單與 sprint-status.yaml', '—', 'v3.2.0'],
   ['*pause', '凍結進行中的工單，處理緊急任務', '[原因]', 'v3.2.0'],
@@ -43,7 +43,7 @@ const towerRows = [
 - [三軌前綴](#prefixes)
 - **skill 指令**：[`/control-tower`](#control-tower)、[`/ct-exec`](#ct-exec)、[`/ct-done`](#ct-done)、[`/ct-status`](#ct-status)、[`/ct-evolve`](#ct-evolve)、[`/ct-insights`](#ct-insights)、[`/ct-fieldguide`](#ct-fieldguide)、[`/ct-help`](#ct-help)、[CT Guide](#control-tower-guide)
 - **塔台內建命令**：[`*rescan`](#rescan)、[`*config`](#config)、[`*help`](#help)、[`*sync`](#sync)、[`*pause`](#pause)、[`*resume`](#resume)、[`*bug`](#bug)、[`*plan`](#plan)、[`*exp`](#exp)、[`*archive`](#archive)、[`*evolve`](#evolve)、[`*insights`](#insights)、[`*fieldguide`](#fieldguide)、[`*import`](#import)、[`*onboard`](#onboard)
-- **對話慣用語**：[yolo 中斷詞](#yolo-stop)、[Renew 觸發詞](#renew)、[回報字串](#report-strings)
+- **對話慣用語**：[yolo 中斷詞](#yolo-stop)、[Renew 觸發詞](#renew)、[回報字串](#report-strings)、[回答待決與待執行（`U-n`／`A-n`）](#user-answers)
 - [不要找：不存在或已刪除的指令](#not-commands)
 
 ## 三軌前綴 {#prefixes}
@@ -73,10 +73,10 @@ const towerRows = [
 - **語法**：`/control-tower [一句話需求或情境]`（Codex：`$control-tower`）
 - **參數**：可選的自由文字，例如 `/control-tower 接手這個專案，前手只留了 README`。
 - **在哪用**：塔台 session。在 BAT 裡要從你自己開的一般分頁啟動；在被派出來的 Worker 分頁裡，派工類操作會被 BAT 拒絕。
-- **做什麼**：啟動或恢復塔台。依序讀專案規則（`AGENTS.md`、`_ct-workorders/_local-rules.md`、`CLAUDE.md`）→ 讀 `_tower-state.md`，有新鮮的環境快照就走快速恢復 → 讀設定（session > 專案 > 全域 > 預設）→ 計算熱區工單數 → 在 BAT 裡宣告這個分頁是塔台 → 顯示狀態面板。只有狀態檔不存在、快照空白或超過 7 天、或你輸入 `*rescan` 時，才做完整掃描。之後跟你對齊需求、開單、派工、收單；硬邊界是不實作產品程式碼、不讀原始碼與原始 log、不用背景 agent 取代工單、不寫已安裝的 skill、未經授權不 push。6.0.1 起，塔台每次寫完 frontmatter（`_tower-state.md`、工單、BUG／PLAN／EXP 等）都用附帶的腳本 `control-tower/scripts/check-frontmatter.py` 自檢，解析失敗不 commit；它是腳本，不是命令（見[字串寫法與寫入後自檢](/deep/principles/files-as-truth#yaml-strings)）。
-- **起始版本**：CT 本體。現行的「塔台與 Worker 分成獨立 skill」自 v3.1.0。
-- **權威出處**：`control-tower/SKILL.md` § Startup Protocol、§ Hard Boundaries、§ Request Routing；6.0.1 起 `control-tower/references/memory-protocol.md` § YAML frontmatter 字串寫法與寫入後自檢
-- **相關**：[為什麼需要 CT](/why)、[塔台不讀程式碼](/deep/principles/tower-and-workers)
+- **做什麼**：啟動或恢復塔台。依序讀專案規則（`AGENTS.md`、`_ct-workorders/_local-rules.md`、`CLAUDE.md`）→ 讀 `_tower-state.md`，有新鮮的環境快照就走快速恢復 → 讀設定（session > 專案 > 全域 > 預設）→ 計算熱區工單數 → 在 BAT 裡宣告這個分頁是塔台 → 顯示狀態面板。只有狀態檔不存在、快照空白或超過 7 天、或你輸入 `*rescan` 時，才做完整掃描。之後跟你對齊需求、開單、派工、收單；硬邊界是不實作產品程式碼、不讀原始碼與原始 log、不用背景 agent 取代工單、不寫已安裝的 skill、未經授權不 push。6.0.1 起，塔台每次寫完 frontmatter（`_tower-state.md`、工單、BUG／PLAN／EXP 等）都用附帶的腳本 `control-tower/scripts/check-frontmatter.py` 自檢，解析失敗不 commit；它是腳本，不是命令（見[字串寫法與寫入後自檢](/deep/principles/files-as-truth#yaml-strings)）。v6.1.0+：開工時先確認 `_tower-state.md` 有 `bat_contract: 2`（沒有就先寫入），在 BAT 內以 `--set-role tower --bat-contract 2` 宣告，狀態面板多一欄 `BAT 契約`；舊 BAT 不認得這個參數時不帶它重送一次並印一行降級提示；BAT 回 `hooks: none` 時印原因與怎麼修。有待決或待執行項目時，每次回覆的最後一行重列（見[待辦分頁（BAT ↔ CT 契約 v2）](/deep/features/bat-todo)）。
+- **起始版本**：CT 本體。現行的「塔台與 Worker 分成獨立 skill」自 v3.1.0（BAT ↔ CT 契約 v2 開工宣告：6.1.0）。
+- **權威出處**：`control-tower/SKILL.md` § Startup Protocol、§ Hard Boundaries、§ Request Routing；6.0.1 起 `control-tower/references/memory-protocol.md` § YAML frontmatter 字串寫法與寫入後自檢；6.1.0 起 `control-tower/references/auto-session.md` § 塔台分頁角色宣告、`memory-protocol.md` § 契約 v2 欄位
+- **相關**：[為什麼需要 CT](/why)、[塔台不讀程式碼](/deep/principles/tower-and-workers)、[待辦分頁（BAT ↔ CT 契約 v2）](/deep/features/bat-todo)
 
 ### `/ct-exec T####` {#ct-exec}
 
@@ -173,9 +173,9 @@ const towerRows = [
 - **語法**：`/ct-help`、`/ct-help <問題>`（Codex：`$ct-help …`）
 - **參數**：可選的自由文字問題，例如「`ct-done` 跟 `ct-exec` 差在哪？」。
 - **在哪用**：任何 session。
-- **做什麼**：操作手冊——先回答你眼前的問題，給確切的指令、紀錄檔的位置、狀態字的意思；新手只解釋接下來兩三步。**只解釋，不建立也不修改工單**，也不切換成塔台或 Worker。
-- **起始版本**：v3.1.0
-- **權威出處**：`ct-help/SKILL.md` § Command Families、§ User Guidance Patterns
+- **做什麼**：操作手冊——先回答你眼前的問題，給確切的指令、紀錄檔的位置、狀態字的意思；新手只解釋接下來兩三步。**只解釋，不建立也不修改工單**，也不切換成塔台或 Worker。v6.1.0+：可以問〈與 BAT 協作〉：契約 v2、待辦分頁、`U-n`／`A-n` 回答格式、BAT 的 hooks 與 CT 的 hooks 有什麼不同、什麼時候要裝 `bat-hooks` plugin、版本要求。
+- **起始版本**：v3.1.0（〈與 BAT 協作〉：6.1.0）
+- **權威出處**：`ct-help/SKILL.md` § Command Families、§ User Guidance Patterns；6.1.0 起 § 與 BAT 協作（Working With BAT, v6.1.0+）
 - **相關**：[`*help`](#help)、[CT Guide](#control-tower-guide)
 
 ### CT Guide（`control-tower-guide`） {#control-tower-guide}
@@ -214,10 +214,11 @@ const towerRows = [
   *config reset                             所有設定重設為預設值（只影響 session）
   *config reset <選項>                       單項重設為預設值（只影響 session）
   *config methodology                       列出 9 個方法論設定鍵與每一層的解析結果（6.0.0 起）
+  *config user_inbox off --save project      不寫待決與待執行清單，回覆結尾照樣重列（6.1.0 起）
   ```
 
 - **作用域**：session > 專案 > 全域 > 預設，上面的蓋過下面的。值不在範圍內、或選項名稱不存在，會報錯並列出可用選項，不修改。
-- **在 BAT 裡**：`auto-session` 的生效值一改，塔台會用新的模式再宣告一次自己的分頁。
+- **在 BAT 裡**：`auto-session` 的生效值一改，塔台會用新的模式再宣告一次自己的分頁（v6.1.0+ 也帶 `--bat-contract 2`）。
 - **全部設定鍵**：
 
   | 選項 | 值 | 預設 | 說明 |
@@ -226,7 +227,7 @@ const towerRows = [
   | `interactive-prompts` | `on`／`off` | `on` | 選項式提問；`off` 退回純文字提問 |
   | `experience-level` | `beginner`／`standard`／`expert` | `standard` | 提示詳細度與引導程度；`beginner` 啟用新手村教學 |
   | `verbose` | `on`／`off` | `on` | 派工摘要的詳細程度 |
-  | `auto-session` | `on`／`ask`／`off`／`yolo` | `ask` | 派工後的行為：`on` 靜默開新分頁；`ask` 先問；`off` 只給文字提示；`yolo` 是 `on` 的超集，Worker 自動送出、塔台自主決定下一張 |
+  | `auto-session` | `on`／`ask`／`off`／`yolo` | `ask` | 派工後的行為：`on` 靜默開新分頁；`ask` 先問；`off` 只給文字提示；`yolo` 是 `on` 的超集，Worker 自動送出、塔台自主決定下一張。在 BAT 內，生效值也以 `--set-role tower --mode` 宣告給塔台分頁；v6.1.0+ 同一個宣告另帶 `--bat-contract 2` |
   | `yolo_max_retries` | `0`–`10` | `3` | 斷點 B 的門檻（Renew 次數或連續 `FAILED` 張數）；`0` = 停用斷點 B |
   | `worker_question_timeout` | `0`–`120`（分鐘） | `30` | yolo Worker 問塔台後最多等多久；逾時以 `BLOCKED` 收尾；`0` = 不等 |
   | `project-prefix` | 2–4 個大寫英文字母，或空 | 空 | 跨專案協調用的工單編號前綴。設了前綴時，Worker 回報、通知、提問一律用含前綴的完整 ID（v5.13.1 起） |
@@ -257,13 +258,14 @@ const towerRows = [
   | `methodology_subagent_writes` | `deny`／`per-workorder` | `deny` | 6.0.0 起。方法論自己開的寫入型子代理怎麼處置 |
   | `methodology_guard` | `warn`／`block`／`off` | `warn` | 6.0.0 起。派工前的方法論注入／衝突檢查；`warn` = 自動在工單加〈方法論邊界〉段 |
   | `methodology_adapters_path` | 路徑／空 | 空 | 6.0.0 起。額外的 adapter 搜尋路徑（一個；相對路徑以 repo 根目錄為準） |
+  | `user_inbox` | `on`／`off` | `on` | 6.1.0 起。BAT ↔ CT 契約 v2 的待決與待執行清單：`on` = 塔台把要你決定（`awaiting_user`）與要你執行（`user_actions`）的事寫進 `_tower-state.md` frontmatter，BAT 的「待辦」分頁可以顯示；`off` = 不寫這兩個清單，退回 6.0.x 寫法（只在終端輸出、待執行的項目照舊放 `todo`）；`bat_contract`、`ct_version`、`reminders` 與每次回覆結尾的重列照舊（見[待辦分頁](/deep/features/bat-todo#user-inbox)） |
 
   Worker 只會讀 `worker_max_retries`、`worker_strikeout_action`、`worker_commit` 與 `experience-level` 這類調諧參數；`worker_auto_close`、`worker_close_delay` 雖然以 `worker_` 開頭，卻是塔台收單時讀的。
 
   `_tower-config.yaml` 另有 `gp-prefix`（Playbook 的 GP 編號前綴），但它不是 `*config` 選項，所以不在上表；定義與未設定時的 fallback 見 `multi-tower-protocol.md` § `gp-prefix` 設定（唯一權威定義）。
 
 - **起始版本**：v3.2.0（各選項的版本見權威出處）
-- **權威出處**：`control-tower/references/tower-config.md` § `*config` 命令、§ 可用選項、§ 作用域與持久化、§ 方法論設定鍵（6.0.0 起）
+- **權威出處**：`control-tower/references/tower-config.md` § `*config` 命令、§ 可用選項、§ 作用域與持久化、§ 方法論設定鍵（6.0.0 起）；`user_inbox` 的欄位規則見 `memory-protocol.md` § 契約 v2 欄位
 - **相關**：[功能總覽 › 設定](/features#config)（四層覆蓋的概念）
 
 ### `*help` {#help}
@@ -464,6 +466,16 @@ yolo 下塔台另外也接受 `T#### 失敗`。不是這些格式的訊息，會
 
 - **權威出處**：`ct-exec/SKILL.md` § BAT Notify And Fallback；`control-tower/references/work-order-system.md` § 回報與通知用的工單 ID、§ 回報處理流程 › 回報 ID 對不上時；`control-tower/references/yolo-mode.md` § 斷點 A：Worker 回報非預期狀態
 
+### 回答待決與待執行（`U-n`／`A-n`） {#user-answers}
+
+- **說法**：v6.1.0+。不是 `*` 命令，是在塔台分頁打的一行回答，或 BAT「待辦」分頁送出的同一行：`U-3：B`（選項代號）、`U-3：先不要發布`（自由回答）、`A-2：完成`、`A-2：失敗 安裝後啟動閃退`。
+- **規則**：全形 `：` 或半形 `:` 都可以；代號不分大小寫，只有唯一命中一個選項才算選了它，否則當自由回答。只有一題在等時直接回 `B` 也可以。塔台回一行確認，例 `U-3 已收到：B → 恢復 T0001`。
+- **回覆結尾重列**：有待決或待執行項目時，塔台每次回覆的最後一行固定是 `⏸ 待你決定：…；🙋 待你執行：…`；沒有項目的那半段不印，兩邊都空就整行不印。任何終端都有，不需要 BAT。
+- **不寫清單**：`*config user_inbox off`（見 [`*config`](#config)），回覆結尾照樣重列。
+- **起始版本**：v6.1.0
+- **權威出處**：`control-tower/references/memory-protocol.md` § 契約 v2 欄位；`control-tower/SKILL.md` § Output Style
+- **相關**：[待辦分頁（BAT ↔ CT 契約 v2）](/deep/features/bat-todo)
+
 ## 不要找：不存在或已刪除的指令 {#not-commands}
 
 | 你可能在找 | 實際情況 |
@@ -480,7 +492,7 @@ yolo 下塔台另外也接受 `T#### 失敗`。不是這些格式的訊息，會
 - `control-tower/SKILL.md` § Built-In Commands
 - `ct-help/SKILL.md` § Command Families
 - 各 skill 的 `SKILL.md`（`ct-exec`、`ct-done`、`ct-status`、`ct-evolve`、`ct-insights`、`ct-fieldguide`、`control-tower-guide`）
-- CT 安裝與使用指南 § 13. Config 速查表（v6.0.2）、§ 14. 命令速查表（v6.0.2）
+- CT 安裝與使用指南 § 13. Config 速查表（v6.1.0）、§ 14. 命令速查表（v6.1.0）
 - `control-tower/references/tower-config.md` § `*config` 命令、§ 可用選項（表下註明 `gp-prefix` 不是選項）
 - `control-tower/references/multi-tower-protocol.md` § `gp-prefix` 設定（唯一權威定義）
 - `control-tower/references/fieldguide-commands.md`

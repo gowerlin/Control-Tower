@@ -68,6 +68,8 @@ BAT `>= 0.7.0-pre.1` 起，`BAT_REMOTE_TOKEN` 是**每個分頁專屬的範圍�
 
 塔台啟動時還會用 `--set-role tower --mode <m>` 向 BAT 宣告「這個分頁是塔台」，BAT 據此把分頁標題設成 `<Agent 顯示名> · Tower`，和 Worker 分頁的 `… · Worker · T####` 對應。分頁的權限模型與標題在 BAT 這一端怎麼呈現，見 <BatLink path="control-tower#permissions">BAT 站：權限模型</BatLink> 與 <BatLink path="control-tower#visibility">BAT 站：看得見每個 Agent</BatLink>。
 
+v6.1.0 起，同一個宣告另帶 `--bat-contract 2`，告訴 BAT 這個塔台說 **BAT ↔ CT 契約 v2**：塔台把要你決定（`U-n`）與要你執行（`A-n`）的事寫進 `_tower-state.md`，BAT 的「待辦」分頁唯讀顯示，另外啟用通知保護與回合訊息卡（需要 BAT `>= 0.8.0-pre.3`）。塔台先寫好狀態檔再宣告，每次 `--set-role`（含改模式時的再宣告）都要帶；舊 BAT 不認得這個參數時，塔台不帶它重送一次、開工面板印一行降級提示，待決事項仍列在每次回覆的結尾。詳見[待辦分頁（BAT ↔ CT 契約 v2）](./bat-todo)。
+
 ## 成功判讀：只認兩個信號 {#success}
 
 派工成不成功，CT 只信兩件事：
@@ -126,7 +128,8 @@ v5.12.0 起還有另一種回收：要對**同一張工單**重派 Worker 之前
 - `control-tower/references/work-order-system.md` § 收單後回收 Worker 分頁（`worker_auto_close`，v5.1.0+）、§ 重派前回收舊 Worker 分頁（v5.12.0+）
 - `control-tower/references/yolo-mode.md` § 收單後回收 Worker 分頁（v5.1.0+）
 - `control-tower-guide/references/runtime-dispatch.md`（全篇）
-- `control-tower-guide/references/bat-integration.md` § 一張分頁的生命週期、§ 兩組環境變數，兩個角色
+- `control-tower-guide/references/bat-integration.md` § 一張分頁的生命週期、§ 兩組環境變數，兩個角色、§ BAT ↔ CT 契約 v2：待辦分頁（v6.1.0+）
+- `control-tower/references/auto-session.md` § 塔台分頁角色宣告（`--set-role tower`，v5.2.0+）（v6.1.0 起含 `--bat-contract 2`）
 - BAT 站：<BatLink path="control-tower#division">分工：塔台、跑道與雷達</BatLink>
 
 ::: warning 摘要不具權威

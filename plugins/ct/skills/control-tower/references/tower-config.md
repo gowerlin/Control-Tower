@@ -56,6 +56,7 @@
 | `worker_commit` | `required` / `recommended` / `off` | `required` | Worker 收尾時 commit 行為。`required` = 必須 commit（失敗仍完成收尾）；`recommended` = 建議 commit，不阻斷；`off` = 不要求。ct-done 補救收尾時也依此檢查 |
 | `worker_auto_close` | `off` / `done` | `off` | `done` = 工單 `DONE` 且不 Renew、輸出收單確認後，呼叫 BAT 回收該工單的 Worker 分頁。`PARTIAL` / `FAILED` / `BLOCKED` 與需要 Renew 的單一律不回收。僅在 BAT 環境（`BAT_SESSION=1`）且該工單是由本塔台以 `bat-terminal.mjs` 派出時生效。`off` = 收單流程不變。觸發條件、指令與 exit code 處理見 [work-order-system.md](work-order-system.md) § 回報處理流程。不影響重派前回收（v5.12.0+，`off` 時也回收；見 [work-order-system.md](work-order-system.md) § 重派前回收舊 Worker 分頁） |
 | `worker_close_delay` | `0` - `300`（秒） | `10` | 回收前的延遲，以 `--delay-ms` 傳給 BAT。延遲期間 Worker 分頁的輸出**不**取消回收；只有排程後使用者在該 Worker 分頁的輸入會取消（終端自動回應，例如切換分頁時送出的 focus report，不算輸入）。延遲到期後 BAT 等分頁連續安靜 5 s 才關，從到期起最多再等 60 s，屆時仍在輸出就放棄、分頁保留（helper 已 exit `0`，塔台不會得知）。以上依 BAT T0545／D145（BAT `CLAUDE.md`「Worker 分頁回收」節、`docs/agent-guide/worker-tab-recycle.md`）。僅在 `worker_auto_close: done` 時有作用。詳見 [work-order-system.md](work-order-system.md) § 回報處理流程 |
+| `user_inbox` | `on` / `off` | `on` | v6.1.0+（BAT ↔ CT 契約 v2）。`on` = 塔台把要你決定的事（`awaiting_user`）與要你執行的事（`user_actions`）寫進 `_tower-state.md` frontmatter，Better Agent Terminal 的「待辦」分頁可以顯示；`off` = 不寫這兩個清單，退回 6.0.x 寫法（待決只在終端輸出、待執行的項目照舊放 `todo`）。`bat_contract`、`ct_version`、`reminders` 與每次回覆結尾的待決重列照舊。專案不能把這類內容寫進檔案時才關。規則見 [memory-protocol.md](memory-protocol.md) § 契約 v2 欄位 |
 | `workflow_integration` | `off` / `ask` / `on` | `on` | v5.11.0+。Claude Code Workflow 工具的整合強度（token 焦慮時可臨時關閉）。`off` = 塔台不建議、不授權 Worker 用 Workflow，不跑工具型 workflow；`ask` = 每次要授權 Worker 用 Workflow 都先問使用者，⭐ 也一樣；`on` = 知識卡到 ⭐ 之前先問使用者，⭐ 之後塔台在 yolo 下可自決。三個值下，規則分析、預篩腳本與 `--workflow` brief 都照常（不花 workflow token）。只約束塔台；Worker 不讀此值，依工單裡的授權段落行事。行為細節見 [workflow-engine.md](workflow-engine.md) § `workflow_integration` 的行為 |
 | `methodology` | `auto` / `none` / `<adapter id>` | `auto` | v6.0.0+。主方法論（沒有個別指定的層都跟它）。語意見 [methodology-adapters.md](methodology-adapters.md) § 抽換 |
 | `methodology_planning` | `inherit` / `none` / `<adapter id>` | `inherit` | v6.0.0+。規劃層的負責 adapter。語意見 [methodology-adapters.md](methodology-adapters.md) § 抽換、§ 層次 |
@@ -284,6 +285,8 @@ control-tower:
   # v5.1+ 收單後回收 Worker 分頁（需 BAT 支援 --close-worker）
   worker_auto_close: off
   worker_close_delay: 10
+  # v6.1.0+ BAT ↔ CT 契約 v2：待你決定／待你執行清單寫進 _tower-state.md（on / off）
+  user_inbox: on
   # v5.11+ Claude Code Workflow 整合強度（off / ask / on）
   workflow_integration: on
   # v6.0.0+：方法論轉接（語意見 methodology-adapters.md § 抽換）

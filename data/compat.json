@@ -1,6 +1,6 @@
 {
   "_note": "相容版本對照（/versions/compatibility 的資料）。每列 feature、ct（CT 起始版本）、bat／codex（最低版本，不需要就省略）、note、source（權威出處：檔案 § 章節）。CT 發版時相容性有變才改（CT 每次發版都要同步更新 Portal）。",
-  "ctVersion": "6.0.2",
+  "ctVersion": "6.1.0",
   "rows": [
     {
       "feature": "帶前綴的工單 ID 走結構化派工（--workorder 帶前綴）",
@@ -193,6 +193,13 @@
       "bat": ">= 0.7.0-pre.7",
       "note": "PATCH。BAT 介面同 v6.0.0，最低 BAT 版本不變，沒有新門檻；BAT 塔台面板讀取契約 v1（summary_version: 1）不變；BAT helper 的參數、exit code 與「內容只走 stdin」的要求都不變，改的只是 CT 怎麼準備 stdin 的內容（--ask、--answer 的題目與答覆先寫成檔再送入）。*sync 的自檢用 6.0.1 附帶的 check-frontmatter.py，只回報、不自動修、不阻擋。",
       "source": "CHANGELOG.md [6.0.2]；ct-exec/SKILL.md § Long Content Via Files；work-order-system.md § 主方法論 tracker 同步 › 同步流程；yolo-mode.md § BAT 通道"
+    },
+    {
+      "feature": "待辦分頁（BAT ↔ CT 契約 v2）：塔台把待你決定（U-n）、待你執行（A-n）、提醒寫進 _tower-state.md frontmatter，開工時 --set-role tower --bat-contract 2 宣告，BAT 待辦分頁唯讀顯示；通知保護、回合訊息卡",
+      "ct": "v6.1.0",
+      "bat": ">= 0.8.0-pre.3",
+      "note": "MINOR。只有契約 v2 需要 BAT >= 0.8.0-pre.3（與 CT 6.1.0 同日發佈）。更舊的 BAT 自動降級：回 Unknown option '--bat-contract' 時塔台不帶這個參數重送一次、本 session 不再帶，分頁標題與模式照舊；開工面板一行降級提示，沒有待辦分頁，待決事項仍列在每次回覆的結尾。不在 BAT 裡的終端不宣告，v2 欄位照寫、回覆結尾照印。契約 v1 的欄位與 summary_version: 1 不變。契約 v2 以外的功能最低仍是 >= 0.7.0-pre.7；Codex 用 plugin 安裝又接 BAT 派工仍需要 >= 0.7.2-pre.1。",
+      "source": "CHANGELOG.md [6.1.0]；memory-protocol.md § 契約 v2 欄位；auto-session.md § 塔台分頁角色宣告；tower-config.md § 可用選項（user_inbox）"
     },
     {
       "feature": "Level 2：外部 bmad-guide 的 BMad workflow 路由",

@@ -1,21 +1,88 @@
 ---
 title: 更版紀錄
-description: BMad Control Tower 近 10 版的更版紀錄（最新 v6.0.2），更早的版本見演進史。
+description: BMad Control Tower 近 10 版的更版紀錄（最新 v6.1.0），更早的版本見演進史。
 ---
 
 <!-- 本頁由 scripts/sync-ct-release.mjs 從 CT CHANGELOG 產生，請勿手改；要改內容請改來源後重跑。 -->
 
 # 更版紀錄
 
-目前版本 **v6.0.2**（2026-11-25）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 64 版（v2.1.1 ～ v5.13.0）請看[演進史](./evolution)。
+目前版本 **v6.1.0**（2026-11-25）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 65 版（v2.1.1 ～ v5.13.1）請看[演進史](./evolution)。
 
-本頁只列正式版。預發行版 v6.0.0-pre.1 ～ v6.0.0-rc.1（14 版）的改動已彙整在 v6.0.0 的段落，逐版說明保留在「實驗功能」的[預發行專章](../preview/methodology-adapters)作為歷史參考。
+本頁只列正式版。預發行版的改動已彙整在對應正式版的段落：v6.0.0-pre.1 ～ v6.0.0-rc.1（14 版）彙整在 v6.0.0，逐版說明保留在「實驗功能」的[預發行專章](../preview/methodology-adapters)作為歷史參考；v6.1.0-pre.1（1 版）彙整在 v6.1.0。
 
 ::: tip 摘要不具權威
 本頁照錄 CT 的 CHANGELOG，只拿掉工單、決策、驗收回函等內部編號與出處註記。規則的權威定義在 CT 各 skill 與 references，兩者有出入時以 CT 本體為準。
 :::
 
 ::: v-pre
+
+## 6.1.0 <small>2026-11-25</small> {#v6-1-0}
+
+
+> **正式版：BAT ↔ CT 契約 v2——塔台要你決定或執行的事，不再被後面的回合淹沒。** yolo 下同時有好幾個 Worker 回報時，塔台給你的提問與總結很快被捲走。
+> 本版起，塔台把要你決定的事（`U-n`）與要你自己執行的事（`A-n`）寫進 `_tower-state.md` 的 frontmatter，Better Agent Terminal（BAT）的「待辦」分頁唯讀顯示；
+> 塔台開工時向 BAT 宣告契約版本，兩邊都是 v2 時 BAT 的新功能才啟用。不靠 BAT 的部分也一起做了：有待決或待執行的項目時，塔台每次回覆的最後一行都重列一次。
+> 本版相對 `6.1.0-pre.1` **沒有功能或規則變更**：只改版號、預覽標示與文件。契約 v2 已在 BAT 0.8.0-pre.3 的測試版上實機驗證（見下方〈實機驗證〉），〈已知未驗〉依結果改寫。
+> **需要的 BAT**：待辦分頁、通知保護、回合訊息卡要 BAT ≥ 0.8.0-pre.3（BAT 0.8.0-pre.3 已發佈）；更舊的 BAT 自動降級——塔台只重送一次宣告、開工面板印一行降級提示，待決事項仍列在每次回覆的結尾。契約 v2 以外的功能，BAT 最低版本仍是 `>= 0.7.0-pre.7`。
+> **plugin**：正式版 6.1.0 上架 marketplace `control-tower`（`ct@control-tower`、`ct-guide@control-tower` 6.1.0）；預發行版仍不提供 plugin。zip 手動安裝照舊支援。
+> **下載**：GitHub Release `ct-v6.1.0`（Latest）；6.0.2 成為上一個穩定版，Release `ct-v6.0.2` 仍可下載。
+> 契約 v1 的欄位全部保留、`summary_version` 不升；方法論契約仍 `ct-methodology-adapter/v1`，**契約不變**；內建 `bmad.yaml` 0.2.1、`ct-adapter-pstack` 0.2.6（只改版號註解）。
+
+### 升級說明
+
+**從 `6.0.2` 升級**：只換 skill 檔案，不需要遷移。
+
+- 8 個 skill 一起換（8 個 `SKILL.md` 版本註解都變了）。規則有改的是 `control-tower`（契約 v2、開工宣告、斷點、派工與收單、回覆結尾、`user_inbox`、`check-frontmatter.py`）與 `ct-help`（〈與 BAT 協作〉）；其餘 6 個只改版號。
+- 要 BAT ≥ 0.8.0-pre.3 才有待辦分頁、通知保護、回合訊息卡。舊 BAT 自動降級：不認得新參數時，塔台不帶它重送一次宣告，分頁標題與模式照舊，開工面板多一行說明哪些功能不可用；待決事項仍列在每次回覆的結尾。不在 BAT 裡的終端也能用。
+- 換版後第一次開工，塔台會先在 `_tower-state.md` frontmatter 加上 `bat_contract: 2` 與 `ct_version`，再向 BAT 宣告；之後每次寫入都帶這兩個欄位。
+- 不自動遷移：既有 `todo` 裡「等你決定」「等你實機驗收」的項目不會被批次改寫，塔台下次處理到時再搬到新清單。
+- 專案不想把這些內容寫進檔案：`*config user_inbox off`（加 `--save project` 保存），塔台就不寫待決與待執行清單，回覆結尾照樣重列。
+- BAT 自己的 hooks（回合訊息卡、對話框保護）什麼時候要另裝 `bat-hooks` plugin，見 `ct-help`〈與 BAT 協作〉；CT 不替你安裝 plugin，也不改 claude 設定。
+- 新規則從換版後新開的塔台 session 起生效。
+
+**從 `6.1.0-pre.1` 升級**：規範相同，只有版號與文件改變；換 skill 檔案即可，沒有新設定鍵、新的 frontmatter 欄位或新命令。8 個 `SKILL.md` 版本註解都變了；內容有改的只有 `control-tower`（`memory-protocol.md` 範例的版號、`version-governance.md` 版號表與 `methodology-adapters.md` 版本歷史加 6.1.0 列、`bmad.yaml` 註解）與 `ct-help`（版本要求一句）。狀態檔的 `ct_version` 在下一次寫入時自動變成 `"6.1.0"`。
+
+### Changed
+
+- 版號 `6.1.0`：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表（加 6.1.0 列）、`methodology-adapters.md` 版本歷史（契約不變）、`bmad.yaml` 版號註解；`ct-adapter-pstack` 版號 6.1.0（`adapter_version` 仍 0.2.6）
+- 預覽標示改成正式版：`memory-protocol.md` 範例的 `ct_version` 與 § 契約 v2 欄位 開頭的引入說明；`ct-help`〈與 BAT 協作〉的版本要求（CT 6.1.0 or later）；`ct-adapter-pstack` 的說明
+- 安裝指南：新增 § 2.69 本版變更；§ 2.68 的〈已知未驗〉依實機結果改寫；§ 1、§ 4.1、§ 4.3 版號；§ 13、§ 14 契約 v2 各列的版本標示改成 `v6.1.0+`
+- 本段〈已知未驗〉依實機驗收結果改寫，已驗與未驗分列
+
+### Unchanged
+
+- 契約 v2 的規範內容（欄位、型別、寫入與移除規則、回答格式、開工宣告與降級、`user_inbox`、`check-frontmatter.py` 的檢查）與 `6.1.0-pre.1` 相同
+- 契約 v2 的最低 BAT 版號 `0.8.0-pre.3`；契約 v1 的欄位、型別與語意；`summary_version` 仍是 `1`
+- 狀態值、派工命令（`--skill` + `--workorder`）、Worker（`ct-exec`、`ct-done`）的流程與通知字串
+- 方法論契約 `ct-methodology-adapter/v1`、adapter 描述檔
+- 歷史段落（本檔 `[6.1.0-pre.1]` 以前的段落、版號表舊列、安裝指南 § 2.68 以前的章節；§ 2.68 只改〈已知未驗〉一句）與「v6.0.2+」等引入標記不改
+
+### 實機驗證（已驗證）
+
+在 BAT 0.8.0-pre.3 的測試版上，用隔離的 BAT 執行環境與隔離的 claude 設定目錄實機跑過；舊 BAT 降級用的是 BAT 0.8.0-pre.1。CT 端判定全部通過，驗收期間 BAT 端發現的問題已由 BAT 修正並補驗。
+
+- **開工宣告與解析**：塔台先寫 `bat_contract: 2`（不加引號的整數）、`ct_version`、`next_ids.user`／`action`，自檢通過後才以 `--set-role tower --bat-contract 2` 宣告；輸出的 `bat-contract: 2` 與 `hooks: ok …` 兩行都解析到，面板 `BAT 契約：v2`、不印提示行；`*config auto-session` 改模式時再宣告也帶 `--bat-contract 2`
+- **從 6.0.2 換版**：6.0.2 不帶 `--bat-contract`、狀態檔沒有 v2 欄位；換成 6.1.0 後第一次開工就補上欄位再宣告，既有 `todo` 原樣保留
+- **舊 BAT 降級**：舊 BAT 回 `Unknown option '--bat-contract'`（exit 1）時，塔台只重送一次、只拿掉這個參數，重送那次不解析兩行；面板 `BAT 契約：不支援（BAT 太舊）`，下一行降級提示與原文相同；舊 BAT 下仍寫 v2 欄位，之後的再宣告不再帶這個參數
+- **待決與待執行**：寫入（有選項與自由回答的 `U-n`、`verify` 與 `run` 的 `A-n`，日期帶 `+08:00`）、從 BAT 待辦分頁送出的回答（`U-n：A`、`U-n：<文字>`、`A-n：完成`、`A-n：失敗 <說明>`）、一行確認、同一次寫入移除並記決策日誌、編號只增不減
+- **回覆結尾重列**：有待決或待執行項目時，每則回覆的最後一行都是重列行（待執行的標題截成前 20 字），兩邊都空就不印；斷點 A 暫停時寫待決，舊 BAT 下也照樣重列
+- **通知保護**：使用者在塔台分頁打字到一半時，Worker 的完成通知不會帶著半句送出；權限對話框開著時通知保留、不替你回答，塔台照常收單
+- **回合訊息卡**：每回合一張卡片，重列行加亮
+- **`bat-hooks` plugin 並存**：裝了 plugin 時宣告仍是 `hooks: ok`，不出 `plugin-outdated`，卡片不重複
+- **CT guard 照常**：過長的 Bash 指令仍被擋下，塔台說明原因與替代做法
+
+### Known unverified（已知未驗）
+
+`[6.0.0]` 的 41 項、`[6.0.1]` 的 2 項、`[6.0.2]` 的 2 項不變。`[6.1.0-pre.1]` 列的 2 項已在實機驗過（見上方〈實機驗證〉）。契約 v2 仍未實機驗證的路徑：
+
+1. `hooks: none (<原因>)` 與 `plugin-outdated` 的提示行：實機宣告都回 `hooks: ok`，沒有出現過
+2. `bat-contract: 2 (requested <n>: unsupported)` 與「exit 0 但沒有 `bat-contract:` 行」兩種不支援的情況：沒有出現過
+3. 不在 BAT 裡的終端，以及 Codex 塔台（`hooks: n/a (codex)`）：實機都是 BAT 內的 Claude Code 塔台
+4. 斷點 B-1／B-2／C／E 與 Worker 提問升級（`worker-question`）寫待決：只驗過斷點 A 與塔台自己的提問
+5. 工單的 `waiting_user`，以及「依賴的工單在等你決定時先不派」：沒有觀察到
+6. 收單時把回報區的「待實機／待使用者執行」項目自動寫成 `A-n`：實機的 `A-n` 是應要求寫入的
+7. `user_inbox: off`、`reminders`、筆數超過上限的警告：只有樣本測試
 
 ## 6.0.2 <small>2026-11-25</small> {#v6-0-2}
 
@@ -414,38 +481,12 @@ RC 期間沒有新驗證到的項目；下列 41 項與 `[6.0.0-rc.1]` 相同，
 - 8 個 skill 一律放在同一個 plugin（`../` 相對連結依賴它們是兄弟目錄）
 - 歷史段落（本檔舊段落、版號表舊列、安裝指南舊章節）不改
 
-## 5.13.1 <small>2026-10-30</small> {#v5-13-1}
-
-
-> **PATCH：通知用工單完整 ID、BAT 塔台面板讀取契約對齊 BAT `0.7.1-pre.9`、BMad 舊說法 4 項。**
-> 設了工單前綴的專案，Worker 收尾通知有時漏掉前綴，BAT 用 `--source` 對不上 Worker 分頁，無法標成 Done、也無法一次關掉已完成的 Worker 分頁。
-> 沒有新命令、新設定；BAT 介面、派工命令、斷點 A 正則不變。升級只換 skill 檔案（見安裝指南 § 2.55）。
-
-### Fixed
-
-- **通知用工單完整 ID**：ct-exec、ct-done、`auto-session.md`、`yolo-mode.md`、安裝指南的通知範本由 `T####` 改成 `<工單 ID>`——`/ct-exec` 收到什麼 ID 就照原樣用（等於 frontmatter `id`，含前綴，不得截短）。原範本讓 Worker 把帶前綴的 ID 截掉前綴，BAT 用 `--source` 對不上 Worker 分頁、無法標 Done。適用 `--source`、訊息字串、`--ask --source` 與手動備援訊息。唯一權威：`work-order-system.md` § 回報與通知用的工單 ID。
-- **Worker 送出前比對**：收尾通知、`--ask`、手動備援訊息送出前與 frontmatter `id` 比對（舊單沒有 `id` 時取檔名），不一致就改用 frontmatter 的值並在回報區記一行。
-- **塔台端容錯**：回報 ID 在熱區沒有完全相同的工單、但恰好一張是「前綴 + 同號」時，當作那一張處理並記錄「回報 ID 缺前綴」；多張同號或找不到就問使用者（yolo 屬斷點 A）。這只保住塔台收單，BAT 標 Done 仍靠 Worker 送對 `--source`。權威：`work-order-system.md` § 回報處理流程 › 回報 ID 對不上時。
-
-### Changed
-
-- `memory-protocol.md` § BAT 塔台面板讀取契約：BAT `>= 0.7.1-pre.9` 讀不到決策、臭蟲、待辦池、Epics、Sprint 的檔時顯示「無法讀取 &lt;檔名>」（太大時附 KB 數與 512 KB 上限），讀不到的工單仍列在清單（UNKNOWN）；`critical` 在任何讀取路徑都算 High。更舊的 BAT 照舊靜默變空，所以 **400 KB 預算保留**；512 KiB 上限不變。`bug-plan-system.md` 同步一句。
-- BMad 舊說法（以 bmad-guide v6.12.4 為準）：派發摘要範例的產出改為 `AGENTS.md` 的專案上下文區塊；「Quick Flow」改稱 Spec / Build；`bmad-automator` 的替代補 `bmad-build-auto`；「BMad v6.10」標題改 `v6.10+`；bmad-guide 範例版號更新。
-- 版號：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表；安裝指南新增 § 2.55，§ 4.1 版號範例同步（`OLD=5.13.0`、`VER=5.13.1`、發行物檔名），§ 13 `project-prefix` 列與 § 14 `/ct-exec`、`/ct-done` 列補完整 ID 一句。
-
-### Unchanged
-
-- BAT 介面、CT 最低 BAT 版本、派工命令（`--workorder`、`--close-worker`）、旗標、exit code 不變；斷點 A 正則本來就涵蓋前綴，不改。
-- 沒設工單前綴的專案行為不變（完整 ID 就是 `T` 加數字）。
-- 設定、工單欄位、狀態值不變；400 KB 預算與 512 KiB 上限的數字不變。
-- 歷史段落（本檔舊段落、版號表舊列、安裝指南舊章節）不改。
-
 :::
 
 ## 延伸閱讀 {#further-reading}
 
-- CT `CHANGELOG.md`（共 74 個版本；本頁列最近 10 版）
+- CT `CHANGELOG.md`（共 75 個版本；本頁列最近 10 版）
 - CT `version-governance.md` § 歷史版號表
-- [演進史](./evolution)：更早的 64 版與九個世代
+- [演進史](./evolution)：更早的 65 版與九個世代
 
 Portal 是摘要，不具權威；與 CT reference 有出入時，以 reference 為準。

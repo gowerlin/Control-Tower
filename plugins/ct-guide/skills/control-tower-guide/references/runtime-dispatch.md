@@ -102,6 +102,9 @@ yolo 下它是異常偵測（yolo Worker 本該問塔台），非 yolo 下只是
 處理和 claude 的一樣。設計理由與 BAT 版本條件見 `bat-integration.md` § 斷點 D；
 確切規則以 CT 的 `yolo-mode.md` § 斷點 D 為準。
 
+> **v6.1.0+（BAT ↔ CT 契約 v2）**：斷點 A／B-1／B-2／C／E 暫停時，塔台在同一次寫入把這一題記成待你決定（`U-n`）、工單加 `waiting_user`，
+> 暫停訊息帶上同一個編號，回覆 `U-n：<選項>`；斷點 D 不寫。見 `preview-bat-contract-v2.md` § 生命週期：什麼時候寫、什麼時候清。
+
 ### 使用者中斷 ≠ 斷點
 
 YOLO 期間使用者隨時輸入 `停`／`stop`／`abort` 就會暫停，但這**不是斷點**：
