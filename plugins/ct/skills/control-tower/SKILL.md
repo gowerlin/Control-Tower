@@ -2,9 +2,9 @@
 name: control-tower
 description: "BMad Control Tower project orchestrator for Tower sessions. Use when the user invokes $control-tower or /control-tower, says control tower, 塔台, 指揮塔, 工單管理, or asks to create, dispatch, sync, recover, archive, report, or coordinate file-driven work orders, BUG/PLAN/EXP records, sprint state, BAT/YOLO dispatch, or multi-agent project work. For worker execution commands such as $ct-exec, $ct-done, $ct-status, $ct-evolve, or $ct-insights, route to those dedicated skills instead of loading tower mode."
 ---
-<!-- control-tower-version: 6.2.0 -->
+<!-- control-tower-version: 6.3.0 -->
 
-# BMad Control Tower v6.2.0
+# BMad Control Tower v6.3.0
 
 $ARGUMENTS
 
@@ -12,7 +12,7 @@ $ARGUMENTS
 
 Operate as the Tower session for a file-driven development workflow. Hold state, decisions, routing, and work order coordination. Keep implementation work in Worker sessions unless the change is explicitly small, non-logic, and safe for Tower direct handling.
 
-Use Traditional Chinese for conversation by default. A methodology injection (SessionStart hook text, usually in English) does not change the conversation language; Tower sessions receive it too (`references/methodology-adapters.md` C1, C8). Keep commands, paths, IDs, commit hashes, enum values, API names, and error text in their original form when exact wording matters.
+Use Traditional Chinese for conversation by default, including the short progress lines between tool calls and any text shown before a menu. A methodology injection (SessionStart hook text, usually in English) does not change the conversation language; Tower sessions receive it too (`references/methodology-adapters.md` C1, C8). Keep commands, paths, IDs, commit hashes, enum values, API names, and error text in their original form when exact wording matters.
 
 ## Hard Boundaries
 
@@ -34,7 +34,7 @@ On `$control-tower`, `/control-tower`, or equivalent Tower startup:
 5. In BAT, declare this tab as the Tower once (`bat-terminal.mjs --set-role tower --bat-contract 2 --mode <effective auto-session>`); conditions, command, and exit-code handling live only in `references/auto-session.md` § 塔台分頁角色宣告. Non-zero exit or non-BAT never blocks startup. v6.1.0+ (BAT ↔ CT contract v2): first make sure `_tower-state.md` frontmatter has `bat_contract: 2` (write it now if missing), then declare, then read the `bat-contract:` / `hooks:` lines of that call; an old BAT that rejects `--bat-contract` (exit `1`, `Unknown option '--bat-contract'`) gets exactly one resend without it, and this session stops adding it. Outside BAT nothing is called, and the contract v2 fields are still written. Non-authoritative summary; the order, the output table, the fallback line, and the `hooks:` codes live only in that section.
 6. Show a concrete Tower status panel before dispatching or editing anything, including the `分頁標題` and `BAT 契約` lines from step 5 and their hint lines. Fields and template are defined only in `references/memory-protocol.md` § 塔台狀態面板; unknown values are shown as 「未知」, never filled by an extra scan. v5.9.0+ (BAT `>= 0.7.1-pre.1`): one `bat_whoami` call may add a one-line hint suggesting BAT「以塔台開啟 Claude」 when `claudeSessionName` exists and does not end with ` · Tower`; a missing key, MCP unavailable, or non-BAT shows nothing. Conditions live only in that section.
 7. Run Full Scan only when `_tower-state.md` is missing, the environment snapshot is empty or older than 7 days, or the user runs `*rescan`.
-8. v6.0.0+: every time the Tower writes `_tower-state.md` (startup, dispatch, closeout, decision, `*pause`/`*resume`, …), it also updates the machine-readable summary frontmatter in the same write; the fields and rules live only in `references/memory-protocol.md` § 機器可讀摘要（YAML frontmatter）. v6.1.0+ (BAT ↔ CT contract v2): every write also carries `bat_contract: 2` and `ct_version` (v6.2.0+: also `inbox_features`); whatever needs the user is kept in `awaiting_user` (decisions, `U-n`) and `user_actions` (things the user must run or verify, `A-n`), plus `reminders`; who writes and removes each item, the answer format (`U-n：<option or text>`, `A-n：完成`, `A-n：失敗 <note>`) and `user_inbox: off` live only in `references/memory-protocol.md` § 契約 v2 欄位. v6.0.1+: after every frontmatter write (this file, work orders, BUG/PLAN/EXP, `_handover`/`_reply`), quote string values as that file's § YAML frontmatter 字串寫法與寫入後自檢 says (a value with a backslash goes in single quotes or uses forward slashes) and run `scripts/check-frontmatter.py` on the files written; fix and re-check before committing. Startup is never blocked by it. v6.0.0-beta.10+: the first write of a session adds its startup entry with this Tower's own session id (or 「session id 未知」; never blocks startup, never a frontmatter field); format and value rules live only in `references/memory-protocol.md` § 塔台 session id.
+8. v6.0.0+: every time the Tower writes `_tower-state.md` (startup, dispatch, closeout, decision, `*pause`/`*resume`, …), it also updates the machine-readable summary frontmatter in the same write; the fields and rules live only in `references/memory-protocol.md` § 機器可讀摘要（YAML frontmatter）. v6.1.0+ (BAT ↔ CT contract v2): every write also carries `bat_contract: 2` and `ct_version` (v6.2.0+: also `inbox_features`; v6.3.0+ its value includes `multi`); whatever needs the user is kept in `awaiting_user` (decisions, `U-n`) and `user_actions` (things the user must run or verify, `A-n`), plus `reminders`; who writes and removes each item, the answer format (`U-n：<option or text>`, `A-n：完成`, `A-n：失敗 <note>`) and `user_inbox: off` live only in `references/memory-protocol.md` § 契約 v2 欄位. v6.0.1+: after every frontmatter write (this file, work orders, BUG/PLAN/EXP, `_handover`/`_reply`), quote string values as that file's § YAML frontmatter 字串寫法與寫入後自檢 says (a value with a backslash goes in single quotes or uses forward slashes) and run `scripts/check-frontmatter.py` on the files written; fix and re-check before committing. Startup is never blocked by it. v6.0.0-beta.10+: the first write of a session adds its startup entry with this Tower's own session id (or 「session id 未知」; never blocks startup, never a frontmatter field); format and value rules live only in `references/memory-protocol.md` § 塔台 session id.
 9. v6.0.0-beta.3+: measure the hot files against the size budget (bytes only, no reading) and print one line per file over budget; the budget, BAT's 512 KiB limit, and the line format live only in `references/memory-protocol.md` § BAT 塔台面板讀取契約 › 大小預算. It never blocks startup.
 
 For state format and recovery rules, read `references/memory-protocol.md`. For config layering, read `references/tower-config.md`.
@@ -261,3 +261,11 @@ Keep Tower responses operational:
     「放棄（停下等新方向）」; when `options` is empty (a free answer) do not open a menu, use the text template.
     The complete rules (also 4 options, "Other", Esc) live only in `references/memory-protocol.md` § 契約 v2 欄位〈暫停的提問方式〉;
     layout, parsing and handling live in the same section.
+  - v6.3.0+: words after `U-n：放棄` are only the reason — log them, do not act on them, keep the work order paused; a new direction comes
+    as a free answer `U-n：<text>`. A question whose options can all hold at once (`tower-question` / `worker-question` only, never a
+    yolo breakpoint, `options` ≥ 2) may be multi-choice (`multi: true`, answered `U-n：A、C`; the menu uses `multiSelect: true` with no drop
+    choice). After handling answers, confirm each answer on its own line (never one summary line such as 「已處理完」), listing
+    several codes in `options` order. When the same reply opens a menu, put those lines at the start of the first question's text in
+    `AskUserQuestion` (e.g. `剛才的回答：U-3 已收到：C、A → …；U-4 已收到，當成自由回答 → 讀成 C、A。U-5（工單：—）…`) — text before a
+    menu may not be shown and a menu ends the output; with more than 4 answers, or a free answer that needs explaining, do not open a
+    menu in that reply. Rules live only in the same section (`multi` row, 〈放棄／略過〉, 〈回答格式與解析〉, 〈暫停的提問方式〉 items 2, 6 and 8).

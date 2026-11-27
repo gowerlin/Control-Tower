@@ -2,7 +2,7 @@
 name: ct-exec
 description: "Control Tower Worker skill for executing a work order end to end from any sub-session. Use when the user invokes $ct-exec or /ct-exec with a T#### work order, asks a worker to start or resume scoped execution, or needs the full lifecycle of reading the work order, marking IN_PROGRESS, implementing only the listed scope, validating, writing the report, committing when required, and notifying Tower or providing a fallback completion message."
 ---
-<!-- ct-exec-version: 6.2.0 -->
+<!-- ct-exec-version: 6.3.0 -->
 
 # ct-exec
 
@@ -14,7 +14,7 @@ Arguments: `$ARGUMENTS`
 
 Act as Worker, not Tower. The work order file is authoritative. Read it fully, execute its explicit steps, update its report and metadata, and stop at scope boundaries.
 
-Use Traditional Chinese for user-facing discussion unless the work order or user requests another language. Preserve exact paths, commands, IDs, commit hashes, enum values, API names, and error text.
+Use Traditional Chinese for user-facing discussion unless the work order or user requests another language, including the short progress lines between tool calls and any text shown before a question. Preserve exact paths, commands, IDs, commit hashes, enum values, API names, and error text.
 
 ## Startup
 

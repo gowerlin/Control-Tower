@@ -574,3 +574,7 @@ CT 不散布上游的任何檔案或原文，下列都是使用者在自己專�
 - v6.2.0-pre.1（T0566）：預覽；**契約不變**（本檔、`adapters/bmad.yaml` 與方法論轉接規則都沒有改；本版改動是契約 v2 待辦清單的推薦項與放棄，見 `memory-protocol.md` § 契約 v2 欄位）；內建 `adapters/bmad.yaml` 只改版號註解（`adapter_version` 仍 0.2.1）；`ct-adapter-pstack` 只改版號，`adapter_version` 仍 0.2.6。
 - v6.2.0-pre.2（T0569）：預覽；**契約不變**（本檔、`adapters/bmad.yaml` 與方法論轉接規則都沒有改；本版是暫停選單條文修正與 `pending_reminder`）；內建 `adapters/bmad.yaml` 只改版號註解（`adapter_version` 仍 0.2.1）；`ct-adapter-pstack` 只改版號，`adapter_version` 仍 0.2.6。
 - v6.2.0（T0571）：正式版 MINOR（自 6.2.0-pre.2 定稿，取代 6.1.1 成為穩定版）；**契約不變**（本檔、`adapters/bmad.yaml` 與方法論轉接規則都沒有改）；內建 `adapters/bmad.yaml` 只改版號註解（`adapter_version` 仍 0.2.1）；`ct-adapter-pstack` 只改版號，`adapter_version` 仍 0.2.6。
+- v6.3.0-pre.1（T0573）：預覽；**契約不變**（本檔、`adapters/bmad.yaml` 與方法論轉接規則都沒有改；本版改動是契約 v2 待辦清單的放棄附文字只當原因與多選，見 `memory-protocol.md` § 契約 v2 欄位）；內建 `adapters/bmad.yaml` 只改版號註解（`adapter_version` 仍 0.2.1）；`ct-adapter-pstack` 只改版號，`adapter_version` 仍 0.2.6。
+- v6.3.0-pre.2（T0576）：預覽；**契約不變**（本檔、`adapters/bmad.yaml` 與方法論轉接規則都沒有改；本版是待辦清單確認行與代號順序的條文修正）；內建 `adapters/bmad.yaml` 只改版號註解（`adapter_version` 仍 0.2.1）；`ct-adapter-pstack` 只改版號，`adapter_version` 仍 0.2.6。
+- v6.3.0-pre.3（T0578）：預覽；**契約不變**（本檔、`adapters/bmad.yaml` 與方法論轉接規則都沒有改；本版是待辦清單確認行改寫進選單題目的條文修正）；內建 `adapters/bmad.yaml` 只改版號註解（`adapter_version` 仍 0.2.1）；`ct-adapter-pstack` 只改版號，`adapter_version` 仍 0.2.6。
+- v6.3.0（T0580）：正式版 MINOR（自 6.3.0-pre.3 定稿，取代 6.2.0 成為穩定版）；**契約不變**（本檔、`adapters/bmad.yaml` 與方法論轉接規則都沒有改）；內建 `adapters/bmad.yaml` 只改版號註解（`adapter_version` 仍 0.2.1）；`ct-adapter-pstack` 只改版號，`adapter_version` 仍 0.2.6。

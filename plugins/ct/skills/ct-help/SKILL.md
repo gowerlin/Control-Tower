@@ -2,7 +2,7 @@
 name: ct-help
 description: "Control Tower help skill for explaining the Tower and Worker ecosystem, commands, prefixes, workflow, BAT and YOLO concepts, methodology adapters, state files, onboarding, and common confusion. Use when the user invokes $ct-help or /ct-help, is new to Control Tower, asks how to use ct-exec, ct-done, ct-status, ct-evolve, ct-fieldguide, or asks what a Tower command means."
 ---
-<!-- ct-help-version: 6.2.0 -->
+<!-- ct-help-version: 6.3.0 -->
 
 # ct-help
 
@@ -12,7 +12,7 @@ Arguments: `$ARGUMENTS`
 
 ## Response Style
 
-- Use Traditional Chinese by default.
+- Use Traditional Chinese by default, including the short progress lines between tool calls.
 - Keep command names, paths, env vars, statuses, and examples exact.
 - Answer the user's immediate question first.
 - Keep beginner explanations short and operational.
@@ -124,12 +124,16 @@ Summaries only; the CT rules live in `../control-tower/references/memory-protoco
   wait for you. BAT never edits CT files; an item that disappears is done.
 - **How to answer** (type it in the Tower tab, or use BAT's answer box, which sends the same line): `U-3：B` (an option code) or
   `U-3：<your own words>`; `A-2：完成`; `A-2：失敗 <what went wrong>`. Full-width `：` and `:` both work. The Tower replies with one
-  confirmation line, for example 「U-3 已收到：B → 恢復 T0123」.
+  confirmation line per answer, for example 「U-3 已收到：B → 恢復 T0123」 (CT 6.3.0+: in the same reply; when that reply opens a new
+  menu, the confirmations start the menu's first question, after 「剛才的回答：」).
 - **Recommended option** (CT 6.2.0+): when the Tower has a recommendation it lists that option first and ends its text with 「（推薦）」,
   in the terminal and in the file; BAT 0.8.0-pre.4 or later also shows a marker and selects it by default. No recommendation, no mark.
-- **Dropping items** (CT 6.2.0+): `U-3：放棄` drops a decision, `A-2：略過` drops a to-do; add words after it to give a reason or a new
-  direction (`U-3：放棄 改做 X`). Several at once: `U-1、U-3：放棄 <reason>`. The Tower applies no option, removes the items, keeps the
-  work order paused, and logs one decision; with no words it waits for your next instruction instead of asking again. 「略過」 is not
+- **Dropping items** (CT 6.2.0+): `U-3：放棄` drops a decision, `A-2：略過` drops a to-do; words after it are the reason
+  (`U-3：放棄 規格還沒定`). Several at once: `U-1、U-3：放棄 <reason>`. The Tower applies no option, removes the items, keeps the
+  work order paused, and logs one decision; it waits for your next instruction instead of asking again.
+  CT 6.3.0+: the words after 「放棄」 are **only a reason** — the Tower logs them and does not act on them, even when they read like an
+  instruction (it says so in its confirmation line). To give a new direction, answer in your own words instead: `U-3：改做 X` (BAT's
+  「其他」 box, the menu's "Other", or typing in the terminal). CT 6.2.x still acted on those words. 「略過」 is not
   「失敗」: no BUG is opened and the check is logged as not verified. Wildcards and ranges (`U-*`, `U-1～U-5`) are not accepted.
   BAT 0.8.0-pre.4 or later adds buttons for this, batch ticks and 「全部放棄」.
 - **Pauses as a menu** (CT 6.2.0+): when the Tower stops for your decision (a breakpoint, the merge check, a Worker question passed to you,
@@ -142,9 +146,20 @@ Summaries only; the CT rules live in `../control-tower/references/memory-protoco
   questions controls it: `*config interactive-prompts off` gives the plain text pause of 6.1.x. The Tower falls back to text by itself
   on Codex (no menu) and in a BAT tab whose startup check did not report contract v2, because only such a BAT holds a Worker's Enter
   while the menu is open (otherwise that Enter could pick an option for you).
+- **Multi-choice** (CT 6.3.0+): when several options can all be true at once, the Tower may mark a question it or a Worker asked as
+  multi-choice; breakpoint pauses are always single-choice. Answer with several codes: `U-3：A、C` (`、`, `,`, `，` or a space between
+  them; repeats are ignored; the Tower lists them back in the options' order, recommended first). One code is a single choice; anything that is not all codes counts as your own words. Several options may be
+  marked 「（推薦）」. The menu lets you tick several and has no drop choice: type 「放棄」 in "Other" to drop it (the ticks are then not
+  applied); other words in "Other" make the whole answer free text, recorded together with the ticks. As text, the pause adds the line
+  「可複選：回 `U-n：A、C`」. BAT 0.8.0-pre.8 or later draws ticks in the inbox tab.
 - **Mixing versions**: CT 6.2.0 with an older BAT (0.8.0-pre.3) still shows the inbox tab; there is no marker or drop button, but the
   recommended option is first with 「（推薦）」 and typing `U-n：放棄` in the free-answer box works. A newer BAT with CT 6.1.x shows neither
   feature; everything else works as before. The contract stays v2 (`bat_contract: 2`); CT 6.2.0 adds `inbox_features` to tell BAT.
+  CT 6.3.0 adds `multi` to `inbox_features`: with a BAT older than 0.8.0-pre.8 the question shows as single-choice, and typing
+  `U-n：A、C` in the free-answer box still works; BAT 0.8.0-pre.8 or later with CT 6.2.x shows no ticks.
+  **A new BAT with a CT 6.2.x Tower**: the 6.2.x Tower may decide on its own to open its native menu as multi-choice, but it does not write
+  `multi` into the file, so BAT shows the question as single-choice, and 6.2.x reads a multi-choice answer as your own words (it never
+  applies the wrong option; it just takes one more round to agree). To use multi-choice, upgrade the Tower to CT 6.3.0.
 - **Any terminal**: while something waits for you, every Tower reply ends with one line such as
   `⏸ 待你決定：U-3（T0123）；🙋 待你執行：A-2（…）`. This works without BAT and with an old BAT. If that line feels noisy,
   `*config pending_reminder on-change` (CT 6.2.0+, add `--save project` to keep it) prints it only in the first reply of a session, when
@@ -161,6 +176,7 @@ Summaries only; the CT rules live in `../control-tower/references/memory-protoco
 - **Versions**: both sides must be new enough — BAT 0.8.0-pre.3 or later and CT 6.1.0 or later. If either side is
   older, BAT's inbox tab says which version is needed and stays off; an old BAT simply has no inbox tab, and the Tower prints one fallback
   line at startup and keeps working. The recommended marker and the drop controls need BAT 0.8.0-pre.4 or later and CT 6.2.0 or later.
+  Multi-choice ticks need BAT 0.8.0-pre.8 or later and CT 6.3.0 or later; "drop words are only a reason" is CT 6.3.0 or later.
 
 ## Claude Code Workflow (v5.11.0+)
 

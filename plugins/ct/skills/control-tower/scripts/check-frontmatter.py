@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """check-frontmatter.py — CT 寫的 YAML frontmatter 寫入後自檢（T0549；v6.0.1 起隨 control-tower 發行；v6.1.0 起另檢查契約 v2 欄位，T0557；
-v6.2.0 起另檢查 awaiting_user[].recommended 與 inbox_features，T0566）。
+v6.2.0 起另檢查 awaiting_user[].recommended 與 inbox_features，T0566；v6.3.0 起另檢查 awaiting_user[].multi 與多個代號的 recommended，T0573）。
 
 規則的權威是 control-tower/references/memory-protocol.md § YAML frontmatter 字串寫法與寫入後自檢。
 本腳本只做其中「可機器檢查」的部分，規則有變以權威檔為準，再改這裡。
@@ -45,9 +45,13 @@ v6.2.0 起另檢查 awaiting_user[].recommended 與 inbox_features，T0566）。
   v2-next-id            next_ids.user 不是 "U-n"、next_ids.action 不是 "A-n"
   v2-recommended        （v6.2.0 起）awaiting_user 的 recommended 不是字串（沒加引號的數字也算）、對不到同一筆 options 的
                         任何代號（不分大小寫），或 options 是空清單（自由回答）卻寫了 recommended
+                        （v6.3.0 起）recommended 有多個代號（以「、」連接）但該筆不是 multi: true，或其中任何一個代號對不到
   v2-features           （v6.2.0 起）inbox_features 不是字串清單（例：不是清單、項目是數字或巢狀清單）；不認得的值不報錯
+  v2-multi              （v6.3.0 起）awaiting_user 的 multi 不是布林（只收不加引號的 true／false；加了引號、yes／no 都算錯）
   waiting-user          工單 frontmatter 的 waiting_user 不是 "U-n"
   v2-count（警告）      awaiting_user 超過 20 筆、user_actions 超過 20 筆或 reminders 超過 10 筆；只警告，不影響 exit code
+  v2-multi-ignored（警告）（v6.3.0 起）options 少於 2 項（含空清單、沒有 options）卻寫了 multi: true；讀者會忽略它，
+                        所以只警告，不影響 exit code
   v2-skipped（警告）    本腳本的小型解析器看不懂這份 frontmatter，契約 v2 欄位沒有檢查（語法檢查照常）
 
 輸出：只印檔名、行號、欄號與問題類型，不印檔案原文。問題印成「- FAIL …」，警告印成「- WARN …」（格式相同）。
@@ -389,6 +393,9 @@ V2_NON_STR_PLAIN_RE = re.compile(r'^(?:[-+]?(?:[0-9][0-9_]*(?:\.[0-9_]*)?|\.[0-9
                                  r'|0[xX][0-9a-fA-F_]+|0[oO][0-7_]+|[-+]?\.(?:inf|Inf|INF)|\.(?:nan|NaN|NAN)'
                                  r'|true|True|TRUE|false|False|FALSE|yes|Yes|YES|no|No|NO|on|On|ON|off|Off|OFF'
                                  r'|null|Null|NULL|~)$')
+# v6.3.0+：awaiting_user[].multi 只接受 YAML 1.2 core 的布林（yes／no／on／off 在 YAML 1.2 是字串，不收）
+V2_BOOL_RE = re.compile(r'^(?:true|True|TRUE|false|False|FALSE)$')
+IDEO_COMMA = chr(0x3001)  # 「、」；v6.3.0+ 多個推薦代號的分隔
 V2_DATE_RE = re.compile(r'^([0-9]{4})-([0-9]{2})-([0-9]{2})'
                         r'(?:[Tt ]([0-9]{2}):([0-9]{2})(?::([0-9]{2})(?:[.,][0-9]+)?)?'
                         r'(?:[Zz]|[+-]([0-9]{2})(?::?([0-9]{2}))?)?)?$')
@@ -745,15 +752,18 @@ def check_contract_v2(fm_lines, base, rep):
                 if v is not None and len(v) > limit:
                     rep.add(*at(sl, sc), 'v2-length', '%s 的 %s 超過 %d 字（目前 %d 字）' % (name, key, limit, len(v)))
             codes = None  # awaiting_user 的選項代號（小寫）；None = options 不是可讀的清單
+            n_opts = None  # awaiting_user 的選項項數；None = options 不是可讀的清單（v6.3.0+ 判斷 multi 用）
             if name == 'awaiting_user' and 'options' in fields:
                 sub, sl, sc = fields['options']
                 if sub.kind == 'scalar' and sub.value is None and sub.style == 'plain':
                     codes = set()
+                    n_opts = 0
                 elif sub.kind != 'seq':
                     rep.add(*at(sl, sc), 'v2-type', 'awaiting_user 的 options 要是清單（自由回答時寫 []）')
                 else:
                     seen = set()
                     codes = seen
+                    n_opts = len(sub.value)
                     for opt in sub.value:
                         v = _str_value(opt)
                         m = V2_OPTION_RE.match(v) if v is not None else None
@@ -765,22 +775,41 @@ def check_contract_v2(fm_lines, base, rep):
                         if code in seen:
                             rep.add(*at(opt.line, opt.col), 'v2-option', '同一筆的選項代號重複（不分大小寫）')
                         seen.add(code)
+            if name == 'awaiting_user' and 'options' not in fields:
+                codes = set()
+                n_opts = 0
+            is_multi = False  # v6.3.0+：這一筆是 multi: true
+            if name == 'awaiting_user' and 'multi' in fields:  # v6.3.0+：布林（不加引號的 true／false）
+                sub, sl, sc = fields['multi']
+                mv = _str_value(sub)
+                if sub.kind != 'scalar' or sub.style != 'plain' or mv is None or not V2_BOOL_RE.match(mv):
+                    rep.add(*at(sl, sc), 'v2-multi', 'awaiting_user 的 multi 要是布林（不加引號的 true；單選題不必寫）')
+                else:
+                    is_multi = mv.lower() == 'true'
+                    if is_multi and n_opts is not None and n_opts < 2:
+                        rep.warn(*at(sl, sc), 'v2-multi-ignored',
+                                 'options 少於 2 項時 multi: true 沒有意義，讀者會忽略（只提示；請拿掉 multi）')
             if name == 'awaiting_user' and 'recommended' in fields:  # v6.2.0+
-                if 'options' not in fields:
-                    codes = set()
                 sub, sl, sc = fields['recommended']
                 v = _str_value(sub)
                 if not _is_yaml_string(sub):
                     rep.add(*at(sl, sc), 'v2-recommended',
                             'awaiting_user 的 recommended 要是字串（選項代號；數字代號也要加引號）')
-                elif codes is None:
-                    pass  # options 本身寫錯（已回報 v2-type），無從比對
-                elif not codes:
-                    rep.add(*at(sl, sc), 'v2-recommended',
-                            'options 是空清單（自由回答）時不寫 recommended')
-                elif v.lower() not in codes:
-                    rep.add(*at(sl, sc), 'v2-recommended',
-                            'awaiting_user 的 recommended 對不到同一筆 options 的任何代號（不分大小寫）；對不到時不寫這個鍵')
+                else:
+                    # v6.3.0+：多個代號以「、」連接（只限 multi: true 的那一筆）
+                    parts = v.split(IDEO_COMMA)  # 比對不去空白，同單一代號（v6.2.0）
+                    if len(parts) > 1 and not is_multi:
+                        rep.add(*at(sl, sc), 'v2-recommended',
+                                'recommended 有多個代號時，該筆要寫 multi: true（單選題只放一個代號）')
+                    if codes is None:
+                        pass  # options 本身寫錯（已回報 v2-type），無從比對
+                    elif not codes and n_opts == 0:
+                        rep.add(*at(sl, sc), 'v2-recommended',
+                                'options 是空清單（自由回答）時不寫 recommended')
+                    elif any(p.lower() not in codes for p in parts):
+                        rep.add(*at(sl, sc), 'v2-recommended',
+                                'awaiting_user 的 recommended 有代號對不到同一筆 options 的代號（不分大小寫）；'
+                                '有一個對不到就整個不寫這個鍵')
             if name == 'reminders':
                 for key in ('due_at', 'last_at'):
                     if key in fields:

@@ -173,8 +173,8 @@ const towerRows = [
 - **語法**：`/ct-help`、`/ct-help <問題>`（Codex：`$ct-help …`）
 - **參數**：可選的自由文字問題，例如「`ct-done` 跟 `ct-exec` 差在哪？」。
 - **在哪用**：任何 session。
-- **做什麼**：操作手冊——先回答你眼前的問題，給確切的指令、紀錄檔的位置、狀態字的意思；新手只解釋接下來兩三步。**只解釋，不建立也不修改工單**，也不切換成塔台或 Worker。v6.1.0+：可以問〈與 BAT 協作〉：契約 v2、待辦分頁、`U-n`／`A-n` 回答格式、BAT 的 hooks 與 CT 的 hooks 有什麼不同、什麼時候要裝 `bat-hooks` plugin、版本要求。v6.2.0+：也可以問推薦標記、放棄與略過（含批次）、新舊版本搭配、選單的放棄項、Esc 之後怎麼辦、`pending_reminder`。
-- **起始版本**：v3.1.0（〈與 BAT 協作〉：6.1.0；推薦項、放棄、選單、`pending_reminder`：6.2.0）
+- **做什麼**：操作手冊——先回答你眼前的問題，給確切的指令、紀錄檔的位置、狀態字的意思；新手只解釋接下來兩三步。**只解釋，不建立也不修改工單**，也不切換成塔台或 Worker。v6.1.0+：可以問〈與 BAT 協作〉：契約 v2、待辦分頁、`U-n`／`A-n` 回答格式、BAT 的 hooks 與 CT 的 hooks 有什麼不同、什麼時候要裝 `bat-hooks` plugin、版本要求。v6.2.0+：也可以問推薦標記、放棄與略過（含批次）、新舊版本搭配、選單的放棄項、Esc 之後怎麼辦、`pending_reminder`。v6.3.0+：也可以問多選怎麼回答、放棄的文字只當原因、新 BAT 搭配 6.2.x 塔台時看到什麼。
+- **起始版本**：v3.1.0（〈與 BAT 協作〉：6.1.0；推薦項、放棄、選單、`pending_reminder`：6.2.0；多選、放棄只當原因：6.3.0）
 - **權威出處**：`ct-help/SKILL.md` § Command Families、§ User Guidance Patterns；6.1.0 起 § 與 BAT 協作（Working With BAT, v6.1.0+）
 - **相關**：[`*help`](#help)、[CT Guide](#control-tower-guide)
 
@@ -226,7 +226,7 @@ const towerRows = [
   | 選項 | 值 | 預設 | 說明 |
   |---|---|---|---|
   | `alignment-rounds` | `0`–`5` | `3` | 開單前最少問幾輪；`0` = 關閉強制提問 |
-  | `interactive-prompts` | `on`／`off` | `on` | 選項式提問；`off` 退回純文字提問。6.2.0 起範圍擴大到塔台暫停（斷點、合併前確認、Worker 提問升級、塔台自己的提問）：`on` 時先寫待決再開原生選單，選項 1～3 個時最後一定有「放棄（停下等新方向）」、4 個時在「其他」打「放棄」，沒有選項或超過 4 個選項的題目用文字；按 Esc 後該筆照留、下一則回覆提醒並重列，之後仍開選單。Codex 塔台與 BAT 契約不是 `v2` 的分頁自動改用文字；`off` 時需求對齊與暫停都用純文字（見[待辦分頁 › 暫停改開原生選單](/deep/features/bat-todo#menu)） |
+  | `interactive-prompts` | `on`／`off` | `on` | 選項式提問；`off` 退回純文字提問。6.2.0 起範圍擴大到塔台暫停（斷點、合併前確認、Worker 提問升級、塔台自己的提問）：`on` 時先寫待決再開原生選單，選項 1～3 個時最後一定有「放棄（停下等新方向）」、4 個時在「其他」打「放棄」，沒有選項或超過 4 個選項的題目用文字；按 Esc 後該筆照留、下一則回覆提醒並重列，之後仍開選單。Codex 塔台與 BAT 契約不是 `v2` 的分頁自動改用文字；`off` 時需求對齊與暫停都用純文字（見[待辦分頁 › 暫停改開原生選單](/deep/features/bat-todo#menu)）。6.3.0 起多選題（`multi: true`）開可以複選的選單、不加放棄項（在「其他」打「放棄」），用文字提問時多一行「可複選：回 `U-n：A、C`」；同一則回覆既處理回答又要開選單時，確認行（每個回答一段，以「；」分隔）寫進選單第一題的題目開頭、以「剛才的回答：」起頭；確認行超過 4 筆或自由回答需要說明時，這一則不開選單（見[待辦分頁 › 多選](/deep/features/bat-todo#multi)、[確認行](/deep/features/bat-todo#confirm)） |
   | `experience-level` | `beginner`／`standard`／`expert` | `standard` | 提示詳細度與引導程度；`beginner` 啟用新手村教學 |
   | `verbose` | `on`／`off` | `on` | 派工摘要的詳細程度 |
   | `auto-session` | `on`／`ask`／`off`／`yolo` | `ask` | 派工後的行為：`on` 靜默開新分頁；`ask` 先問；`off` 只給文字提示；`yolo` 是 `on` 的超集，Worker 自動送出、塔台自主決定下一張。在 BAT 內，生效值也以 `--set-role tower --mode` 宣告給塔台分頁；v6.1.0+ 同一個宣告另帶 `--bat-contract 2` |
@@ -260,7 +260,7 @@ const towerRows = [
   | `methodology_subagent_writes` | `deny`／`per-workorder` | `deny` | 6.0.0 起。方法論自己開的寫入型子代理怎麼處置 |
   | `methodology_guard` | `warn`／`block`／`off` | `warn` | 6.0.0 起。派工前的方法論注入／衝突檢查；`warn` = 自動在工單加〈方法論邊界〉段 |
   | `methodology_adapters_path` | 路徑／空 | 空 | 6.0.0 起。額外的 adapter 搜尋路徑（一個；相對路徑以 repo 根目錄為準） |
-  | `user_inbox` | `on`／`off` | `on` | 6.1.0 起。BAT ↔ CT 契約 v2 的待決與待執行清單：`on` = 塔台把要你決定（`awaiting_user`）與要你執行（`user_actions`）的事寫進 `_tower-state.md` frontmatter，BAT 的「待辦」分頁可以顯示；`off` = 不寫這兩個清單，退回 6.0.x 寫法（只在終端輸出、待執行的項目照舊放 `todo`）；`bat_contract`、`ct_version`、`reminders` 與每次回覆結尾的重列照舊（見[待辦分頁](/deep/features/bat-todo#user-inbox)）。6.2.0 起能力旗標 `inbox_features` 不受 `off` 影響、每次照寫；在終端回 `U-n：放棄`、`A-n：略過` 一樣有效 |
+  | `user_inbox` | `on`／`off` | `on` | 6.1.0 起。BAT ↔ CT 契約 v2 的待決與待執行清單：`on` = 塔台把要你決定（`awaiting_user`）與要你執行（`user_actions`）的事寫進 `_tower-state.md` frontmatter，BAT 的「待辦」分頁可以顯示；`off` = 不寫這兩個清單，退回 6.0.x 寫法（只在終端輸出、待執行的項目照舊放 `todo`）；`bat_contract`、`ct_version`、`reminders` 與每次回覆結尾的重列照舊（見[待辦分頁](/deep/features/bat-todo#user-inbox)）。6.2.0 起能力旗標 `inbox_features` 不受 `off` 影響、每次照寫；在終端回 `U-n：放棄`、`A-n：略過` 一樣有效。6.3.0 起 `inbox_features` 多了 `multi`（`["recommended", "dismiss", "multi"]`）；在終端回多選 `U-n：A、C` 一樣有效 |
   | `pending_reminder` | `every`／`on-change` | `every` | 6.2.0 起。回覆結尾 `⏸ 待你決定／🙋 待你執行` 那一行的頻率：`every` = 有待決時每則回覆都印（與 6.1.x 相同）；`on-change` = 只在 session 第一則回覆、清單新增項目、你問待決或下 `*sync`、暫停選單被 Esc 關掉後的下一則回覆印。狀態檔清單、BAT 待辦分頁、暫停訊息與選單不受影響；對話被壓縮後可能多提醒一次（見[待辦分頁 › 提醒頻率](/deep/features/bat-todo#pending-reminder)） |
 
   Worker 只會讀 `worker_max_retries`、`worker_strikeout_action`、`worker_commit` 與 `experience-level` 這類調諧參數；`worker_auto_close`、`worker_close_delay` 雖然以 `worker_` 開頭，卻是塔台收單時讀的。
@@ -268,7 +268,7 @@ const towerRows = [
   `_tower-config.yaml` 另有 `gp-prefix`（Playbook 的 GP 編號前綴），但它不是 `*config` 選項，所以不在上表；定義與未設定時的 fallback 見 `multi-tower-protocol.md` § `gp-prefix` 設定（唯一權威定義）。
 
 - **起始版本**：v3.2.0（各選項的版本見權威出處）
-- **權威出處**：`control-tower/references/tower-config.md` § `*config` 命令、§ 可用選項、§ 作用域與持久化、§ 方法論設定鍵（6.0.0 起）；`user_inbox` 的欄位規則見 `memory-protocol.md` § 契約 v2 欄位；6.2.0 起 `interactive-prompts` 在塔台暫停時的問法見同一處〈暫停的提問方式〉，`pending_reminder` 見 `control-tower/SKILL.md` § Output Style
+- **權威出處**：`control-tower/references/tower-config.md` § `*config` 命令、§ 可用選項、§ 作用域與持久化、§ 方法論設定鍵（6.0.0 起）；`user_inbox` 的欄位規則見 `memory-protocol.md` § 契約 v2 欄位；6.2.0 起 `interactive-prompts` 在塔台暫停時的問法見同一處〈暫停的提問方式〉，`pending_reminder` 見 `control-tower/SKILL.md` § Output Style；6.3.0 起多選題的選單與確認行也在〈暫停的提問方式〉
 - **相關**：[功能總覽 › 設定](/features#config)（四層覆蓋的概念）
 
 ### `*help` {#help}
@@ -472,15 +472,18 @@ yolo 下塔台另外也接受 `T#### 失敗`。不是這些格式的訊息，會
 
 ### 回答待決與待執行（`U-n`／`A-n`） {#user-answers}
 
-- **說法**：v6.1.0+。不是 `*` 命令，是在塔台分頁打的一行回答，或 BAT「待辦」分頁送出的同一行：`U-3：B`（選項代號）、`U-3：先不要發布`（自由回答）、`A-2：完成`、`A-2：失敗 安裝後啟動閃退`。v6.2.0+ 另有 `U-3：放棄 改做 X`（放棄一題，可附原因或新方向）、`A-2：略過 換機器了`（略過一項，可附原因）、`U-1、U-4：放棄`（一次好幾題）。
+- **說法**：v6.1.0+。不是 `*` 命令，是在塔台分頁打的一行回答，或 BAT「待辦」分頁送出的同一行：`U-3：B`（選項代號）、`U-3：先不要發布`（自由回答）、`A-2：完成`、`A-2：失敗 安裝後啟動閃退`。v6.2.0+ 另有 `U-3：放棄 規格還沒定`（放棄一題，可附原因）、`A-2：略過 換機器了`（略過一項，可附原因）、`U-1、U-4：放棄`（一次好幾題）。v6.3.0+ 另有 `U-4：A、C`（多選題選好幾個）；要給新方向用自由回答，例 `U-3：改做 X`。
 - **規則**：全形 `：` 或半形 `:` 都可以；代號不分大小寫，只有唯一命中一個選項才算選了它，否則當自由回答。只有一題在等時直接回 `B` 也可以。塔台回一行確認，例 `U-3 已收到：B → 恢復 T0001`。
 - **放棄與略過（v6.2.0+）**：只有冒號後第一個詞是「放棄」「略過」才算。放棄不套用任何選項、工單維持暫停；略過不是失敗，不開 BUG、不重開工單，決策日誌記「未驗（使用者略過）」。一次好幾題用 `、`、`,`、`，` 分隔，只用在放棄與略過；不接受 `U-*`、`U-1～U-3` 這類萬用字元與範圍，也不接受好幾題選同一個選項；已經不在清單的編號略過、其他照做。
-- **推薦項（v6.2.0+）**：塔台有推薦時，那個選項排第一、說明結尾有「（推薦）」；BAT 0.8.0-pre.4 起另顯示推薦標記並預設選取。
+- **放棄附的文字只當原因（v6.3.0+）**：`U-n：放棄 <文字>` 的文字塔台照記、不照做，工單維持暫停；原因看起來像指示時，確認行提醒你直接下指示。新方向用自由回答 `U-n：<文字>`（BAT 待辦分頁與原生選單的「其他」也是這個寫法）。6.2.x 會照文字重新對齊，這是行為改變。
+- **多選（v6.3.0+）**：只有標成多選的題目（`multi: true`：塔台或 Worker 的提問、選項可以同時成立、至少 2 個選項；斷點一律單選）才收多個代號：`U-n：A、C`，分隔用 `、`、`,`、`，` 或空白，重複的去掉；混了別的字，或單選題回多個代號，都當自由回答。批次仍只用在放棄與略過，`U-1、U-3：A` 仍不支援。
+- **確認行（v6.3.0+）**：塔台在同一則回覆為每個回答各回一行確認；多個代號依該題選項的順序列出（推薦項在前），不依手打順序。同一則回覆要開新選單時，確認行寫在選單第一題的開頭（「剛才的回答：…」）；確認行超過 4 筆或自由回答需要說明時，這一則不開選單。
+- **推薦項（v6.2.0+）**：塔台有推薦時，那個選項排第一、說明結尾有「（推薦）」；BAT 0.8.0-pre.4 起另顯示推薦標記並預設選取。v6.3.0+ 多選題可以有多個推薦項，都排在前面、都標「（推薦）」，BAT 預設勾選。
 - **回覆結尾重列**：有待決或待執行項目時，塔台每次回覆的最後一行固定是 `⏸ 待你決定：…；🙋 待你執行：…`；沒有項目的那半段不印，兩邊都空就整行不印。任何終端都有，不需要 BAT。v6.2.0+ 頻率照 `pending_reminder`（預設 `every`，見 [`*config`](#config)）。
 - **不寫清單**：`*config user_inbox off`（見 [`*config`](#config)），回覆結尾照樣重列。
-- **起始版本**：v6.1.0（放棄、略過、批次、推薦項：6.2.0）
+- **起始版本**：v6.1.0（放棄、略過、批次、推薦項：6.2.0；多選、放棄只當原因、確認行：6.3.0）
 - **權威出處**：`control-tower/references/memory-protocol.md` § 契約 v2 欄位；`control-tower/SKILL.md` § Output Style
-- **相關**：[待辦分頁（BAT ↔ CT 契約 v2）](/deep/features/bat-todo)、[放棄與略過](/deep/features/bat-todo#dismiss)、[暫停改開原生選單](/deep/features/bat-todo#menu)
+- **相關**：[待辦分頁（BAT ↔ CT 契約 v2）](/deep/features/bat-todo)、[放棄與略過](/deep/features/bat-todo#dismiss)、[暫停改開原生選單](/deep/features/bat-todo#menu)、[多選](/deep/features/bat-todo#multi)、[確認行](/deep/features/bat-todo#confirm)
 
 ## 不要找：不存在或已刪除的指令 {#not-commands}
 
@@ -498,7 +501,7 @@ yolo 下塔台另外也接受 `T#### 失敗`。不是這些格式的訊息，會
 - `control-tower/SKILL.md` § Built-In Commands
 - `ct-help/SKILL.md` § Command Families
 - 各 skill 的 `SKILL.md`（`ct-exec`、`ct-done`、`ct-status`、`ct-evolve`、`ct-insights`、`ct-fieldguide`、`control-tower-guide`）
-- CT 安裝與使用指南 § 13. Config 速查表（v6.2.0）、§ 14. 命令速查表（v6.2.0）
+- CT 安裝與使用指南 § 13. Config 速查表（v6.3.0）、§ 14. 命令速查表（v6.3.0）
 - `control-tower/references/tower-config.md` § `*config` 命令、§ 可用選項（表下註明 `gp-prefix` 不是選項）
 - `control-tower/references/multi-tower-protocol.md` § `gp-prefix` 設定（唯一權威定義）
 - `control-tower/references/fieldguide-commands.md`

@@ -15,6 +15,7 @@
 > 當 `*config interactive-prompts` 設為 `off` 時，所有場景皆退回純文字提問。
 > v6.2.0+：塔台暫停（斷點、合併前確認、Worker 提問升級、`tower-question`）也歸這個開關；`on` 時怎麼開原生選單、什麼情況改用文字範本，
 > 只定義在 [memory-protocol.md](memory-protocol.md) § 契約 v2 欄位〈暫停的提問方式〉。
+> v6.3.0+：暫停的多選題（`multi: true`）用 `multiSelect: true`、不加放棄項，「其他」與勾選同時出現時的處理也只定義在該處（第 8 點）。
 
 ## 選項格式規範
 

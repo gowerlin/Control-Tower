@@ -355,7 +355,7 @@ T0106（即將派發）affects_files：
    - `PARTIAL` → 先判斷 blocker 是否仍存在，再照下方 § PARTIAL 當下收尾：塔台一裁示剩餘部分怎麼處理（另開接手單、或判定不需再做），**當下**補〈塔台收尾補記〉並改 `DONE`；
      只有真的在等外部條件的才保留 `PARTIAL`／`BLOCKED`；裁示之前先評估拆分或補充指引
    - 收單後要使用者選下一步（`tower-question`）：寫待決與提問方式（v6.2.0+ `interactive-prompts: on` 時用原生選單）只定義在
-     [memory-protocol.md](memory-protocol.md) § 契約 v2 欄位〈暫停的提問方式〉
+     [memory-protocol.md](memory-protocol.md) § 契約 v2 欄位〈暫停的提問方式〉；v6.3.0+ 選項可以同時成立時可寫成多選（`multi`），條件與回答寫法也只定義在同一節
 
 回報確認格式：
 ```
