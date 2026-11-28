@@ -1,6 +1,6 @@
 {
   "_note": "相容版本對照（/versions/compatibility 的資料）。每列 feature、ct（CT 起始版本）、bat／codex（最低版本，不需要就省略）、note、source（權威出處：檔案 § 章節）。CT 發版時相容性有變才改（CT 每次發版都要同步更新 Portal）。",
-  "ctVersion": "6.3.0",
+  "ctVersion": "6.4.0",
   "rows": [
     {
       "feature": "帶前綴的工單 ID 走結構化派工（--workorder 帶前綴）",
@@ -221,6 +221,13 @@
       "bat": ">= 0.8.0-pre.8",
       "note": "MINOR。複選畫面、待辦分頁的「其他」與放棄備註只寫原因需要 BAT >= 0.8.0-pre.8；推薦標記與放棄控制項仍是 >= 0.8.0-pre.4，契約 v2 本身最低仍是 >= 0.8.0-pre.3：bat_contract 仍是 2、summary_version 不升，多選以狀態檔 inbox_features 的新值 multi 告訴 BAT。搭舊 BAT（例 0.8.0-pre.4）時多選題照單選顯示，在塔台的輸入框打 U-n：A、C 一樣有效。新 BAT 搭 CT 6.2.x：狀態檔沒有 multi、BAT 照單選顯示；6.2.x 塔台若自行在原生選單用複選，複選的回答會當自由回答（不會錯套選項，要多一輪對齊），要用複選請把塔台升到 6.3.0。放棄附的文字只當原因是 CT 這一側的行為改變，舊 BAT 上手打 U-n：放棄 <文字> 也一樣只當原因。契約 v2 以外的功能最低仍是 >= 0.7.0-pre.7。",
       "source": "CHANGELOG.md [6.3.0]；memory-protocol.md § 契約 v2 欄位（含〈回答格式與解析〉、〈暫停的提問方式〉）；interactive-prompts.md；ct-help/SKILL.md〈與 BAT 協作〉"
+    },
+    {
+      "feature": "選單開著時待辦分頁也能作答：塔台開暫停選單前在狀態檔寫 menu_open（選單裡的 U-n；之後每次寫入都不寫），BAT 先關掉選單、再送出待辦分頁的回答；被關掉的選單不重開（確認行之後提醒一次，新的待決只放新題，說「重問 U-n」才重開）；同一則回覆有選單題也有文字題時，文字題寫進選單第一題的題目；狀態檔能力旗標 inbox_features 加 menu；寫入後自檢另擋重複的鍵（duplicate-key）",
+      "ct": "v6.4.0",
+      "bat": ">= 0.8.1-pre.4",
+      "note": "MINOR。選單交接（選單開著時在待辦分頁作答、BAT 代按 Esc 再送出）需要 BAT >= 0.8.1-pre.4；複選畫面仍是 >= 0.8.0-pre.8，推薦標記與放棄控制項仍是 >= 0.8.0-pre.4，契約 v2 本身最低仍是 >= 0.8.0-pre.3：bat_contract 仍是 2、summary_version 不升，選單交接以狀態檔 inbox_features 的新值 menu 告訴 BAT。搭舊 BAT（例 0.8.1-pre.3）時 BAT 不理會 menu 與 menu_open，待辦分頁照舊，選單開著時在終端的選單作答即可（實機驗過）。新 BAT 搭 CT 6.3.x：狀態檔沒有 menu，BAT 照自己的預設處理；被關掉的選單裡沒答的題，6.3.x 塔台可能重開成新選單，從待辦分頁逐題回答時每題會多一次代按 Esc（不會錯套回答），升到 6.4.0 不重開。自檢擋重複的鍵是 CT 這一側的改動，沒有 BAT 門檻。契約 v2 以外的功能最低仍是 >= 0.7.0-pre.7。",
+      "source": "CHANGELOG.md [6.4.0]；memory-protocol.md § 契約 v2 欄位（含〈暫停的提問方式〉、〈競態〉）與 § YAML frontmatter 字串寫法與寫入後自檢；interactive-prompts.md；check-frontmatter.py；ct-help/SKILL.md〈與 BAT 協作〉"
     },
     {
       "feature": "Level 2：外部 bmad-guide 的 BMad workflow 路由",

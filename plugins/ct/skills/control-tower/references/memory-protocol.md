@@ -16,8 +16,8 @@
 
 **位置**：`_tower-state.md` 第一行 `---` 起的 YAML frontmatter，以下一行 `---` 結束；其後的 Markdown 本文（下方標準區段）照舊。
 
-**欄位**（前 6 列是契約 v1，全部保留、語意不變；後 7 列是契約 v2，v6.1.0+（其中 `inbox_features` 是 v6.2.0+ 加的能力旗標，v6.3.0+ 多一個值 `multi`，契約仍是 2），
-細節只寫在下方 § 契約 v2 欄位）：
+**欄位**（前 6 列是契約 v1，全部保留、語意不變；後 8 列是契約 v2，v6.1.0+（其中 `inbox_features` 是 v6.2.0+ 加的能力旗標，v6.3.0+ 多一個值 `multi`、v6.4.0+ 多一個值 `menu`；
+`menu_open` 是 v6.4.0+ 加的選填欄位；契約仍是 2），細節只寫在下方 § 契約 v2 欄位）：
 
 | 欄位 | 必填 | 型別 | 內容 |
 |------|------|------|------|
@@ -29,8 +29,9 @@
 | `todo` | 選填 | 字串陣列 | 待辦；外部讀者只顯示**前 5 則** |
 | `bat_contract` | v2 必填 | 整數，目前 `2`；**不加引號** | 契約版本。CT 6.1.0 起每次寫入都寫 |
 | `ct_version` | v2 必填 | 字串 | 寫入時的 CT 版號 |
-| `inbox_features` | 選填；CT 6.2.0 起每次寫 | 字串陣列，目前 `["recommended", "dismiss", "multi"]`（CT 6.3.0 起；6.2.x 是 `["recommended", "dismiss"]`） | 待辦清單的能力旗標（不是契約版本） |
+| `inbox_features` | 選填；CT 6.2.0 起每次寫 | 字串陣列，目前 `["recommended", "dismiss", "multi", "menu"]`（CT 6.4.0 起；6.3.x 是 `["recommended", "dismiss", "multi"]`，6.2.x 是 `["recommended", "dismiss"]`） | 待辦清單的能力旗標（不是契約版本） |
 | `awaiting_user` | 選填 | 陣列 | 待你決定 |
+| `menu_open` | 選填（v6.4.0+）；只出現在開原生選單前的那一次寫入 | 物件 `{ ids, opened_at }` | 塔台此刻開著的原生選單裡有哪些 `awaiting_user` 項目；其他每次寫入都不寫這個鍵。寫在 `awaiting_user` 正後方（6.4.0 起；位置只是給塔台寫入用的，讀者不依賴） |
 | `user_actions` | 選填 | 陣列 | 待你執行 |
 | `reminders` | 選填 | 陣列 | 到期提醒 |
 | `next_ids.user`／`next_ids.action` | 選填 | 字串 `"U-n"`／`"A-n"` | `next_ids` 裡的兩個鍵：下一個待決／待執行編號 |
@@ -54,7 +55,8 @@
   契約要升 v3 同樣先通知 BAT、雙方核定後才改。
 - 能力旗標（v6.2.0+）：在同一個契約版本內加了讀者要知道的能力（例如看得懂新的回答寫法），就在 `inbox_features` 加一個值，
   `bat_contract` 不升；只有改掉既有欄位的名稱、型別或語意才升契約版本（下方 § 契約 v2 欄位 › 頂層欄位）。
-  例：v6.3.0 的多選加了值 `multi` 與選填欄位 `awaiting_user[].multi`，`bat_contract` 仍是 `2`。
+  例：v6.3.0 的多選加了值 `multi` 與選填欄位 `awaiting_user[].multi`，`bat_contract` 仍是 `2`；
+  v6.4.0 的選單交接加了值 `menu` 與選填頂層欄位 `menu_open`，`bat_contract` 仍是 `2`。
 
 **YAML 寫法**：
 
@@ -69,10 +71,10 @@
 schema_kind: tower-state
 summary_version: 1
 bat_contract: 2
-ct_version: "6.3.0"
-inbox_features: ["recommended", "dismiss", "multi"]
+ct_version: "6.4.0"
+inbox_features: ["recommended", "dismiss", "multi", "menu"]
 updated_at: "2026-10-25T19:21:43+0800"
-session: "2026-10-25 17:48 塔台 session（CT v6.3.0）"
+session: "2026-10-25 17:48 塔台 session（CT v6.4.0）"
 next_ids:
   workorder: "T0306"
   decision: "D341"
@@ -93,11 +95,14 @@ todo:
 
 - 塔台**每次寫入** `_tower-state.md` 都同步更新摘要（至少刷新 `updated_at`，其餘欄位有變就改）：啟動、派工、收單、決策、
   `*rescan`、收工（Session 結束前）、`*pause`／`*resume`，以及下方 § 自動更新時機 列的每一項。v6.1.0+ 每次寫入也寫 `bat_contract: 2` 與
-  `ct_version`，v6.2.0+ 另寫 `inbox_features`（v6.3.0+ 的值含 `multi`；下方 § 契約 v2 欄位）。
+  `ct_version`，v6.2.0+ 另寫 `inbox_features`（v6.3.0+ 的值含 `multi`，v6.4.0+ 再含 `menu`；下方 § 契約 v2 欄位）。
+  v6.4.0+：`menu_open` **只**出現在開原生選單前的那一次寫入；其他每一次寫入（含啟動、`*pause`、處理回答）都**不寫**這個鍵，
+  上一次留下的就此清掉，不必另有清除步驟（下方 § 契約 v2 欄位〈誰寫、誰清〉的 `menu_open`）。
 - **Fast Path 恢復**：摘要只供外部顯示，塔台恢復狀態**以本文為準**。摘要與本文不一致（例：`next_ids` 不等於 § 🔢 編號追蹤 的最大編號 + 1、
   `todo` 過時）時以本文為準，並在這次寫入時依本文重寫摘要。
   例外（v6.1.0+）：`awaiting_user`、`user_actions`、`reminders` 三個清單**只存在 frontmatter**（本文不重抄），依本文重寫摘要時原樣保留，不得清掉。
-- **Full Scan／`*rescan`**：重建本文時一併依新本文重建摘要（同上，三個清單原樣保留）。
+  `menu_open`（v6.4.0+）不在此列：依本文重寫摘要時不保留（同上一點）。
+- **Full Scan／`*rescan`**：重建本文時一併依新本文重建摘要（同上，三個清單原樣保留，`menu_open` 不保留）。
 - **舊專案沒有摘要**：不是錯誤，恢復啟動不提示補齊（摘要不屬於下方 7 個必要區段）；塔台下次寫入 `_tower-state.md` 時直接補上。不需要遷移工具。
 - **首次啟動**（從標準模板建立 `_tower-state.md`）：同時寫入摘要。
 
@@ -107,7 +112,7 @@ schema_kind: tower-state
 summary_version: 1
 bat_contract: 2
 ct_version: "<CT 版號>"
-inbox_features: ["recommended", "dismiss", "multi"]
+inbox_features: ["recommended", "dismiss", "multi", "menu"]
 updated_at: "<datetime>"
 next_ids:
   workorder: "T####"
@@ -198,6 +203,11 @@ todo:
 > v6.3.0 加入（6.3.0-pre.1 預覽時加入，6.3.0 納入正式版）：**放棄附的文字只當原因**（行為改變：6.2.x 會照文字重新對齊，6.3.0 起只記錄、工單維持暫停；新方向改用自由回答）、
 > **多選**（`inbox_features` 的值 `multi`、`awaiting_user[].multi`、回答寫法 `U-n：A、C`、多個推薦項、原生選單的複選）。
 > 依據：BAT 與 CT 雙方使用者核定的「其他、放棄的意思、多選」提案。`bat_contract` 維持 `2`、`summary_version` 不升；資料格式除了新增的值與選填欄位都不變。
+> v6.4.0 加入（6.4.0-pre.1 預覽時加入，6.4.0 納入正式版）：**選單開著時待辦分頁也能作答**——頂層欄位 `menu_open`（開著的原生選單含哪些 `U-n`）與 `inbox_features` 的值 `menu`、
+> 被關掉的選單不重開（〈暫停的提問方式〉第 7 點寫明）、〈競態〉改寫（契約 v2 的 BAT 可能代按 Esc 關掉選單再送回答）。
+> 依據：BAT 與 CT 雙方使用者核定的「塔台開著原生選單時，待辦分頁也能作答」提案。`bat_contract` 維持 `2`、`summary_version` 不升；既有欄位與回答格式都不變。
+> v6.4.0 釐清（6.4.0-pre.2 預覽時依實機驗收補上）：`menu_open` 寫在 `awaiting_user` 正後方、分幾個 Edit 時最後寫最先清（〈誰寫、誰清〉的 `menu_open` 第 1、6 點）；
+> 同一則回覆混用選單與文字範本時，文字範本的題寫進第一題題目（〈暫停的提問方式〉第 5 點）；提醒接在確認行之後（第 7 點）。只改鍵的建議位置，資料格式與語意沒有改。
 
 **用途**：塔台需要使用者決定或執行的事寫進 frontmatter，Better Agent Terminal（BAT）的「待辦」分頁唯讀顯示，
 使用者不必在終端往回捲找塔台的提問。塔台開工時也向 BAT 宣告契約版本（[auto-session.md](auto-session.md) § 塔台分頁角色宣告），
@@ -208,12 +218,26 @@ todo:
 | 欄位 | 型別 | 寫法 |
 |---|---|---|
 | `bat_contract` | 整數 `2`，**不加引號** | CT 6.1.0 起**每次**寫 `_tower-state.md` 都寫；`user_inbox: off`、非 BAT 終端也寫（契約版本和要不要寫清單是兩件事） |
-| `ct_version` | 字串 | 每次寫入都寫，值取自已安裝的 `control-tower/SKILL.md` 版本註解 `<!-- control-tower-version: X -->` 的 `X`（例 `"6.3.0"`）；BAT 只顯示、不比較 |
-| `inbox_features` | 字串陣列（v6.2.0+） | 待辦清單的能力旗標。CT 6.2.0 起**每次**寫 `_tower-state.md` 都寫；CT 6.3.0 起寫 `["recommended", "dismiss", "multi"]`（6.2.x 寫 `["recommended", "dismiss"]`）；`user_inbox: off`、非 BAT 終端也寫（同 `bat_contract`）。值的意思：`dismiss` = 寫這份狀態檔的塔台看得懂下方〈回答格式與解析〉的放棄、略過與批次寫法（BAT 只在有這個值時顯示放棄、略過、批次勾選與「全部放棄」）；`recommended` = 這個塔台會寫 `awaiting_user[].recommended`，只供參考（推薦標記與預設選取只看那個欄位本身，寫了就顯示）；`multi`（v6.3.0+）= 寫這份狀態檔的塔台看得懂下方〈回答格式與解析〉的多選回答 `U-n：A、C`（BAT 只在有這個值時把 `multi: true` 的那一筆畫成複選；沒有這個值時照單選顯示，`multi` 欄位不理會）。讀者忽略不認得的值；鍵不存在或不是陣列時當作空陣列（＝ CT 6.1.x 的行為）。只放在狀態檔，**不**加進 `--set-role`（[auto-session.md](auto-session.md) § 塔台分頁角色宣告 不變）。以後要加能力沿用這個陣列；要改既有欄位的語意才升 `bat_contract`，照上方 § 機器可讀摘要 › 相容規則 先雙方核定 |
+| `ct_version` | 字串 | 每次寫入都寫，值取自已安裝的 `control-tower/SKILL.md` 版本註解 `<!-- control-tower-version: X -->` 的 `X`（例 `"6.4.0"`）；BAT 只顯示、不比較 |
+| `inbox_features` | 字串陣列（v6.2.0+） | 待辦清單的能力旗標。CT 6.2.0 起**每次**寫 `_tower-state.md` 都寫；CT 6.4.0 起寫 `["recommended", "dismiss", "multi", "menu"]`（6.3.x 寫 `["recommended", "dismiss", "multi"]`，6.2.x 寫 `["recommended", "dismiss"]`）；`user_inbox: off`、非 BAT 終端也寫（同 `bat_contract`）。值的意思：`dismiss` = 寫這份狀態檔的塔台看得懂下方〈回答格式與解析〉的放棄、略過與批次寫法（BAT 只在有這個值時顯示放棄、略過、批次勾選與「全部放棄」）；`recommended` = 這個塔台會寫 `awaiting_user[].recommended`，只供參考（推薦標記與預設選取只看那個欄位本身，寫了就顯示）；`multi`（v6.3.0+）= 寫這份狀態檔的塔台看得懂下方〈回答格式與解析〉的多選回答 `U-n：A、C`（BAT 只在有這個值時把 `multi: true` 的那一筆畫成複選；沒有這個值時照單選顯示，`multi` 欄位不理會）；`menu`（v6.4.0+）= 寫這份狀態檔的塔台會照下方 `menu_open` 列與〈誰寫、誰清〉的 `menu_open` 寫這個欄位（BAT 有這個值時才信任「沒有 `menu_open` ＝ 沒有開著含 `U-n` 的選單」；沒有這個值時讀者不理會 `menu_open`）。讀者忽略不認得的值；鍵不存在或不是陣列時當作空陣列（＝ CT 6.1.x 的行為）。只放在狀態檔，**不**加進 `--set-role`（[auto-session.md](auto-session.md) § 塔台分頁角色宣告 不變）。以後要加能力沿用這個陣列；要改既有欄位的語意才升 `bat_contract`，照上方 § 機器可讀摘要 › 相容規則 先雙方核定 |
 | `next_ids.user`／`next_ids.action` | 字串 `"U-n"`／`"A-n"` | 下一個可用編號（見下方〈編號〉） |
 | `awaiting_user` | 陣列，≤ 20 筆 | 待你決定；沒有項目時不寫這個鍵 |
+| `menu_open` | 物件，選填（v6.4.0+） | 塔台此刻開著的原生選單（Claude Code `AskUserQuestion`）裡有哪些 `awaiting_user` 項目。**沒有這個鍵 ＝ 沒有開著含 `U-n` 的選單**（只在 `inbox_features` 有 `menu` 時成立）。只出現在開選單前的那一次寫入，寫在 `awaiting_user` 清單正後方（下方〈誰寫、誰清〉的 `menu_open` 第 1 點）；鍵見下表 |
 | `user_actions` | 陣列，≤ 20 筆 | 待你執行；沒有項目時不寫這個鍵 |
 | `reminders` | 陣列，≤ 10 筆 | 到期提醒；沒有項目時不寫這個鍵 |
+
+**`menu_open` 的鍵**（v6.4.0+）
+
+```yaml
+menu_open:
+  ids: ["U-57", "U-58"]
+  opened_at: "2026-11-28T12:23:00+08:00"
+```
+
+| 鍵 | 型別 | 內容 |
+|---|---|---|
+| `ids` | 字串陣列，1～4 筆 | 選單裡的 `U-n`，依選單題目的順序；每一筆都必須同時在 `awaiting_user` 裡，不重複（原生選單一次最多 4 題） |
+| `opened_at` | 字串 | 寫入時間，`+08:00` 帶冒號（見下方〈時區〉），取自系統時間 |
 
 **`awaiting_user[]` 每筆**
 
@@ -289,6 +313,28 @@ todo:
   5. **`A-n：略過` 不是 `A-n：失敗`**：略過＝不做了，**不開 BUG、不重開工單**；決策日誌把該項記為「未驗（使用者略過）」，
      不得寫成已驗證（實際沒驗的不能算驗過）。附的文字是原因，照記。
 - **`reminders`**：專案的定期事項（例：每週日誌清查、到某日重跑掃描）。塔台做完時更新 `last_at`／`due_at`；不再需要時移除。
+- **`menu_open`**（v6.4.0+；鍵見上方〈`menu_open` 的鍵〉）：
+  1. **寫入時機、位置與順序**：照下方〈暫停的提問方式〉第 1 點先寫 `awaiting_user`、**再**開原生選單；`menu_open` 寫在**同一次寫入**（開選單前最後一次寫 `_tower-state.md`），
+     `ids` 依選單題目的順序列出這個選單裡的 `U-n`。
+     - **位置**（6.4.0 起）：`menu_open` 寫在 `awaiting_user` 清單**正後方**（`user_actions`、`reminders` 之前；下方完整範例）。
+       新增的 `U-n` 加在 `awaiting_user` 結尾，和 `menu_open` 是相鄰的一段，用**一個** Edit 寫完。
+       讀者不依賴鍵的位置（YAML 的鍵順序沒有意義）；這個位置是給塔台寫入用的，讓正確的寫法也是最省事的寫法。
+     - **分幾個 Edit 時的順序**：`menu_open` 在開選單前**最後**才寫，清除時（第 4 點）**最先**拿掉。任何一次存檔後，`menu_open.ids` 的每一筆都已在 `awaiting_user` 裡。
+     - 理由：`ids` 有一筆還不在 `awaiting_user` 的中間狀態不合法。BAT 讀到時當作沒有 `menu_open`（回答保留到選單關閉），所以不會誤按 Esc，
+       但 `check-frontmatter.py` 會報錯（`v2-menu-open`）。6.4.0-pre.1 的範例把 `menu_open` 放在 `updated_at` 後面、離 `awaiting_user` 很遠，
+       只新增項目時，塔台照範例先插 `menu_open`、再用另一個 Edit 補 `awaiting_user`，中間那幾份就不合法。
+  2. **只在選單裡至少有一筆 `U-n` 時寫**。需求對齊等不含 `U-n` 的選單不寫——對 BAT 來說等於「開著的選單沒有待辦分頁的題」，BAT 照舊把回答保留到選單關閉。
+  3. **不寫的情況**（都不開原生選單，或沒有 `awaiting_user`）：Codex 塔台、開工宣告的 BAT 契約不是 `v2`、`interactive-prompts: off`、
+     文字範本（`options` 超過 4 項或是空陣列；同一則回覆有的題開選單、有的題用文字時，`ids` 只列開進選單的，文字範本的題寫進第一題題目，見下方〈暫停的提問方式〉第 5 點）、`user_inbox: off`。
+  4. **清除**：`menu_open` 只出現在開選單前的那一次寫入；之後**任何一次**寫 `_tower-state.md`（選單回來後移除已回答的項目、處理 BAT 送來的文字回答、
+     開工、`*pause`……）都**不寫**這個鍵——除非那一次寫入本身又是下一個選單開之前的寫入，那時只寫新選單的 `ids`（分幾個 Edit 時先拿掉 `menu_open`，見第 1 點）。所以不必另有「開工時清掉」的步驟；
+     塔台當掉或 compact 後，下一次寫入就清掉。選單開著時塔台不會寫檔（回合停在選單），欄位不會在選單還開著時被誤清。
+  5. **BAT 怎麼用**（以 BAT 文件為準）：BAT 只在塔台分頁 `blocked`＋reason `question`、**而且**待辦分頁回答的 `U-n` 在 `ids` 裡時，代按 Esc 關掉選單再送出回答
+     （下方〈暫停的提問方式〉的〈競態〉）；`opened_at` 供 BAT 和 `question` blocked 開始的時間比對，防止殘留的欄位被當成這個選單的。
+     頂層 `inbox_features` 沒有 `menu` 時 BAT 不理會這個鍵。
+  6. **回覆不提 `menu_open`**（6.4.0 起）：`menu_open` 是給 BAT 的欄位，回覆與選單題目都不必提。看到不是自己寫的 `menu_open`
+     （例：上一個選單被 Esc 關掉後留下的，或外部寫入的）不必處理，下一次寫入就清掉（第 4 點）；需要說明時，在選單之後的回覆一句帶過，不寫進題目。
+     理由：題目是要使用者做決定，混進使用者不必處理的機器欄位，會讓人以為要先處理它。
 - **不自動遷移**：升級到 6.1.0 時不批次改寫既有的 `todo`；塔台下次處理到該項時再搬到對應清單。
 - 三個清單只在 frontmatter（本文不重抄；依本文重寫摘要時原樣保留，見上方 § 機器可讀摘要 › 維護時機）。
 - **BAT 只讀**：BAT 不改 CT 的任何檔（包含已回答的項目）；清單裡的項目消失就是已結。
@@ -343,6 +389,8 @@ todo:
   暫停照 6.1.x 的文字範本（[yolo-mode.md](yolo-mode.md) 各斷點的暫停訊息）。代價是無法「對齊用選單、暫停用文字」，有需求時再加鍵。
 - **`on` 的做法**：
   1. 先照上方〈誰寫、誰清〉寫 `awaiting_user`（有工單時同時寫 `waiting_user`），**再**開原生選單（Claude Code 的 `AskUserQuestion`）。
+     v6.4.0+：同一次寫入也寫 `menu_open`，列出這個選單裡的 `U-n`（上方〈誰寫、誰清〉的 `menu_open`；選單之後的任何一次寫入都不再寫這個鍵）。
+     6.4.0 起：`menu_open` 寫在 `awaiting_user` 正後方，和新增的 `U-n` 用一個 Edit 寫完；分幾個 Edit 時 `menu_open` 最後寫、最先清（上方〈誰寫、誰清〉的 `menu_open` 第 1 點）。
   2. 題目本身寫完整：`U-n`、工單（沒有就寫「—」）、一句話說要決定什麼。選單前面的文字使用者可能看不到，所以不能只寫在前面。
      - **處理了回答時，確認行寫進題目**（v6.3.0+）：這一則回覆處理了回答又要開選單時，第一題題目開頭先寫「剛才的回答：」加每個回答的確認行
        （以「；」分隔、寫成一行；格式同〈回答格式與解析〉的確認行，多個代號依 `options` 的順序），再寫本題。例：
@@ -361,15 +409,37 @@ todo:
      後面的文字同樣只當原因（v6.3.0+，上方〈放棄／略過〉第 4 點）。
   5. 改用文字範本（不開選單）的兩種資料：`options` 超過 4 項（原生選單最多 4 個選項）；v6.2.0+ `options` 是空陣列（自由回答）——
      `AskUserQuestion` 每題要 2～4 個選項，只剩「放棄」一項開不出來。
+     - **同一則回覆混用選單與文字範本**（6.4.0 起；與第 2、6 點同一套規則）：同一則回覆有的題開選單、有的題改用文字範本時，
+       文字範本的題**寫進第一題題目**：在「剛才的回答：」確認行與被關選單的提醒（第 7 點）之後、本題之前，每題一段：
+       `U-n（工單：—）<要決定什麼>；選項 A …／B …；回 U-n：<代號>`。自由回答寫「回 U-n：<文字>」；多選題加「可複選：回 `U-n：A、C`」。
+       工單欄照第 2 點寫（沒有工單寫「—」）。例：
+       `U-9（工單：—）下一階段先做哪個模組；選項 A 匯出／B 報表／C 權限／D 通知／E 稽核；回 U-9：<代號>。U-10（工單：—）新模組要叫什麼；回 U-10：<文字>。U-11（工單：—）<要決定什麼>`
+     - 文字範本的題超過 2 題，或寫不下（題目無法把每題寫完整）時，走第 2 點的退路：這一則**不開選單**，全部的題都用文字範本，下一則再開。
+     - `menu_open.ids` 仍只列開進選單的題（上方〈誰寫、誰清〉的 `menu_open` 第 3 點）。
+     - 理由：選單前的文字使用者可能看不到，回合的下一步是開選單時模型也常不輸出它（第 2 點），題目是唯一一定出現的地方。
+       只開選單、把文字範本的題放在選單前，使用者在終端就可能從頭到尾看不到那幾題的選項。
   6. 在選單、終端打字、BAT 待辦分頁回答都算數；照常移除該筆、清 `waiting_user`、記決策日誌。回覆結尾的 `⏸ 待你決定` 重列照 `SKILL.md` § Output Style（含 `pending_reminder`）。
-     - **處理回答又開選單時的確認行**（v6.3.0+）：同一則回覆既處理回答又要開原生選單時（例：一則訊息回答了幾筆，又有幾筆仍待決或新增了一筆），
+     - **處理回答又開選單時的確認行**（v6.3.0+）：同一則回覆既處理回答又要開原生選單時（例：一則訊息回答了幾筆，又新增了一筆；
+       或第 2 點退路那一則沒開選單、仍待決的幾筆。v6.4.0+：被關掉的選單裡沒答的題不在此列、不重開，見第 7 點），
        確認行照第 2 點寫進第一題的題目開頭（超過 4 筆或自由回答需要說明時照第 2 點的退路，這一則不開選單），每個回答各一段
        （〈回答格式與解析〉的確認行那一點）。理由：選單開了之後，塔台要等使用者作答才能再輸出，使用者按 Esc 則直接結束這個回合（第 7 點），
        放在選單之後的確認行就不會出現，使用者看不到塔台怎麼讀了剛才的回答。選單前的文字照樣可以寫，但不算確認。
-  7. **Esc**（v6.2.0+）：使用者在選單按 Esc＝使用者中斷，Claude Code 直接結束這個回合，塔台這一回合不會再輸出。
-     - 該筆已先寫入，照留（不算回答、不算放棄），工單的 `waiting_user` 也留著。
-     - **下一則回覆**照常重列，並在開頭提醒哪幾筆的選單被關掉、仍待決。這一點不受 `pending_reminder: on-change` 限制。
-     - Esc 過不改變之後的提問方式：下一筆仍開選單。要改用文字，請使用者下 `*config interactive-prompts off`；塔台不因前面被 Esc 就自己改用文字。
+  7. **Esc**（v6.2.0+；v6.4.0+ 寫明被關掉的選單不重開）：選單被 Esc 關掉＝使用者中斷，Claude Code 直接結束這個回合，塔台這一回合不會再輸出。
+     **不分 Esc 是使用者按的，還是契約 v2 的 BAT 為了送出待辦分頁的回答代按的**（下方〈競態〉），處理都相同：
+     - 這個選單裡的每一筆都已先寫入，照留（不算回答、不算放棄），工單的 `waiting_user` 也留著（同 6.3.0）。
+     - **下一則回覆**（BAT 送來的 `U-n：…` 文字，或使用者自己打的字）：照常處理回答、逐筆確認（〈回答格式與解析〉的確認行）；
+       同一個選單裡**還沒回答的題不重開選單**（v6.4.0+），**確認行之後緊接著**提醒（6.4.0 起寫明順序，與下一點開新選單時相同；
+       沒有確認行時放在回覆開頭），例「U-58 的選單已關閉，仍待決，可在待辦分頁或終端回答」；
+       結尾照常重列 `⏸ 待你決定`。這一點不受 `pending_reminder: on-change` 限制。
+     - 這一則回覆若又**新增**了待決（新的 `U-n`），新的那筆照常開選單（第 1 點，`menu_open` 只列新的題），選單**只放新的題**，
+       不把被關掉的題放回去。這時確認行照第 2 點寫進第一題的題目開頭（第 6 點），上一點的提醒接在確認行之後、本題之前
+       （提醒不算進第 2 點退路的 4 筆）。
+     - 被關掉的題之後在任何管道回答（待辦分頁、終端打字）都照常處理（第 6 點）。使用者要重新以選單回答時說一聲（例「重問 U-58」），
+       塔台才為那幾筆重開選單（照第 1 點，同樣寫 `menu_open`）。
+     - Esc 過不改變之後的提問方式：下一個**新的暫停**仍開選單（6.3.0 的「下一筆仍開選單」說的就是新的暫停，不是被關掉的那幾筆）。
+       要改用文字，請使用者下 `*config interactive-prompts off`；塔台不因前面被 Esc 就自己改用文字。
+     - 理由：使用者從待辦分頁回答，代表他選擇在那裡作答；每答一題就重開選單，BAT 又得 Esc 一次，形成循環。6.3.0 的這一點也沒有要求重開舊題，
+       6.4.0 只是寫明。
   8. **多選題**（v6.3.0+，`multi: true`，上方 `awaiting_user[]` 的 `multi` 列）：`AskUserQuestion` 用 `multiSelect: true`，**不加**放棄項
      （放棄不是可以和其他項目一起勾的選項），題目結尾寫「可複選；要放棄請在「其他」輸入 放棄」。推薦項照 `options` 列的排法（每個都標「（推薦）」）。
      送回來的結果（v6.3.0+ 回傳形式：Claude Code 把勾選的標籤與「其他」的文字以 `, ` 連接回傳；塔台以標籤開頭的代號對選項，
@@ -385,8 +455,13 @@ todo:
   - 非 BAT 終端（`略過（非 BAT）`）照 `on` 用原生選單：沒有 Worker 會自動寫進塔台分頁。
 - **文字範本的多選提示**（v6.3.0+）：用文字範本顯示 `multi: true` 的那一筆時（Codex 塔台、`options` 超過 4 項、BAT 契約不是 v2，
   以及 `interactive-prompts: off`），暫停訊息的選項清單下方加一行「可複選：回 `U-n：A、C`」（`U-n` 換成該筆的編號）。
-- **競態**：選單開著時 BAT 待辦分頁送出的回答由 BAT 保留，選單關閉後才送到；若使用者已在選單或終端回答同一筆，那一行照上方「編號不存在或已結」處理
-  （回一行說明並列出目前未決的編號），不重複套用。
+- **競態**（v6.4.0+ 改寫；BAT 端怎麼判斷以 BAT 文件為準）：
+  - 契約 v2 的 BAT 在塔台開著原生選單時，可能**代按 Esc 關掉選單，再把待辦分頁的回答當成一行 `U-n：…` 文字送來**
+    （頂層 `inbox_features` 有 `menu` 時，只在回答的 `U-n` 在 `menu_open.ids` 裡）。塔台把這個 Esc 當成第 7 點的 Esc：
+    被關掉的選單裡每一筆照留，下一則（就是 BAT 送來的文字）照常處理，沒答的題不重開。
+  - BAT 沒有代按 Esc 時（例：回答的 `U-n` 不在 `menu_open.ids` 裡，或選單不含 `U-n`），回答由 BAT 保留，選單關閉後才送到。
+  - `permission`、`elicitation` 的對話框與 Worker 的通知照舊由 BAT 保留，BAT 不代按 Esc。
+  - 使用者已在選單或終端回答過同一筆時，晚到的那一行照上方「編號不存在或已結」處理（回一行說明並列出目前未決的編號），不重複套用。
 
 **`user_inbox: off`**（[tower-config.md](tower-config.md) § 可用選項）：不寫 `awaiting_user`、`user_actions`，退回 6.0.x 寫法（待決只在終端輸出、
 待使用者執行的項目照舊放 `todo`）。`bat_contract`、`ct_version`、`inbox_features`（v6.2.0+；終端回覆照樣可以放棄／略過）、`reminders`、`next_ids.user`／`action`、工單 `waiting_user` 照寫，
@@ -407,17 +482,20 @@ PowerShell `Get-Date -Format "yyyy-MM-ddTHH:mm:ssK"`。`reminders` 的 `due_at`�
 v6.2.0 起另檢查 `recommended`（是字串、對得到同一筆 `options` 的代號、`options` 是空陣列時不應有）與 `inbox_features`（字串陣列；不認得的值不報錯）。
 v6.3.0 起另檢查 `multi`（存在時必須是布林）、多個代號的 `recommended`（該筆必須 `multi: true`、每個代號都對得到），
 以及 `options` 少於 2 項的 `multi: true`（只提示，不算錯誤，和讀者忽略它的規則一致）。
+v6.4.0 起另檢查 `menu_open`：是物件；`ids` 1～4 筆、每筆符合 `^U-\d+$`、都在 `awaiting_user` 裡、不重複；`opened_at` 是帶冒號時區的日期時間。
+6.4.0 起另擋重複的鍵（任何 frontmatter 的同一層 mapping；下方 § YAML frontmatter 字串寫法與寫入後自檢 › 寫入後自檢）。
 
-完整範例：
+完整範例（v6.4.0+；這份是塔台正要開原生選單、問 U-3 和 U-4 時寫的，所以有 `menu_open`；下一次寫入就不再有這個鍵。U-5 是自由回答，不開選單，寫進第一題題目（〈暫停的提問方式〉第 5 點），所以不在 `ids` 裡。
+6.4.0 起 `menu_open` 寫在 `awaiting_user` 正後方，加在 `awaiting_user` 結尾的新項目和 `menu_open` 是相鄰的一段（〈誰寫、誰清〉的 `menu_open` 第 1 點））：
 
 ```yaml
 ---
 schema_kind: tower-state
 summary_version: 1
 bat_contract: 2
-ct_version: "6.3.0"
-inbox_features: ["recommended", "dismiss", "multi"]
-updated_at: "2026-11-25T03:10:23+0800"
+ct_version: "6.4.0"
+inbox_features: ["recommended", "dismiss", "multi", "menu"]
+updated_at: "2026-11-25T03:12:41+0800"
 next_ids:
   workorder: "T0130"
   decision: "D045"
@@ -452,6 +530,9 @@ awaiting_user:
     summary: "下一階段先做哪個模組（自由回答，沒有推薦項）"
     options: []
     created_at: "2026-11-25T03:12:40+08:00"
+menu_open:
+  ids: ["U-3", "U-4"]
+  opened_at: "2026-11-25T03:12:41+08:00"
 user_actions:
   - id: "A-2"
     title: "安裝 0.8.0-pre.2 後做一次完整重裝驗收"
@@ -704,6 +785,9 @@ todo:
    `<control-tower>` 是已安裝的 `control-tower` skill 目錄（例：Claude Code `~/.claude/skills/control-tower`、Codex `~/.codex/skills/control-tower`；
    plugin 安裝則在 plugin 的 `skills/control-tower`）。exit `0` = 全部通過、`1` = 有問題、`2` = 用法錯誤或路徑不存在。
    檢查項目與輸出格式寫在腳本開頭的說明；環境裡有 PyYAML 時，腳本會再做一次完整解析。
+   6.4.0 起另擋**重複的鍵**（同一層 mapping 出現兩次同一個鍵，例兩個頂層 `user_actions:`，或 `next_ids` 裡兩個 `user`）：
+   重複鍵讓 BAT（js-yaml）整份讀不到，PyYAML 卻不報錯、靜默取後者，所以腳本自己偵測（`duplicate-key`），有沒有 PyYAML 都會擋。
+   要加項目時改原本那個鍵底下的清單，不要另起一個同名的鍵。
 2. **腳本不在**（例：Worker 端只裝了 `ct-exec`、找不到 `control-tower`）→ 用環境裡現成的 YAML 解析器（PyYAML、node `yaml`／`js-yaml`），
    只印問題描述與行號。PyYAML 的例子：先用 Write 工具把下面的程式寫到 scratchpad 檔（例 `check_fm.py`；v6.0.2+ 不用 heredoc，
    規則見 `ct-exec/SKILL.md` § Long Content Via Files），再執行 `python -X utf8 -B <scratchpad>/check_fm.py <檔>`
@@ -721,7 +805,7 @@ todo:
        print('FAIL', sys.argv[1], 'line', (mark.line + 2) if mark else '?', getattr(e, 'problem', ''))
    ```
 
-   不要直接印例外全文：PyYAML 的例外訊息會附上原文片段。
+   不要直接印例外全文：PyYAML 的例外訊息會附上原文片段。這個片段不會抓到重複的鍵（上一點），用它時另外目視確認同一層沒有同名的鍵。
 3. **兩者都沒有** → 至少找出 frontmatter 裡「雙引號內有反斜線」的行，只印檔名與行號，再逐行人工確認（改成單引號或正斜線最省事）：
 
    ```bash

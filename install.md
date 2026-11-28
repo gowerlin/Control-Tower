@@ -78,7 +78,7 @@ BMad Guide 裝在同一層：Claude Code 是 `~/.claude/skills/bmad-guide/`，Co
 
 ## 確認現行版號 {#check-version}
 
-版號寫在每個 `SKILL.md` 正文的第一個註解（例如 `<!-- control-tower-version: 6.3.0 -->`），frontmatter 不放版號。下面是 zip 手動安裝的查法；用 plugin 安裝的看 `plugin list --json`，見[確認 plugin 版號](#plugin-version)。
+版號寫在每個 `SKILL.md` 正文的第一個註解（例如 `<!-- control-tower-version: 6.4.0 -->`），frontmatter 不放版號。下面是 zip 手動安裝的查法；用 plugin 安裝的看 `plugin list --json`，見[確認 plugin 版號](#plugin-version)。
 
 ::: code-group
 
@@ -93,6 +93,21 @@ grep -h -o "[a-z-]*-version: [0-9.]*" ~/.codex/skills/{control-tower,ct-*}/SKILL
 :::
 
 8 行的版號應該一致。v5.0.2 以前的舊版把版號放在 frontmatter 的 `version:`。
+
+## 從 6.3.0 升級到 6.4.0 {#upgrade-640}
+
+6.4.0 是 v6 的第四個 MINOR，再補強[待辦分頁](/deep/features/bat-todo)：塔台開著原生選單時，你也能在待辦分頁作答，BAT 先關掉選單、再把回答送給塔台；被關掉的選單不重開，沒答的題在待辦分頁或終端接著答；同一則回覆有選單題也有文字題時，文字題寫進選單第一題的題目。另外，寫入後自檢會擋下重複的鍵。6.3.0 成為上一個穩定版，發行檔仍在 Release `ct-v6.3.0`（見[更版紀錄 v6.3.0](/versions/releases#v6-3-0)）。
+
+- **只換 skill 檔，不需要遷移**。zip 手動安裝照下面的[四步](#upgrade)（`OLD=6.3.0`、`VER=6.4.0`），Claude Code 與 Codex 各做一次；有裝 CT Guide 的，一併換成 Guide 6.4.0。
+- **8 個 skill 一起換**（8 個 `SKILL.md` 的版號註解都變了）。規則有改的是 `control-tower`（`memory-protocol.md` § 契約 v2 欄位與 § YAML frontmatter 字串寫法與寫入後自檢；`yolo-mode.md`、`interactive-prompts.md`、`work-order-system.md`、`SKILL.md` 各加引用；`check-frontmatter.py` 新檢查）與 `ct-help`（〈與 BAT 協作〉），其他 6 個只改版號。`ct-adapter-pstack` 只改版號，沒裝的不必裝。
+- **選單開著時在待辦分頁作答要 BAT `>= 0.8.1-pre.4`**。舊 BAT（例 `0.8.1-pre.3`）不理會 `menu_open`，待辦分頁照舊，選單開著時在終端的選單作答即可；不在 BAT 裡的終端照常回同一行文字。複選畫面仍要 `0.8.0-pre.8`、推薦標記與放棄控制項仍要 `0.8.0-pre.4`，契約 v2 最低仍是 `0.8.0-pre.3`（見[待辦分頁 › CT 6.4.0 與 BAT 0.8.1-pre.4](/deep/features/bat-todo#versions-640)）。
+- **狀態檔的能力旗標多一個值**：換版後塔台第一次寫 `_tower-state.md` 時，`inbox_features` 變成 `["recommended", "dismiss", "multi", "menu"]`，之後每次寫入都帶；既有的待決項目不會被改寫。`ct_version` 在下一次寫入時自動變成 `"6.4.0"`。開選單前塔台另寫的 `menu_open` 是給 BAT 的內部欄位，之後任何一次寫入都不寫，換版後不必清理。
+- **新 BAT 搭 6.3.x 塔台**：狀態檔沒有 `menu`，BAT 照自己的預設處理。被關掉的選單裡沒答的題，6.3.x 塔台可能重開成新選單，從待辦分頁逐題回答時每題會多一次代按 Esc（不會錯套回答）；升到 6.4.0 不重開。
+- **自檢會擋重複的鍵**：換版後 `check-frontmatter.py` 可能對既有檔報 `duplicate-key`。那份檔 BAT 本來就整份讀不到（以前的自檢沒擋下），照訊息寫的兩處行號把兩段合成一個鍵（要加項目時改原本那個鍵，不要再寫一個同名的鍵），再跑一次自檢確認通過；工單、BUG／PLAN／EXP 等 frontmatter 也適用（見[字串寫法與寫入後自檢](/deep/principles/files-as-truth#yaml-strings)）。
+- **沒有新設定鍵**：`interactive-prompts`、`user_inbox`、`pending_reminder` 照舊；選單開著時作答、被關掉的選單不重開、文字問的題寫進選單題目，都跟著 `interactive-prompts` 走（見[待辦分頁 › 選單開著時在待辦分頁作答](/deep/features/bat-todo#menu-handoff)）。
+- **新規則從換版後新開的塔台 session 起生效**：已經開著的塔台與 Worker session 仍照 6.3.0 的規則。
+- **用 plugin 的**：marketplace 更新後，把 `ct@control-tower`（有裝的話連同 `ct-guide@control-tower`）從 6.3.0 升到 6.4.0，指令見 [Claude Code](#plugin-claude)、[Codex](#plugin-codex)；開新 session 後用 `plugin list --json` 確認 `version` 是 `6.4.0`（見[確認 plugin 版號](#plugin-version)）。
+- **要退回 6.3.0**：zip 手動安裝照[回退](#rollback)還原備份；6.3.0 的發行檔仍在 Release `ct-v6.3.0`。`_tower-state.md` 多出的 `menu` 與 `menu_open` 不影響 6.3.0（讀者會忽略不認得的值），6.3.0 的塔台下一次寫入就不再寫 `menu_open`。
 
 ## 從 6.2.0 升級到 6.3.0 {#upgrade-630}
 
@@ -109,6 +124,8 @@ grep -h -o "[a-z-]*-version: [0-9.]*" ~/.codex/skills/{control-tower,ct-*}/SKILL
 - **用 plugin 的**：marketplace 更新後，把 `ct@control-tower`（有裝的話連同 `ct-guide@control-tower`）從 6.2.0 升到 6.3.0，指令見 [Claude Code](#plugin-claude)、[Codex](#plugin-codex)；開新 session 後用 `plugin list --json` 確認 `version` 是 `6.3.0`（見[確認 plugin 版號](#plugin-version)）。
 - **要退回 6.2.0**：zip 手動安裝照[回退](#rollback)還原備份；6.2.0 的發行檔仍在 Release `ct-v6.2.0`。`_tower-state.md` 多出的 `multi` 不影響 6.2.0（讀者會忽略不認得的值），但 6.2.0 的塔台會照文字處理放棄附的文字。
 
+從 6.2.0 直接升到 6.4.0 也照這一節（`VER=6.4.0`），再加上[從 6.3.0 升級到 6.4.0](#upgrade-640) 的幾點。
+
 ## 從 6.1.1 升級到 6.2.0 {#upgrade-620}
 
 6.2.0 是 v6 的第二個 MINOR，補強[待辦分頁](/deep/features/bat-todo)：塔台有推薦時，那個選項排第一、標「（推薦）」；所有選項都不適用時可以放棄一題（`U-n：放棄`）、略過一項待執行（`A-n：略過`），也可以一次列好幾個編號；塔台暫停等你決定時改開 Claude Code 的原生選單。另外回應 GitHub issue #1，新增設定 `pending_reminder`，讓回覆結尾的待決提醒可以只在清單有變化時印。6.1.1 成為上一個穩定版，發行檔仍在 Release `ct-v6.1.1`（見[更版紀錄 v6.1.1](/versions/releases#v6-1-1)）。
@@ -124,7 +141,7 @@ grep -h -o "[a-z-]*-version: [0-9.]*" ~/.codex/skills/{control-tower,ct-*}/SKILL
 - **用 plugin 的**：marketplace 更新後，把 `ct@control-tower`（有裝的話連同 `ct-guide@control-tower`）從 6.1.1 升到 6.2.0，指令見 [Claude Code](#plugin-claude)、[Codex](#plugin-codex)；開新 session 後用 `plugin list --json` 確認 `version` 是 `6.2.0`（見[確認 plugin 版號](#plugin-version)）。
 - **要退回 6.1.1**：zip 手動安裝照[回退](#rollback)還原備份；6.1.1 的發行檔仍在 Release `ct-v6.1.1`。`_tower-state.md` 多出的 `inbox_features`、`recommended` 不影響 6.1.1。
 
-從 6.1.1 直接升到 6.3.0 也照這一節（`VER=6.3.0`），再加上[從 6.2.0 升級到 6.3.0](#upgrade-630) 的幾點。
+從 6.1.1 直接升到 6.4.0 也照這一節（`VER=6.4.0`），再加上[從 6.2.0 升級到 6.3.0](#upgrade-630) 與[從 6.3.0 升級到 6.4.0](#upgrade-640) 的幾點。
 
 ## 從 6.1.0 升級到 6.1.1 {#upgrade-611}
 
@@ -138,7 +155,7 @@ grep -h -o "[a-z-]*-version: [0-9.]*" ~/.codex/skills/{control-tower,ct-*}/SKILL
 - **用 plugin 的**：marketplace 更新後，把 `ct@control-tower`（有裝的話連同 `ct-guide@control-tower`）從 6.1.0 升到 6.1.1，指令見 [Claude Code](#plugin-claude)、[Codex](#plugin-codex)；開新 session 後用 `plugin list --json` 確認 `version` 是 `6.1.1`（見[確認 plugin 版號](#plugin-version)）。
 - **要退回 6.1.0**：zip 手動安裝照[回退](#rollback)還原備份；6.1.0 的發行檔仍在 Release `ct-v6.1.0`。
 
-從 6.1.0 直接升到 6.3.0 也照這一節（`VER=6.3.0`），再加上[從 6.1.1 升級到 6.2.0](#upgrade-620) 與[從 6.2.0 升級到 6.3.0](#upgrade-630) 的幾點。
+從 6.1.0 直接升到 6.4.0 也照這一節（`VER=6.4.0`），再加上[從 6.1.1 升級到 6.2.0](#upgrade-620)、[從 6.2.0 升級到 6.3.0](#upgrade-630) 與[從 6.3.0 升級到 6.4.0](#upgrade-640) 的幾點。
 
 ## 從 6.0.2 升級到 6.1.0 {#upgrade-610}
 
@@ -155,7 +172,7 @@ grep -h -o "[a-z-]*-version: [0-9.]*" ~/.codex/skills/{control-tower,ct-*}/SKILL
 - **用 plugin 的**：marketplace 更新後，把 `ct@control-tower`（有裝的話連同 `ct-guide@control-tower`）從 6.0.2 升到 6.1.0，指令見 [Claude Code](#plugin-claude)、[Codex](#plugin-codex)；開新 session 後用 `plugin list --json` 確認 `version` 是 `6.1.0`（見[確認 plugin 版號](#plugin-version)）。
 - **要退回 6.0.2**：zip 手動安裝照[回退](#rollback)還原備份；6.0.2 的發行檔仍在 Release `ct-v6.0.2`。`_tower-state.md` 多出的 v2 欄位不影響 6.0.2。
 
-從 6.0.2 直接升到 6.3.0 也照這一節（`VER=6.3.0`），再加上[從 6.1.0 升級到 6.1.1](#upgrade-611)、[從 6.1.1 升級到 6.2.0](#upgrade-620) 與[從 6.2.0 升級到 6.3.0](#upgrade-630) 的幾點。
+從 6.0.2 直接升到 6.4.0 也照這一節（`VER=6.4.0`），再加上[從 6.1.0 升級到 6.1.1](#upgrade-611)、[從 6.1.1 升級到 6.2.0](#upgrade-620)、[從 6.2.0 升級到 6.3.0](#upgrade-630) 與[從 6.3.0 升級到 6.4.0](#upgrade-640) 的幾點。
 
 ## 從 6.0.1 升級到 6.0.2 {#upgrade-602}
 
@@ -170,7 +187,7 @@ grep -h -o "[a-z-]*-version: [0-9.]*" ~/.codex/skills/{control-tower,ct-*}/SKILL
 - **BAT 不必升級**：塔台面板讀取契約 v1 與 BAT helper 的參數都不變，最低版本仍是 `>= 0.7.0-pre.7`（見[相容版本對照](/versions/compatibility)）。
 - **要退回 6.0.1**：zip 手動安裝照[回退](#rollback)還原備份；6.0.1 的發行檔仍在 Release `ct-v6.0.1`。
 
-從 6.0.1 直接升到 6.3.0 也照這一節（`VER=6.3.0`），再加上[從 6.0.2 升級到 6.1.0](#upgrade-610)、[從 6.1.0 升級到 6.1.1](#upgrade-611)、[從 6.1.1 升級到 6.2.0](#upgrade-620) 與[從 6.2.0 升級到 6.3.0](#upgrade-630) 的幾點。
+從 6.0.1 直接升到 6.4.0 也照這一節（`VER=6.4.0`），再加上[從 6.0.2 升級到 6.1.0](#upgrade-610)、[從 6.1.0 升級到 6.1.1](#upgrade-611)、[從 6.1.1 升級到 6.2.0](#upgrade-620)、[從 6.2.0 升級到 6.3.0](#upgrade-630) 與[從 6.3.0 升級到 6.4.0](#upgrade-640) 的幾點。
 
 ## 從 6.0.0 升級到 6.0.1 {#upgrade-601}
 
@@ -183,7 +200,7 @@ grep -h -o "[a-z-]*-version: [0-9.]*" ~/.codex/skills/{control-tower,ct-*}/SKILL
 - **BAT 不必升級**：塔台面板讀取契約 v1 不變，最低版本仍是 `>= 0.7.0-pre.7`（見[相容版本對照](/versions/compatibility)）。
 - **要退回 6.0.0**：zip 手動安裝照[回退](#rollback)還原備份；6.0.0 的發行檔仍在 Release `ct-v6.0.0`。
 
-從 6.0.0 直接升到 6.3.0 也照這一節（`VER=6.3.0`），再加上[從 6.0.1 升級到 6.0.2](#upgrade-602)、[從 6.0.2 升級到 6.1.0](#upgrade-610)、[從 6.1.0 升級到 6.1.1](#upgrade-611)、[從 6.1.1 升級到 6.2.0](#upgrade-620) 與[從 6.2.0 升級到 6.3.0](#upgrade-630) 的幾點。
+從 6.0.0 直接升到 6.4.0 也照這一節（`VER=6.4.0`），再加上[從 6.0.1 升級到 6.0.2](#upgrade-602)、[從 6.0.2 升級到 6.1.0](#upgrade-610)、[從 6.1.0 升級到 6.1.1](#upgrade-611)、[從 6.1.1 升級到 6.2.0](#upgrade-620)、[從 6.2.0 升級到 6.3.0](#upgrade-630) 與[從 6.3.0 升級到 6.4.0](#upgrade-640) 的幾點。
 
 ## 從 5.15.0 升級到 6.0.0 {#upgrade-600}
 
@@ -198,7 +215,7 @@ grep -h -o "[a-z-]*-version: [0-9.]*" ~/.codex/skills/{control-tower,ct-*}/SKILL
 - **BAT 不必升級**：最低版本仍是 `>= 0.7.0-pre.7`，派工命令不變（見[相容版本對照](/versions/compatibility)）。
 - **要退回 5.15.0**：zip 手動安裝照[回退](#rollback)還原備份；5.15.0 的發行檔仍在 Release `ct-v5.15.0`。
 
-從 5.15.0 直接升到 6.3.0 也照這一節，再加上[從 6.0.0 升級到 6.0.1](#upgrade-601)、[從 6.0.1 升級到 6.0.2](#upgrade-602)、[從 6.0.2 升級到 6.1.0](#upgrade-610)、[從 6.1.0 升級到 6.1.1](#upgrade-611)、[從 6.1.1 升級到 6.2.0](#upgrade-620) 與[從 6.2.0 升級到 6.3.0](#upgrade-630) 的幾點。
+從 5.15.0 直接升到 6.4.0 也照這一節，再加上[從 6.0.0 升級到 6.0.1](#upgrade-601)、[從 6.0.1 升級到 6.0.2](#upgrade-602)、[從 6.0.2 升級到 6.1.0](#upgrade-610)、[從 6.1.0 升級到 6.1.1](#upgrade-611)、[從 6.1.1 升級到 6.2.0](#upgrade-620)、[從 6.2.0 升級到 6.3.0](#upgrade-630) 與[從 6.3.0 升級到 6.4.0](#upgrade-640) 的幾點。
 
 試用過預發行版（Beta、RC）的：從 6.0.0-rc.1 升級只換 skill 檔案，規則與設定都沒變。各預發行版的改動保留在「實驗功能」的[方法論轉接](/preview/methodology-adapters)專章。
 
@@ -315,14 +332,14 @@ done
 
 ## 用 plugin marketplace 安裝（v5.14.0 起） {#plugin}
 
-v5.14.0 起，CT 也可以用 Claude Code 與 Codex 的 plugin marketplace 安裝，之後的更新交給 Agent CLI。zip 手動安裝照舊支援，同一個 Agent 上兩種擇一。v6 系列從正式版 6.0.0 起上架；從 5.15.0 升到 6.0.0 的注意事項見[從 5.15.0 升級到 6.0.0](#upgrade-600)，從 6.0.0 升到 6.0.1 見[從 6.0.0 升級到 6.0.1](#upgrade-601)，從 6.0.1 升到 6.0.2 見[從 6.0.1 升級到 6.0.2](#upgrade-602)，從 6.0.2 升到 6.1.0 見[從 6.0.2 升級到 6.1.0](#upgrade-610)，從 6.1.0 升到 6.1.1 見[從 6.1.0 升級到 6.1.1](#upgrade-611)，從 6.1.1 升到 6.2.0 見[從 6.1.1 升級到 6.2.0](#upgrade-620)，從 6.2.0 升到 6.3.0 見[從 6.2.0 升級到 6.3.0](#upgrade-630)。
+v5.14.0 起，CT 也可以用 Claude Code 與 Codex 的 plugin marketplace 安裝，之後的更新交給 Agent CLI。zip 手動安裝照舊支援，同一個 Agent 上兩種擇一。v6 系列從正式版 6.0.0 起上架；從 5.15.0 升到 6.0.0 的注意事項見[從 5.15.0 升級到 6.0.0](#upgrade-600)，從 6.0.0 升到 6.0.1 見[從 6.0.0 升級到 6.0.1](#upgrade-601)，從 6.0.1 升到 6.0.2 見[從 6.0.1 升級到 6.0.2](#upgrade-602)，從 6.0.2 升到 6.1.0 見[從 6.0.2 升級到 6.1.0](#upgrade-610)，從 6.1.0 升到 6.1.1 見[從 6.1.0 升級到 6.1.1](#upgrade-611)，從 6.1.1 升到 6.2.0 見[從 6.1.1 升級到 6.2.0](#upgrade-620)，從 6.2.0 升到 6.3.0 見[從 6.2.0 升級到 6.3.0](#upgrade-630)，從 6.3.0 升到 6.4.0 見[從 6.3.0 升級到 6.4.0](#upgrade-640)。
 
 | 項目 | 內容 |
 |---|---|
 | marketplace | `control-tower`，放在本站的公開 repo <code>{{ mkt }}</code> |
 | plugin | `ct`：CT 的 8 個 skill，一定一起裝；`ct-guide`：CT Guide，可不裝；`bmad-guide`：[BMad Guide Skill](/guide/bmad-guide)，可不裝 |
 | 版號 | `ct` 的版號 = CT 版號，`ct-guide` 的版號 = CT Guide 版號；`bmad-guide` 的版號跟 BMad-Method 走（例如 6.12.4），不跟 CT |
-| 預發行版 | 不上架：v6 的 beta、rc 照舊用 zip 手動安裝；v6 從正式版 6.0.0 起上架（目前 `ct`、`ct-guide` 6.3.0） |
+| 預發行版 | 不上架：v6 的 beta、rc 照舊用 zip 手動安裝；v6 從正式版 6.0.0 起上架（目前 `ct`、`ct-guide` 6.4.0） |
 
 ::: warning 從 zip 手動安裝改用 plugin：先移除手動安裝
 同名的手動安裝還留在 `skills/` 裡時，`/ct-exec`、`$ct-exec` 都會用手動那份，plugin 版不生效，而且看不出差別。所以先照[升級：四步](#upgrade)的 Step 1 把 8 個 skill（有裝 CT Guide、BMad Guide 的話加上 `control-tower-guide`、`bmad-guide`）備份到 `skill-backups/`、逐檔確認備份完整，再把它們從 `~/.claude/skills/`（Codex：`~/.codex/skills/`）**移**到備份目錄，不要直接刪除。之後才裝 plugin。
@@ -489,7 +506,7 @@ CT 不預先判斷你的 BAT 是哪一版：照常呼叫，失敗時依結束碼
 
 ## 延伸閱讀 {#further}
 
-- CT 安裝與使用指南 § 4. 安裝（4.1 安裝／升級（現行流程，含〈用 plugin marketplace 安裝／升級〉）、4.2 Agent CLI 選擇、4.3 Skill 架構（v6.3.0））、§ 2.56、§ 2.57、§ 2.65、§ 2.66、§ 2.67、§ 2.69、§ 2.70、§ 2.71、§ 2.72
+- CT 安裝與使用指南 § 4. 安裝（4.1 安裝／升級（現行流程，含〈用 plugin marketplace 安裝／升級〉）、4.2 Agent CLI 選擇、4.3 Skill 架構（v6.4.0））、§ 2.56、§ 2.57、§ 2.65、§ 2.66、§ 2.67、§ 2.69、§ 2.70、§ 2.71、§ 2.72、§ 2.73
 - `control-tower/references/version-governance.md` § 安裝／升級流程（含 plugin 安裝／升級）、§ 版號事實來源
 - `control-tower/references/data-layer-architecture.md` § 寫入規則（Q1～Q4：Layer 1 路徑（含 plugin 安裝路徑）、備份落點、唯一例外）
 - `control-tower/references/auto-session.md` § BAT 內部終端路由（Better Agent Terminal），派工指令的權威；§ 依安裝方式的 skill 呼叫字串

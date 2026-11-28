@@ -336,6 +336,7 @@ v5.13.0／v6.0.0-beta.3 起兩個索引的格式有唯一權威（CT `bug-plan-s
 - 含反斜線的值用**單引號**（單引號不處理跳脫，只有 `'` 要寫成 `''`），或把路徑改成正斜線；雙引號裡不寫反斜線
 - 其他自由文字一律加引號：含 `: `、` #` 或以 YAML 指示字元（`` ` ``、`*`、`&`、`[` 等）開頭的值，不加引號會被當成語法
 - 每次寫完 frontmatter、commit 前自檢：先用 CT 附的 `control-tower/scripts/check-frontmatter.py`（只用 Python 標準函式庫——不是每台機器都有 PyYAML），沒有就用現成的 YAML 解析器，再沒有至少 grep 雙引號裡的反斜線；失敗當場修，不得 commit。檢查輸出只有檔名、行號、問題類型，不印原文
+- 6.4.0 起自檢另擋**重複的鍵**：同一層出現兩次同一個鍵（例：兩個頂層 `user_actions:`、`next_ids` 裡兩個 `user`）列為 `duplicate-key`，寫出鍵名與兩處行號；有沒有 PyYAML 都擋（PyYAML 不報錯、靜默取後面那個，BAT 的解析器卻整份讀不到）。要加項目就改原本那個鍵，不要再寫一個同名的鍵
 - 已經能解析的舊檔不追改：規則是為了不再寫壞，不是為了重寫歷史
 
 為什麼由寫的一方自檢、而不是要讀者放寬：讀者不只一個，CT 寫的 frontmatter 也不只摘要（工單、BUG／PLAN／EXP、`_handover`／`_reply` 都有），在寫入點擋下最便宜；契約 v1 本身不動，單引號字串在 YAML 裡一樣是字串。規則以 CT `memory-protocol.md` § YAML frontmatter 字串寫法與寫入後自檢 為準。

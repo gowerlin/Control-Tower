@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """check-frontmatter.py — CT 寫的 YAML frontmatter 寫入後自檢（T0549；v6.0.1 起隨 control-tower 發行；v6.1.0 起另檢查契約 v2 欄位，T0557；
-v6.2.0 起另檢查 awaiting_user[].recommended 與 inbox_features，T0566；v6.3.0 起另檢查 awaiting_user[].multi 與多個代號的 recommended，T0573）。
+v6.2.0 起另檢查 awaiting_user[].recommended 與 inbox_features，T0566；v6.3.0 起另檢查 awaiting_user[].multi 與多個代號的 recommended，T0573；
+v6.4.0 起另檢查 menu_open，T0582；6.4.0 起另檢查重複鍵，T0585）。
 
 規則的權威是 control-tower/references/memory-protocol.md § YAML frontmatter 字串寫法與寫入後自檢。
 本腳本只做其中「可機器檢查」的部分，規則有變以權威檔為準，再改這裡。
@@ -31,6 +32,9 @@ v6.2.0 起另檢查 awaiting_user[].recommended 與 inbox_features，T0566；v6.
   colon-in-plain        沒加引號的值裡有 ": "（或以 : 結尾）
   tab-indent            縮排用了 tab
   not-utf8              檔案不是 UTF-8
+  duplicate-key         （6.4.0 起）同一層 mapping 出現兩次同一個鍵（任何 frontmatter；頂層、巢狀 map、清單項目、{ } 單行都算），
+                        訊息寫出鍵名與兩處行號。PyYAML 對重複鍵不報錯、靜默取後者，BAT 的 js-yaml 則整份讀不到；
+                        所以本腳本自己偵測，有沒有 PyYAML 都報（有 PyYAML 時另以自訂 loader 補抓）
   yaml-error            （有 PyYAML 時）完整解析失敗；只印 PyYAML 的問題描述，不印原文
   not-mapping           （有 PyYAML 時）frontmatter 頂層不是 mapping
 
@@ -48,11 +52,15 @@ v6.2.0 起另檢查 awaiting_user[].recommended 與 inbox_features，T0566；v6.
                         （v6.3.0 起）recommended 有多個代號（以「、」連接）但該筆不是 multi: true，或其中任何一個代號對不到
   v2-features           （v6.2.0 起）inbox_features 不是字串清單（例：不是清單、項目是數字或巢狀清單）；不認得的值不報錯
   v2-multi              （v6.3.0 起）awaiting_user 的 multi 不是布林（只收不加引號的 true／false；加了引號、yes／no 都算錯）
+  v2-menu-open          （v6.4.0 起）menu_open 不是物件；ids 不是 1～4 筆的清單、有一筆不是 "U-n"、重複或不在 awaiting_user 裡；
+                        opened_at 不是帶冒號時區的日期時間（例 "2026-11-28T12:23:00+08:00"）。區塊與 { } 單行寫法都檢查
   waiting-user          工單 frontmatter 的 waiting_user 不是 "U-n"
   v2-count（警告）      awaiting_user 超過 20 筆、user_actions 超過 20 筆或 reminders 超過 10 筆；只警告，不影響 exit code
   v2-multi-ignored（警告）（v6.3.0 起）options 少於 2 項（含空清單、沒有 options）卻寫了 multi: true；讀者會忽略它，
                         所以只警告，不影響 exit code
-  v2-skipped（警告）    本腳本的小型解析器看不懂這份 frontmatter，契約 v2 欄位沒有檢查（語法檢查照常）
+  v2-menu-open-ignored（警告）（v6.4.0 起）有 menu_open 但 inbox_features 沒有 "menu"；讀者不理會 menu_open，
+                        所以只警告，不影響 exit code
+  v2-skipped（警告）    本腳本的小型解析器看不懂這份 frontmatter，契約 v2 欄位（或 6.4.0 起的重複鍵）沒有檢查（語法檢查照常）
 
 輸出：只印檔名、行號、欄號與問題類型，不印檔案原文。問題印成「- FAIL …」，警告印成「- WARN …」（格式相同）。
 exit 0 = 全部通過（可以有警告）；1 = 有問題；2 = 用法錯誤或路徑不存在。
@@ -396,6 +404,8 @@ V2_NON_STR_PLAIN_RE = re.compile(r'^(?:[-+]?(?:[0-9][0-9_]*(?:\.[0-9_]*)?|\.[0-9
 # v6.3.0+：awaiting_user[].multi 只接受 YAML 1.2 core 的布林（yes／no／on／off 在 YAML 1.2 是字串，不收）
 V2_BOOL_RE = re.compile(r'^(?:true|True|TRUE|false|False|FALSE)$')
 IDEO_COMMA = chr(0x3001)  # 「、」；v6.3.0+ 多個推薦代號的分隔
+MENU_IDS_MAX = 4  # v6.4.0+：menu_open.ids 1～4 筆（原生選單一次最多 4 題）
+MENU_TZ_RE = re.compile(r'[+-][0-9]{2}:[0-9]{2}$')  # v6.4.0+：menu_open.opened_at 的時區要帶冒號（+08:00）
 V2_DATE_RE = re.compile(r'^([0-9]{4})-([0-9]{2})-([0-9]{2})'
                         r'(?:[Tt ]([0-9]{2}):([0-9]{2})(?::([0-9]{2})(?:[.,][0-9]+)?)?'
                         r'(?:[Zz]|[+-]([0-9]{2})(?::?([0-9]{2}))?)?)?$')
@@ -405,14 +415,15 @@ KEY_RE = re.compile(r'^([A-Za-z0-9_][A-Za-z0-9_. -]*?)[ \t]*:(?:[ \t]+|$)')
 class Node:
     """kind：'map'（value = {鍵: (節點, 鍵的行, 鍵的欄)}）／'seq'（value = [節點]）／'scalar'。
     scalar 的 style：'plain'／'double'／'single'／'block'／'other'（看不懂的寫法，value 為 None）。line／col 從 0 起算。"""
-    __slots__ = ('kind', 'value', 'style', 'line', 'col')
+    __slots__ = ('kind', 'value', 'style', 'line', 'col', 'raw')
 
-    def __init__(self, kind, value, line, col, style=None):
+    def __init__(self, kind, value, line, col, style=None, raw=None):
         self.kind = kind
         self.value = value
         self.style = style
         self.line = line
         self.col = col
+        self.raw = raw  # v6.4.0+：{ } 單行 mapping 的原文（只給 menu_open 的檢查用；其他鍵照舊當成看不懂的寫法）
 
 
 def _indent(s):
@@ -519,6 +530,31 @@ class MiniYaml:
     def __init__(self, lines):
         self.lines = list(lines)
         self.n = len(self.lines)
+        self.dups = []  # 6.4.0+：同一層 mapping 的重複鍵 (鍵, 第一次的行, 欄, 重複的行, 欄)；行欄從 0 起算
+
+    def walk_flow_maps(self, node, out):
+        """6.4.0+：找出 { } 單行 mapping 裡的重複鍵（只看單行寫法的頂層；行號都是那一行）。"""
+        if node is None:
+            return
+        if node.kind == 'map':
+            for sub, _, _ in node.value.values():
+                self.walk_flow_maps(sub, out)
+        elif node.kind == 'seq':
+            for sub in node.value:
+                self.walk_flow_maps(sub, out)
+        elif node.style == 'other' and node.raw is not None and node.raw.startswith('{'):
+            got = _split_flow(node.raw)
+            if got is None:
+                return
+            seen = set()
+            for item in got[0]:
+                m = KEY_RE.match(item + ' ')
+                if not m:
+                    continue
+                key = m.group(1).strip()
+                if key in seen:
+                    out.append((key, node.line, node.col, node.line, node.col))
+                seen.add(key)
 
     def next_meaningful(self, i):
         while i < self.n and not _meaningful(self.lines[i]):
@@ -569,6 +605,9 @@ class MiniYaml:
                     val, i = Node('scalar', None, i, vj, 'plain'), i + 1
             else:
                 val, i = self.inline(i, vj, ind)
+            if key in node.value:  # 6.4.0+：重複鍵（YAML 1.2 不允許；BAT 的 js-yaml 會整份讀不到）
+                _, pl, pc = node.value[key]
+                self.dups.append((key, pl, pc, key_line, ind))
             node.value[key] = (val, key_line, ind)
         return node, i
 
@@ -628,7 +667,7 @@ class MiniYaml:
             text, j = self._join_until(i, t, _split_flow)
             got = _split_flow(text)
             if got is None or t[0] == '{':
-                return Node('scalar', None, i, col, 'other'), j + 1
+                return Node('scalar', None, i, col, 'other', raw=text if got is not None else None), j + 1
             return Node('seq', [_scalar(x, i, col) for x in got[0]], i, col), j + 1
         if t[:1] in ('"', "'"):
             text, j = self._join_until(i, t, lambda s: _quote_end(s, 0))
@@ -818,6 +857,88 @@ def check_contract_v2(fm_lines, base, rep):
                             rep.add(*at(fields[key][1], fields[key][2]), 'v2-date',
                                     'reminders 的 %s 不是可解析的 ISO 日期或日期時間' % key)
 
+    if 'menu_open' in top:  # v6.4.0+
+        check_menu_open(top, at, rep)
+
+
+def _awaiting_ids(top):
+    """awaiting_user 裡各筆的 id（字串）；awaiting_user 不存在或不是清單時回傳空集合。"""
+    ids = set()
+    if 'awaiting_user' not in top:
+        return ids
+    node = top['awaiting_user'][0]
+    if node.kind != 'seq':
+        return ids
+    for item in node.value:
+        if item.kind == 'map' and 'id' in item.value:
+            v = _str_value(item.value['id'][0])
+            if v is not None:
+                ids.add(v)
+    return ids
+
+
+def _features(top):
+    """inbox_features 的字串值；不存在或不是清單時回傳空集合（讀者規則：當作空陣列）。"""
+    if 'inbox_features' not in top:
+        return set()
+    node = top['inbox_features'][0]
+    if node.kind != 'seq':
+        return set()
+    return {_str_value(x) for x in node.value if _is_yaml_string(x)}
+
+
+def check_menu_open(top, at, rep):
+    """v6.4.0+：menu_open 是物件；ids 1～4 筆、每筆 ^U-\\d+$、都在 awaiting_user 裡、不重複；opened_at 是帶冒號時區的日期時間。
+    格式錯 → v2-menu-open（FAIL，寫入端的錯，同 v2-recommended）；inbox_features 沒有 menu → v2-menu-open-ignored（只警告，讀者不理會它）。"""
+    node, kl, kc = top['menu_open']
+    pos = at(kl, kc)
+    if node.kind == 'scalar' and node.style == 'other' and node.raw is not None and node.raw.startswith('{'):
+        got = _split_flow(node.raw)  # { ids: [...], opened_at: "..." } 單行寫法：拆成「鍵: 值」逐行再讀
+        node = MiniYaml(got[0]).parse_node(0, 0)[0] if got is not None and got[0] else None
+        flow = True
+    else:
+        flow = False
+    if node is None or node.kind != 'map':
+        rep.add(*pos, 'v2-menu-open', 'menu_open 要是物件（ids、opened_at 兩個鍵）')
+        return
+
+    def where(entry):
+        return pos if flow else at(entry[1], entry[2])
+
+    fields = node.value
+    if 'ids' not in fields:
+        rep.add(*pos, 'v2-menu-open', 'menu_open 缺少 ids')
+    else:
+        sub = fields['ids'][0]
+        if sub.kind != 'seq' or not 1 <= len(sub.value) <= MENU_IDS_MAX:
+            rep.add(*where(fields['ids']), 'v2-menu-open', 'menu_open.ids 要是 1～%d 筆的清單' % MENU_IDS_MAX)
+        else:
+            known = _awaiting_ids(top)
+            seen = set()
+            for item in sub.value:
+                v = _str_value(item)
+                ipos = pos if flow else at(item.line, item.col)
+                if v is None or not _is_yaml_string(item) or not V2_ID_RE['awaiting_user'][0].match(v):
+                    rep.add(*ipos, 'v2-menu-open', 'menu_open.ids 的每一筆要寫成 "U-<數字>"')
+                    continue
+                if v in seen:
+                    rep.add(*ipos, 'v2-menu-open', 'menu_open.ids 有重複的編號')
+                elif v not in known:
+                    rep.add(*ipos, 'v2-menu-open', 'menu_open.ids 的編號要同時在 awaiting_user 裡')
+                seen.add(v)
+    if 'opened_at' not in fields:
+        rep.add(*pos, 'v2-menu-open', 'menu_open 缺少 opened_at')
+    else:
+        sub = fields['opened_at'][0]
+        v = _str_value(sub)
+        m = V2_DATE_RE.match(v) if v is not None and _is_yaml_string(sub) else None
+        if not m or m.group(4) is None or not MENU_TZ_RE.search(v) or not _valid_date(v):
+            rep.add(*where(fields['opened_at']), 'v2-menu-open',
+                    'menu_open.opened_at 要是帶冒號時區的日期時間（例 "2026-11-28T12:23:00+08:00"）')
+    if 'menu' not in _features(top):
+        rep.warn(*pos, 'v2-menu-open-ignored',
+                 'inbox_features 沒有 "menu"，讀者不理會 menu_open（只提示；CT 6.4.0 起 inbox_features 要含 "menu"）')
+
 
 # ---------------------------------------------------------------- 檔案層
 
@@ -841,13 +962,54 @@ def split_frontmatter(text, rep, explicit):
     return None
 
 
+DUP_MSG = '重複的鍵 %s：第 %d 行已有，第 %d 行又寫一次（同一層 mapping 只能出現一次；BAT 的 YAML 解析會整份讀不到）'
+
+
+def check_duplicate_keys(fm_lines, base, rep):
+    """6.4.0+：任何 frontmatter 的同一層 mapping（頂層、巢狀、清單項目、{ } 單行）出現重複鍵 → duplicate-key（FAIL）。
+    用本腳本的小型解析器，有沒有 PyYAML 都一樣（PyYAML 對重複鍵不報錯、靜默取後者）。看不懂時只警告 v2-skipped。"""
+    try:
+        mini = MiniYaml(fm_lines)
+        tree, _ = mini.parse_node(0, 0)
+        found = list(mini.dups)
+        mini.walk_flow_maps(tree, found)
+    except Exception as e:  # 小型解析器看不懂時不擋檢查，只記一行警告
+        rep.warn(0, 0, 'v2-skipped', '重複鍵檢查略過（' + type(e).__name__ + '）')
+        return
+    for key, pl, pc, dl, dc in sorted(found, key=lambda x: (x[3], x[4])):
+        rep.add(base + dl, dc + 1, 'duplicate-key', DUP_MSG % (key, base + pl, base + dl))
+
+
+def _dup_loader(yaml, found):
+    """6.4.0+：PyYAML 的 SafeLoader 加重複鍵偵測（補抓小型解析器看不懂的寫法）。"""
+    class DupSafeLoader(yaml.SafeLoader):
+        def construct_mapping(self, node, deep=False):
+            if isinstance(node, yaml.MappingNode):
+                seen = {}
+                for knode, _ in node.value:
+                    if knode.tag == 'tag:yaml.org,2002:merge':
+                        continue
+                    try:
+                        k = self.construct_object(knode, deep=True)
+                        hash(k)
+                    except Exception:
+                        continue
+                    if k in seen:
+                        found.append((str(k), seen[k].line, knode.start_mark.line, knode.start_mark.column))
+                    else:
+                        seen[k] = knode.start_mark
+            return super().construct_mapping(node, deep)
+    return DupSafeLoader
+
+
 def yaml_check(fm_lines, line_base, rep):
     try:
         import yaml  # noqa: F401（選用）
     except ImportError:
         return False
+    found = []
     try:
-        doc = yaml.safe_load('\n'.join(fm_lines))
+        doc = yaml.load('\n'.join(fm_lines), Loader=_dup_loader(yaml, found))
     except yaml.YAMLError as e:
         mark = getattr(e, 'problem_mark', None)
         problem = getattr(e, 'problem', None) or type(e).__name__
@@ -856,6 +1018,8 @@ def yaml_check(fm_lines, line_base, rep):
         else:
             rep.add(0, 0, 'yaml-error', 'PyYAML 解析失敗：' + str(problem))
         return True
+    for key, pl, dl, dc in found:
+        rep.add(line_base + dl, dc + 1, 'duplicate-key', DUP_MSG % (key, line_base + pl, line_base + dl))
     if doc is not None and not isinstance(doc, dict):
         rep.add(line_base, 1, 'not-mapping')
     return True
@@ -880,6 +1044,8 @@ def check_file(path, explicit, use_yaml):
         return rep, has_fm
     fm_lines, base = got
     Scanner(fm_lines, base, rep).run()
+    if not rep.items:
+        check_duplicate_keys(fm_lines, base, rep)  # 6.4.0+：兩種模式都做，不靠 PyYAML
     if use_yaml and not rep.items:
         yaml_check(fm_lines, base, rep)
     if not rep.items:

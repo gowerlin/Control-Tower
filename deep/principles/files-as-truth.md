@@ -70,6 +70,7 @@ frontmatter 是給機器讀的，一個值寫壞，壞掉的是**整份** frontm
 - **自由文字一律加引號**：含 `: `、` #`，或以反引號、`*`、`&`、`[` 這類 YAML 指示字元開頭的值，不加引號會被當成語法。
 - **寫完自檢再 commit**：塔台與 Worker 每次寫完 frontmatter，先跑 `python -X utf8 -I -B <control-tower>/scripts/check-frontmatter.py <檔>`（只用 Python 標準函式庫）；找不到腳本就用環境裡現成的 YAML 解析器，再沒有至少 grep 雙引號裡的反斜線。失敗當場修正，**不得 commit 解析失敗的檔**。檢查的輸出只有檔名、行號與問題類型，不印檔案原文。
 - **舊檔不追改**：已經能正確解析的舊 frontmatter 不改寫；解析失敗的在下一次寫入時修。要一次盤點，可以對 `_ct-workorders/` 跑同一支腳本（加 `-r` 含子目錄）。
+- **重複的鍵（v6.4.0+）**：同一層出現兩次同一個鍵（頂層、巢狀、清單的單筆內與 `{ }` 單行寫法都算）時，BAT 會整份讀不到；PyYAML 對重複的鍵不報錯、靜默取後面那個，所以以前的自檢擋不下來。6.4.0 起 `check-frontmatter.py` 報 `duplicate-key`，寫出鍵名與兩處行號，**有沒有 PyYAML 都擋**。處理方式是把兩段**合成一個鍵**；要加項目時改原本那個鍵，不要再寫一個同名的鍵。換版後對既有檔報這個問題，那份檔本來就讀不到，照兩處行號合併後再跑一次自檢。工單、BUG／PLAN／EXP 等 frontmatter 一樣適用。
 - **`*sync` 也會檢查（v6.0.2+）**：同步流程的第 6 步對熱區（`_ct-workorders/` 的 `*.md`，不含 `_archive/`）跑同一支腳本，有解析失敗的檔就在同步摘要列出檔名、行號、問題類型，建議把該值整個加引號；**只回報、不修、不阻擋** `*sync`，何時修由塔台決定。
 
 為什麼由寫的一方自檢，而不是要讀者放寬：讀者不只一個，在寫入點擋下最便宜。BAT 塔台面板讀取契約 v1 本身沒有變，單引號字串在 YAML 裡一樣是字串。權威定義：`control-tower/references/memory-protocol.md` § YAML frontmatter 字串寫法與寫入後自檢；Worker 端見 `ct-exec/SKILL.md` § Frontmatter Rules。

@@ -1,21 +1,145 @@
 ---
 title: 更版紀錄
-description: BMad Control Tower 近 10 版的更版紀錄（最新 v6.3.0），更早的版本見演進史。
+description: BMad Control Tower 近 10 版的更版紀錄（最新 v6.4.0），更早的版本見演進史。
 ---
 
 <!-- 本頁由 scripts/sync-ct-release.mjs 從 CT CHANGELOG 產生，請勿手改；要改內容請改來源後重跑。 -->
 
 # 更版紀錄
 
-目前版本 **v6.3.0**（2026-11-27）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 68 版（v2.1.1 ～ v5.14.2）請看[演進史](./evolution)。
+目前版本 **v6.4.0**（2026-11-28）。這裡列出最近 10 版的完整紀錄，最新的在最上面；更早的 69 版（v2.1.1 ～ v5.14.3）請看[演進史](./evolution)。
 
-本頁只列正式版。預發行版的改動已彙整在對應正式版的段落：v6.0.0-pre.1 ～ v6.0.0-rc.1（14 版）彙整在 v6.0.0，逐版說明保留在「實驗功能」的[預發行專章](../preview/methodology-adapters)作為歷史參考；v6.1.0-pre.1（1 版）彙整在 v6.1.0；v6.2.0-pre.1 ～ v6.2.0-pre.2（2 版）彙整在 v6.2.0；v6.3.0-pre.1 ～ v6.3.0-pre.3（3 版）彙整在 v6.3.0。
+本頁只列正式版。預發行版的改動已彙整在對應正式版的段落：v6.0.0-pre.1 ～ v6.0.0-rc.1（14 版）彙整在 v6.0.0，逐版說明保留在「實驗功能」的[預發行專章](../preview/methodology-adapters)作為歷史參考；v6.1.0-pre.1（1 版）彙整在 v6.1.0；v6.2.0-pre.1 ～ v6.2.0-pre.2（2 版）彙整在 v6.2.0；v6.3.0-pre.1 ～ v6.3.0-pre.3（3 版）彙整在 v6.3.0；v6.4.0-pre.1 ～ v6.4.0-pre.2（2 版）彙整在 v6.4.0。
 
 ::: tip 摘要不具權威
 本頁照錄 CT 的 CHANGELOG，只拿掉工單、決策、驗收回函等內部編號與出處註記。規則的權威定義在 CT 各 skill 與 references，兩者有出入時以 CT 本體為準。
 :::
 
 ::: v-pre
+
+## 6.4.0 <small>2026-11-28</small> {#v6-4-0}
+
+
+> **正式版：塔台開著原生選單時，也能在待辦分頁作答。** 塔台暫停時會先把待決項目寫進 `_tower-state.md`、再開 Claude Code 的原生選單，
+> Better Agent Terminal（BAT）的「待辦」分頁同時列出同一題。以前選單開著時只有終端的選單能可靠作答，在待辦分頁送出的回答可能被當成按鍵打進選單。
+> 本版讓塔台在開選單前寫出 `menu_open`（選單裡有哪些 `U-n`），BAT 就能先關掉選單、再把回答以一行 `U-n：…` 送給塔台；被關掉的選單不重開，
+> 沒答的題在待辦分頁或終端回答即可。同一則回覆有的題開選單、有的題要用文字問時，文字問的題寫進選單第一題的題目，選單一開就看得到。
+> 另外，寫入後自檢會擋下重複的鍵（frontmatter 有兩個同名的鍵時，BAT 會整份讀不到狀態檔）。
+> 本版由 `6.4.0-pre.1`、`6.4.0-pre.2` 兩個預覽版定稿：規則與 `6.4.0-pre.2` 相同，只改版號、預覽標示與文件。
+> 已在 BAT 0.8.1-pre.4 上實機驗證（見下方〈實機驗證〉），〈已知未驗〉依結果改寫。
+> **需要的 BAT**：選單開著時在待辦分頁作答要 BAT ≥ 0.8.1-pre.4；搭配舊 BAT 仍可用（舊 BAT 不理會 `menu_open`，選單開著時在終端的選單作答即可）。
+> 契約 v2 的最低 BAT 仍是 `0.8.0-pre.3`，複選畫面仍是 `0.8.0-pre.8`，推薦標記與放棄控制項仍是 `0.8.0-pre.4`，契約 v2 以外的功能仍是 `>= 0.7.0-pre.7`。
+> **契約版本不變**：`bat_contract` 仍是 `2`、`summary_version` 不升；以狀態檔能力旗標 `inbox_features` 的新值 `menu` 告訴 BAT。
+> **plugin**：正式版 6.4.0 上架 marketplace `control-tower`（`ct@control-tower`、`ct-guide@control-tower` 6.4.0）；預發行版仍不提供 plugin。zip 手動安裝照舊支援。
+> **下載**：GitHub Release `ct-v6.4.0`（Latest）；6.3.0 成為上一個穩定版，Release `ct-v6.3.0` 仍可下載。
+> 方法論契約仍 `ct-methodology-adapter/v1`，**契約不變**；內建 `bmad.yaml` 0.2.1、`ct-adapter-pstack` 0.2.6（只改版號註解）。
+
+### 升級說明
+
+**從 `6.3.0` 升級**：只換 skill 檔案，不需要遷移。
+
+- 8 個 skill 一起換（8 個 `SKILL.md` 版本註解都變了）。規則有改的是 `control-tower`（`memory-protocol.md` § 契約 v2 欄位與 § YAML frontmatter 字串寫法與寫入後自檢；
+  `yolo-mode.md`、`interactive-prompts.md`、`work-order-system.md`、`SKILL.md` 各加引用；`check-frontmatter.py` 新檢查）與 `ct-help`（〈與 BAT 協作〉）；其餘 6 個只改版號。
+- 換版後塔台第一次寫 `_tower-state.md` 時，`inbox_features` 會變成 `["recommended", "dismiss", "multi", "menu"]`，之後每次寫入都帶；既有的待決項目不會被改寫。
+- `menu_open` 只出現在開原生選單前的那一次寫入，之後任何一次寫入都不寫這個鍵；換版後不必清理舊狀態檔。
+- **選單交接要 BAT ≥ 0.8.1-pre.4**：BAT 關掉選單、再送出待辦分頁的回答。舊 BAT 不理會 `menu_open` 與 `menu`，照舊顯示待辦分頁；
+  選單開著時在終端的選單作答即可。在 BAT 以外的終端照常回同一行文字。
+- **新 BAT（≥ 0.8.1-pre.4）搭配 6.3.x 塔台**：6.3.x 的狀態檔沒有 `menu`，BAT 照自己的預設處理（以 BAT 文件為準）。被關掉的選單裡沒答的題，
+  6.3.x 塔台可能重開成新選單，從待辦分頁逐題回答時每題會多一次代按 Esc（不會錯套回答）；升到 6.4.0 不重開。
+- **自檢會擋重複的鍵**：換版後 `check-frontmatter.py` 可能對既有檔報 `duplicate-key`。那份檔 BAT 本來就整份讀不到（以前的自檢沒擋下），
+  照訊息寫的兩處行號，把兩段合成一個鍵即可（要加項目時改原本那個鍵，不要再寫一個同名的鍵），再跑一次自檢確認通過。工單、BUG／PLAN／EXP 等 frontmatter 也適用。
+- 新規則從換版後新開的塔台 session 起生效；已開著的 session 仍照舊版規則。
+- plugin 使用者：marketplace 更新後把 `ct@control-tower`、`ct-guide@control-tower` 升到 6.4.0（安裝指南 § 4.1〈用 plugin marketplace 安裝／升級〉）。
+
+**從 `6.4.0-pre.1` 或 `6.4.0-pre.2` 升級**：換 skill 檔案即可，不需要遷移；狀態檔與既有待決不用改，`ct_version` 在下一次寫入時自動變成 `"6.4.0"`。
+
+- 從 `6.4.0-pre.2`：規則相同，只有版號、預覽標示與文件（「6.4.0-pre.2 起」之類的版本標示改寫成 6.4.0）
+- 從 `6.4.0-pre.1`：另加 `menu_open` 寫在 `awaiting_user` 正後方（分幾次寫時最後寫、最先清）、文字問的題寫進選單第一題的題目、提醒接在確認行之後、
+  回覆不提 `menu_open`、自檢擋重複的鍵、`ct-help` 寫明 BAT 版號 0.8.1-pre.4，以及新 BAT 搭配 6.3.x 的相容說明。
+  換版後 `check-frontmatter.py` 可能報 `duplicate-key`，處理方式同上
+
+### 本版內容（兩個預覽版合併整理）
+
+- **`menu_open`**（選填頂層欄位）：`ids`（字串陣列 1～4 筆，依選單題目的順序，每筆都在 `awaiting_user` 裡）與 `opened_at`（`+08:00` 帶冒號，取自系統時間）。
+  沒有這個鍵＝沒有開著含 `U-n` 的選單
+- **寫入時機與位置**：在開選單前寫 `awaiting_user` 的同一次寫入一起寫，只在選單裡至少有一筆 `U-n` 時寫；寫在 `awaiting_user` 清單正後方（`user_actions`、`reminders` 之前），
+  新增的 `U-n` 和 `menu_open` 用一次編輯寫完。分幾次寫時 `menu_open` 最後寫、清除時最先拿掉，任何一次存檔後 `menu_open.ids` 都已在 `awaiting_user` 裡。
+  讀者不依賴鍵的位置（YAML 的鍵順序沒有意義）
+- **不寫的情況**：需求對齊等不含 `U-n` 的選單、不開原生選單的情況（Codex 塔台、BAT 契約不是 v2、`interactive-prompts: off`、文字範本）與 `user_inbox: off`
+- **清除**：`menu_open` 只出現在開選單前的那一次寫入；之後任何一次寫入（選單回來、處理文字回答、開工、`*pause`……）都不寫這個鍵，
+  所以塔台當掉或 compact 後，下一次寫入就清掉，不必另有清除步驟
+- **能力旗標**：每次寫 `_tower-state.md` 都寫 `inbox_features: ["recommended", "dismiss", "multi", "menu"]`；沒有 `menu` 時讀者不理會 `menu_open`
+- **BAT 怎麼用**（以 BAT 文件為準）：只在塔台分頁開著選單、而且待辦分頁回答的 `U-n` 在 `menu_open.ids` 裡時，關掉選單再送出回答；`opened_at` 防止殘留欄位被誤用
+- **被關掉的選單不重開**：不分 Esc 是你按的、還是 BAT 代按的，選單裡的每一筆照留；下一則回覆照常處理回答、逐筆確認，同一個選單裡沒答的題不重開選單，
+  在確認行之後緊接著提醒「U-n 的選單已關閉，仍待決，可在待辦分頁或終端回答」（沒有確認行時放在回覆開頭）。這一則若新增了待決，新的那筆照常開選單、
+  只放新的題；你說「重問 U-n」才重開
+- **〈競態〉**：契約 v2 的 BAT 可能代按 Esc 關掉選單、再把待辦分頁的回答送來；塔台把這個 Esc 當成你按的 Esc。權限與輸入對話框、Worker 的通知照舊由 BAT 保留；
+  已在選單或終端回答過的同一筆，晚到的那一行照「編號不存在或已結」處理
+- **同一則回覆有選單題也有文字題**：選項超過 4 個或要你自由回答的題，寫進選單第一題的題目：在「剛才的回答：」確認行與被關選單的提醒之後、本題之前，
+  每題一段 `U-n（工單：—）<要決定什麼>；選項 A …／B …；回 U-n：<代號>`（自由回答寫「回 U-n：&lt;文字>」，多選加「可複選：回 `U-n：A、C`」）。
+  文字題超過 2 題或寫不下時，這一則不開選單、全部用文字列出，下一則再開。`menu_open.ids` 只列開進選單的題
+- **回覆不提 `menu_open`**：`menu_open` 是給 BAT 的欄位，回覆與選單題目不必提；看到不是自己寫的 `menu_open` 不必處理（下一次寫入就清掉），
+  需要說明時在選單之後的回覆一句帶過，不寫進題目
+- **自檢**：`check-frontmatter.py` 對 `_tower-state.md` 另檢查 `menu_open`（`v2-menu-open`：是物件；`ids` 1～4 筆、每筆 `U-n`、都在 `awaiting_user` 裡、不重複；
+  `opened_at` 是帶冒號時區的日期時間；區塊與 `{ }` 單行寫法都檢查），有 `menu_open` 但 `inbox_features` 沒有 `menu` 時只警告（`v2-menu-open-ignored`）。
+  另外任何 frontmatter（狀態檔、工單、BUG／PLAN／EXP 等）同一層出現兩次同一個鍵就列為問題（`duplicate-key`），頂層、巢狀、清單的單筆內與 `{ }` 單行寫法都算，
+  訊息寫出鍵名與兩處行號；有沒有 PyYAML 都會擋（PyYAML 對重複的鍵不報錯、靜默取後面那個）
+- **`ct-help`〈與 BAT 協作〉**：選單開著時也可以在待辦分頁作答、被關掉的題不重開、怎麼重問、新舊版本搭配（含 BAT 版號 0.8.1-pre.4 與新 BAT 搭配 6.3.x 塔台）
+
+完整的條文改動逐項列在下方 `[6.4.0-pre.1]`、`[6.4.0-pre.2]`。
+
+### Changed
+
+- 版號 `6.4.0`：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表（加 6.4.0 列）、`methodology-adapters.md` 版本歷史（契約不變）、
+  `bmad.yaml` 版號註解；`ct-adapter-pstack` 版號 6.4.0（`adapter_version` 仍 0.2.6）
+- 預覽標示改成正式版：`memory-protocol.md` 範例的 `ct_version`、§ 契約 v2 欄位 開頭的引入說明（「6.4.0-pre.1 預覽時加入，6.4.0 納入正式版」「6.4.0-pre.2 預覽時依實機驗收補上」）；
+  `memory-protocol.md`、`SKILL.md` § Output Style 與 `check-frontmatter.py` 說明文字裡的「6.4.0-pre.2 起」改寫成「6.4.0 起」（只改版本標示，條文與檢查不變）；`ct-adapter-pstack` 的說明
+- 安裝指南：§ 2.73 改成正式版（版本需求、實機驗證、從 6.3.0 與兩個預覽版升級、已知未驗）；§ 1 加一列；§ 1、§ 4.1、§ 4.3 版號；
+  § 13、§ 14 各列的版本標示改成 `v6.4.0+`
+- 本段〈已知未驗〉依實機驗收結果改寫，已驗與未驗分列
+
+### Unchanged
+
+- 規則與 `6.4.0-pre.2` 相同：狀態檔欄位的名稱、型別與語意（`menu_open` 的形狀、寫入時機、位置、不寫的情況與清除）；回答格式與解析；
+  〈暫停的提問方式〉（含被關選單不重開、文字題寫進題目與不開選單的條件）；`check-frontmatter.py` 的檢查項、分級、輸出與 exit code
+- `bat_contract` 仍是 `2`、`summary_version` 仍是 `1`、`inbox_features` 仍寫 `["recommended", "dismiss", "multi", "menu"]`；`--set-role` 的參數與輸出、開工降級提示、
+  契約 v2 的最低 BAT 版號 `0.8.0-pre.3`
+- 設定鍵與預設值（沒有新鍵）、狀態值、命令、派工命令、Worker（`ct-exec`、`ct-done`）的流程與通知字串
+- 方法論契約 `ct-methodology-adapter/v1`、adapter 描述檔
+- 歷史段落（本檔 `[6.4.0-pre.2]` 以前的段落、版號表舊列、安裝指南 § 2.72 以前的章節）與「v6.4.0+」等引入標記不改
+
+### 實機驗證（已驗證）
+
+在 BAT 0.8.1-pre.4 上，用隔離的 BAT 執行環境與隔離的 claude 設定目錄實機跑過兩輪：先以 6.4.0-pre.1 跑完整清單（另以舊 BAT 0.8.1-pre.3 跑一個情境、以 CT 6.3.0 跑一個情境），
+再以 6.4.0-pre.2 補跑修正過的寫法。第一輪唯一不合格的「同一則回覆混用選單與文字問的題時，文字題的選項與回答方式沒有列出」，改成「寫進選單第一題的題目」後補驗通過；
+第一輪另有幾份中間存檔不合法（`menu_open` 先寫、`awaiting_user` 後補），改了寫入位置後沒有再出現。CT 端判定全部通過。
+
+- **BAT 依 `menu_open` 代按 Esc**：待辦分頁回答的 `U-n` 在 `menu_open.ids` 裡時，BAT 關掉選單再送出回答；以 `opened_at` 判斷殘留欄位、不誤按 Esc
+- **塔台的寫入與清除**：換版後每次寫狀態檔都帶 `menu`；只在開選單前的那一次寫入寫 `menu_open`（`ids` 依題目順序、都在 `awaiting_user` 裡，`opened_at` 帶冒號），
+  之後的寫入都不寫；Esc 殘留與人為注入的殘留都被下一次寫入清掉
+- **被關掉的選單不重開**：BAT 代按或你按的 Esc 之後，下一則照常處理回答、沒答的題不重開、有提醒；新增的待決只放新題；說「重問 U-n」才重開；
+  已在選單回答過、BAT 又送來的同一筆照「編號不存在或已結」處理
+- **不寫 `menu_open` 的情況**：需求對齊的選單不寫（BAT 保留回答到選單關閉）；`interactive-prompts: off` 不寫
+- **新舊版本搭配**：CT 6.4.0 搭舊 BAT 0.8.1-pre.3（照寫 `menu` 與 `menu_open`，舊 BAT 不理會、待辦分頁照舊）；CT 6.3.0 搭新 BAT（狀態檔沒有 `menu`、沒有 `menu_open`，沒有回歸）
+- **文字問的題寫進題目**：同一則回覆有一題開選單、兩題用文字問時，選單第一題的題目依序寫了被關選單的提醒、5 個選項那題的選項與回答方式、
+  自由回答那題的回答方式，最後才是本題；`menu_open.ids` 只有開進選單的那一題
+- **寫入位置**：`menu_open` 緊接 `awaiting_user`，新增的題與 `menu_open` 一次寫完、回答後一次移除；驗收過程中每一份存檔（含中間存檔）都通過 `check-frontmatter.py`
+
+### Known unverified（已知未驗）
+
+`[6.3.0]` 以前列的項目不變（6.3.0 的 Codex 塔台多選、確認行超過 4 筆的退路仍未驗）。`[6.4.0-pre.1]`、`[6.4.0-pre.2]` 列的項目除下列各項外都已在實機驗過（見上方〈實機驗證〉）。
+本版仍未實機驗證的路徑：
+
+1. Codex 塔台：沒有選單，不寫 `menu_open`，所有題走文字範本；沒有 Codex 環境，未實機確認
+2. BAT 遇到權限詢問或 MCP 要求輸入（`permission`／`elicitation`）的暫停時，照舊保留回答、不代按 Esc：驗收環境略過權限詢問、也沒有會要求輸入的 MCP，沒有觸發；以 BAT 文件為準
+3. 混用選單與文字問的題的幾個分支：文字題超過 2 題或寫不下時「這一則不開選單」的退路、文字題是多選題時的「可複選」寫法、
+   同一則回覆同時有「剛才的回答：」確認行時的完整順序（確認行 → 提醒 → 文字題 → 本題）。驗收只有 2 題文字題、沒有確認行，都沒有觸發
+4. 分幾次寫時「`menu_open` 最後寫、最先清」的順序：驗收中寫入與清除都是一次完成；被回答的題不是清單最後一筆、必須分開寫的情況沒有觀察到
+   （就算順序寫反，BAT 也只是當作沒有 `menu_open`、不會誤按 Esc，自檢會擋下）
+5. 下一則回覆不開新選單時，提醒緊接在確認行之後：補跑沒有這個情況（第一輪兩種順序都出現過，都沒有違反當時的條文）
+6. Worker 提問升級給你的選單（`worker-question`），以及選單開著時從待辦分頁回答 `A-n`（保留到選單關閉）：不在驗收清單，條文和塔台提問的選單相同
+7. 重複的鍵（`duplicate-key`）：檢查腳本有樣本測試，並對本專案的工單目錄（561 份 frontmatter）新舊腳本比對、沒有新增誤報；BAT 也用樣本確認過整份讀不到。
+   驗收中塔台沒有實際寫出重複的鍵，所以「塔台寫錯時自檢擋下」這條路徑沒有實機發生；BAT 端行為以 BAT 文件為準
 
 ## 6.3.0 <small>2026-11-27</small> {#v6-3-0}
 
@@ -650,46 +774,12 @@ RC 期間沒有新驗證到的項目；下列 41 項與 `[6.0.0-rc.1]` 相同，
 - zip 手動安裝流程、發行物版面（全量 zip、8 個單一 skill zip、Guide zip）、plugin 名稱與內容組成不變
 - 歷史段落（本檔舊段落、版號表舊列、安裝指南舊章節）不改
 
-## 5.14.3 <small>2026-10-30</small> {#v5-14-3}
-
-
-> **PATCH：補上「一個塔台、多個巢狀的獨立 repo」的配置文件，附實機驗證結果。**
-> 上層目錄底下有好幾個跟團隊共用的獨立 repo 時，工單常被寫進各子 repo，BAT 面板看不到。原因是 Worker 在子 repo 執行、工單只好跟著 cwd 走，不是落點檢查要求的。CT 之前沒有寫這種配置怎麼做，本版補上：工單集中在上層的個人塔台 repo，Worker 在上層執行，子 repo 用 `git -C` commit。
-> 沒有新命令、新設定、新欄位；落點檢查、commit 規則、CT 派工命令、BAT 介面、斷點 A 正則、exit code 不變。升級只換 skill 檔案（見安裝指南 § 2.59）。
-
-### Added
-
-- `mono-repo-patterns.md` 新增 § 巢狀的獨立 repo（一個塔台、多個共用 repo）（唯一權威）：為什麼工單會跑進子 repo、目錄與上層設定（`git init`、`.gitignore` 排除子 repo）、工單 frontmatter（`repo` 填上層目錄名、`project` 填子 repo、`affects_files` 從上層寫）、工單步驟寫法（先讀子 repo 的 `AGENTS.md`／`CLAUDE.md`、確認子 repo 身分、`git -C <子 repo> commit --only <去掉前綴的路徑>`、回報區各記子 repo SHA、工單在上層 commit）、派工與面板、限制、何時改用每個 repo 一個塔台、已寫在子 repo 的舊工單怎麼處理、實機驗證結果
-- 同一節寫明兩個看法：隊友不用 CT 時，執行紀錄不建議預設推到團隊共用的 remote（建議，不是規則）；`parent_workorder` 不是 CT 欄位，同一個塔台底下的關聯用 `depends_on`／`related`
-
-### Changed
-
-- `multi-tower-protocol.md` § 決策：一個塔台還是多個：加一列「子專案是跟團隊共用的獨立 repo、隊友不用 CT」，指向新節
-- `work-order-template.md`：「目標子專案」、`affects_files` 的路徑基準、`repo` 欄位各補一句巢狀獨立 repo 的說明；`isolation` 加「不能用」：工單在上層、產品檔在巢狀獨立 repo 的工單（worktree 裡沒有子 repo）
-- `onboarding.md` 主題 1、`control-tower/SKILL.md` 的 reference 路由：指回新節
-- 安裝指南：〈情境 8：Mono-repo〉補巢狀獨立 repo 的例子；新增 § 2.59
-- 版號：8 個 `SKILL.md` 版本註解、`control-tower/SKILL.md` H1、`version-governance.md` 範例與版號表；安裝指南 § 1、§ 4.1 版號範例與發行物檔名同步（`OLD=5.14.2`、`VER=5.14.3`）
-
-### Notes
-
-- 這個配置用 CT 5.14.2＋BAT 0.7.2-pre.1 在拋棄式目錄實機驗證過：Worker 在上層執行，落點檢查 C-0、C-1、C-3 都通過，兩個子 repo 各自 `git -C` commit 成功，上層看不到子 repo 的檔案
-- 尚未實機驗證：BAT 面板一鍵派工（要另開一個指向上層的 BAT workspace；cwd = workspace 根是依 BAT 的行為推得）、子 repo 有 remote 時的 push
-- 新目錄第一次派工時，Claude Code 會先問要不要信任這個資料夾，`--wait-started` 可能回 exit `8`；使用者在分頁回答後就正常開始，不需要重派
-- 宣告子 repo 根目錄的 frontmatter 欄位與對應的落點檢查，本版沒有做，之後另議
-
-### Unchanged
-
-- 落點檢查（C-0～C-3）、ct-exec 的 commit 規則、工單欄位、狀態值、設定不變
-- CT 派工命令（`--skill` + `--workorder`）、BAT 介面、斷點 A 正則、exit code 不變
-- zip 手動安裝流程、發行物版面（全量 zip、8 個單一 skill zip、Guide zip）、plugin 名稱與內容組成不變
-- 歷史段落（本檔舊段落、版號表舊列、安裝指南舊章節）不改
-
 :::
 
 ## 延伸閱讀 {#further-reading}
 
-- CT `CHANGELOG.md`（共 78 個版本；本頁列最近 10 版）
+- CT `CHANGELOG.md`（共 79 個版本；本頁列最近 10 版）
 - CT `version-governance.md` § 歷史版號表
-- [演進史](./evolution)：更早的 68 版與九個世代
+- [演進史](./evolution)：更早的 69 版與九個世代
 
 Portal 是摘要，不具權威；與 CT reference 有出入時，以 reference 為準。

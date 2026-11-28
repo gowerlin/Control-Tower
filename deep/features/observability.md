@@ -59,7 +59,7 @@ BAT 視窗裡的指揮塔面板（總覽、決策、臭蟲、待辦池、工單�
 
 大小之外，契約也列出各檔 BAT 依賴的格式。例如 BUG 索引的狀態只看那一列所在的區段標題；嚴重度格子要寫 `🔴 High`，只寫 emoji 時 BAT 顯示 Unknown，按等級篩選就會漏掉。BAT `0.7.1-pre.9` 起只寫 `critical` 也算 High，但更舊的 BAT 會顯示 Unknown，所以 critical 的 BUG 在索引裡照舊寫 `🔴 High（critical）`。CT 不為了面板去改單據本身的值，只照契約寫索引。
 
-**字串寫法與寫入後自檢（v6.0.1+）**：檔案不大、面板還是少了下一個編號與待辦，再看 `_tower-state.md` 檔頭的機器可讀摘要能不能解析。摘要是 YAML frontmatter，只要一個值寫壞，整份都讀不到，BAT 照相容規則當成沒有摘要。最常見的是把含 Windows 路徑的文字放進雙引號字串（`\U`、`\b` 這類組合會被當成跳脫）。6.0.1 起 CT 寫 frontmatter 時，含反斜線的值用單引號或正斜線、自由文字一律加引號，寫完先跑 `check-frontmatter.py` 自檢、解析失敗不 commit；能解析的舊檔不追改（見[檔案即真相來源 › 字串寫法與寫入後自檢](/deep/principles/files-as-truth#yaml-strings)）。契約 v1（`summary_version: 1`）的欄位與型別都沒變，BAT 端不必改；已經寫壞的檔，在那個工作區的塔台換上 6.0.1、下次寫入並自檢時修好。
+**字串寫法與寫入後自檢（v6.0.1+）**：檔案不大、面板還是少了下一個編號與待辦，再看 `_tower-state.md` 檔頭的機器可讀摘要能不能解析。摘要是 YAML frontmatter，只要一個值寫壞，整份都讀不到，BAT 照相容規則當成沒有摘要。最常見的是把含 Windows 路徑的文字放進雙引號字串（`\U`、`\b` 這類組合會被當成跳脫）。6.0.1 起 CT 寫 frontmatter 時，含反斜線的值用單引號或正斜線、自由文字一律加引號，寫完先跑 `check-frontmatter.py` 自檢、解析失敗不 commit（6.4.0 起另擋同一層重複的鍵 `duplicate-key`：重複的鍵一樣會讓面板整份讀不到，處理方式是合成一個鍵）；能解析的舊檔不追改（見[檔案即真相來源 › 字串寫法與寫入後自檢](/deep/principles/files-as-truth#yaml-strings)）。契約 v1（`summary_version: 1`）的欄位與型別都沒變，BAT 端不必改；已經寫壞的檔，在那個工作區的塔台換上 6.0.1、下次寫入並自檢時修好。
 
 ## `ct-insights`：從紀錄看健康度 {#insights}
 

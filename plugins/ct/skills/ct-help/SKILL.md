@@ -2,7 +2,7 @@
 name: ct-help
 description: "Control Tower help skill for explaining the Tower and Worker ecosystem, commands, prefixes, workflow, BAT and YOLO concepts, methodology adapters, state files, onboarding, and common confusion. Use when the user invokes $ct-help or /ct-help, is new to Control Tower, asks how to use ct-exec, ct-done, ct-status, ct-evolve, ct-fieldguide, or asks what a Tower command means."
 ---
-<!-- ct-help-version: 6.3.0 -->
+<!-- ct-help-version: 6.4.0 -->
 
 # ct-help
 
@@ -152,11 +152,21 @@ Summaries only; the CT rules live in `../control-tower/references/memory-protoco
   marked 「（推薦）」. The menu lets you tick several and has no drop choice: type 「放棄」 in "Other" to drop it (the ticks are then not
   applied); other words in "Other" make the whole answer free text, recorded together with the ticks. As text, the pause adds the line
   「可複選：回 `U-n：A、C`」. BAT 0.8.0-pre.8 or later draws ticks in the inbox tab.
+- **Answering in the inbox tab while a menu is open** (CT 6.4.0+, with BAT 0.8.1-pre.4 or later): you can answer in BAT's inbox tab
+  even while the Tower's menu is open. BAT closes the menu and then sends your answer. The other questions in that closed menu are not
+  asked again in a menu: they stay open, and you answer them in the inbox tab or the terminal. A new pending item still gets its own menu,
+  with only the new questions. Say 「重問 U-n」 if you want the closed questions back in a menu. Before opening a menu the Tower writes
+  `menu_open` (which `U-n` are in it) so BAT knows the answer belongs to that menu.
 - **Mixing versions**: CT 6.2.0 with an older BAT (0.8.0-pre.3) still shows the inbox tab; there is no marker or drop button, but the
   recommended option is first with 「（推薦）」 and typing `U-n：放棄` in the free-answer box works. A newer BAT with CT 6.1.x shows neither
   feature; everything else works as before. The contract stays v2 (`bat_contract: 2`); CT 6.2.0 adds `inbox_features` to tell BAT.
   CT 6.3.0 adds `multi` to `inbox_features`: with a BAT older than 0.8.0-pre.8 the question shows as single-choice, and typing
   `U-n：A、C` in the free-answer box still works; BAT 0.8.0-pre.8 or later with CT 6.2.x shows no ticks.
+  CT 6.4.0 adds `menu` to `inbox_features` and writes `menu_open`: an older BAT ignores both and keeps working as before; BAT
+  0.8.1-pre.4 or later with CT 6.3.x or older falls back to its own default for answering while a menu is open.
+  **A new BAT (0.8.1-pre.4 or later) with a CT 6.3.x Tower**: the questions left unanswered in a closed menu may be reopened by the 6.3.x
+  Tower as a new menu, so when you answer them one by one from the inbox tab, each one costs one more Esc that BAT presses for you;
+  CT 6.4.0 does not reopen them.
   **A new BAT with a CT 6.2.x Tower**: the 6.2.x Tower may decide on its own to open its native menu as multi-choice, but it does not write
   `multi` into the file, so BAT shows the question as single-choice, and 6.2.x reads a multi-choice answer as your own words (it never
   applies the wrong option; it just takes one more round to agree). To use multi-choice, upgrade the Tower to CT 6.3.0.
@@ -177,6 +187,8 @@ Summaries only; the CT rules live in `../control-tower/references/memory-protoco
   older, BAT's inbox tab says which version is needed and stays off; an old BAT simply has no inbox tab, and the Tower prints one fallback
   line at startup and keeps working. The recommended marker and the drop controls need BAT 0.8.0-pre.4 or later and CT 6.2.0 or later.
   Multi-choice ticks need BAT 0.8.0-pre.8 or later and CT 6.3.0 or later; "drop words are only a reason" is CT 6.3.0 or later.
+  Answering in the inbox tab while a menu is open, with the menu's other questions not reopened, needs CT 6.4.0 or later and BAT
+  0.8.1-pre.4 or later.
 
 ## Claude Code Workflow (v5.11.0+)
 
